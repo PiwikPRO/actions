@@ -1,6 +1,6 @@
 # Actions
 
-Custom github actions used internally by Piwik PRO employees. This repo is public and licensed on MIT license due to technical reasons - currently it's impossible to create private Github actions. 
+Custom github actions used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
 
 ## Actions
 
@@ -15,7 +15,7 @@ Example usage:
       - name: Check out repository code
         uses: actions/checkout@v2
 
-      # Copy-pasting this snippet is enough, as all of those variables are exported on organization level in PiwikPRO
+      # Copy-pasting this snippet is enough, as all of those variables are exported on organization level in Piwik PRO
       - name: Download dtools
         uses: PiwikPRO/actions/dtools@v1
         with:

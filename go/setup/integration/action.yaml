@@ -1,5 +1,5 @@
 name: 'Setup integration tests'
-description: 'Sets up golang, python, installs'
+description: 'Sets up golang, python, installs local python package'
 inputs:
   test-directory:
     required: false
