@@ -33,8 +33,14 @@ runs:
 
     - name: Run tests
       shell: bash
-      run: go test ./... -v -covermode=count
-    
+      run: go test ./... -v -coverprofile cover.out
+
+    - name: Extract coverage
+      if: ${{ inputs.cov == 'true' }}
+      id: get-coverage
+      shell: bash
+      run: echo "::set-output name=coverage::$(go tool cover -func cover.out | grep total | awk '{print substr($3, 1, length($3)-1)}'"
+
     - name: Generate PiwikPRO access token for coverage action
       uses: PiwikPRO/github-app-token-generator@v1
       if: ${{ inputs.cov == 'true' }}
@@ -49,6 +55,6 @@ runs:
       with:
         aws-access-key-id: ${{ inputs.cov-aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.cov-aws-secret-access-key }}
-        head-coverage: "10"
+        head-coverage: ${{ steps.get-coverage.outputs.coverage }}
         github-token: ${{ steps.get-token.outputs.token }}
         threshold: ${{ inputs.cov-threshold }}
