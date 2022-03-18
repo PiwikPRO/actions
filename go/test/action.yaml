@@ -1,13 +1,55 @@
 name: 'Test go project'
 description: 'Sets up go and runs go tests'
+
+inputs:
+  cov:
+    required: false
+    description: If coverage should be enabled
+    default: "false"
+  cov-aws-access-key-id:
+    required: false
+    description: AWS Access Key ID used for storing coverage
+  cov-aws-secret-access-key:
+    required: false
+    description: AWS Secret Access Key used for storing coverage
+  cov-reporeader-private-key:
+    required: true
+    description: Private key for token generator application
+  cov-reporeader-application-id:
+    required: true
+    description: Application ID of token generator application
+  cov-threshold:
+    required: false
+    default: 80
+    description: Application ID of token generator application
+  
 runs:
   using: "composite"
   steps:
     - name: Install Go
-      if: success()
       uses: actions/setup-go@v2
       with:
         go-version: 1.18.x
+
     - name: Run tests
       shell: bash
       run: go test ./... -v -covermode=count
+    
+    - name: Generate PiwikPRO access token for coverage action
+      uses: PiwikPRO/github-app-token-generator@v1
+      if: ${{ inputs.cov == 'true' }}
+      id: get-token
+      with:
+        private-key: ${{ inputs.cov-reporeader-private-key }}
+        app-id: ${{ inputs.cov-reporeader-application-id }}
+
+    - name: Run coverage action
+      uses: PiwikPRO/actions/coverage@1.0.0
+      if: ${{ inputs.cov == 'true' }}
+      id: get-token
+      with:
+        aws-access-key-id: ${{ inputs.cov-aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.cov-aws-secret-access-key }}
+        head-coverage: "10"
+        github-token: ${{ inputs.dtools-token }}
+        threshold: ${{ inputs.cov-threshold }}
