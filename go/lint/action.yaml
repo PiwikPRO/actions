@@ -6,7 +6,9 @@ runs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.18.x
+          # Downgraded to 1.17, because currently the linter does not support go 1.18
+          # https://github.com/golangci/golangci-lint/issues/2374
+          go-version: 1.17.x
 
       - name: Run linters
         uses: golangci/golangci-lint-action@v2
