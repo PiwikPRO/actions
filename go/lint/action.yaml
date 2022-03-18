@@ -1,0 +1,16 @@
+name: 'Lint go project'
+description: 'Sets up go and runs go linters'
+runs:
+  using: "composite"
+  steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18.x
+
+      - name: Run linters
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.43.0
+          # Extended timeout to ensure all the linters are installed before it hits
+          args: --exclude-use-default=false --timeout=300s

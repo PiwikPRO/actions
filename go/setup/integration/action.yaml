@@ -1,0 +1,23 @@
+name: 'Setup integration tests'
+description: 'Sets up golang, python, installs'
+inputs:
+  test-directory:
+    required: false
+    description: Name of the directory the tests are stored in
+    default: "tests"
+runs:
+  using: "composite"
+  steps:
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.18.x
+
+    - name: Install Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.x"
+
+    - name: Install packages required for tests
+      shell: bash
+      run: cd ${{ inputs.test-directory }} && python setup.py develop

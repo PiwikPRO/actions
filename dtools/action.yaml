@@ -1,0 +1,32 @@
+# action.yml
+name: 'Piwik PRO dtools'
+description: 'Installs Dtools'
+inputs:
+  reporeader-private-key:
+    required: true
+    description: Private key for token generator application
+  reporeader-application-id:
+    required: true
+    description: Application ID of token generator application
+  dtools-token:
+    required: true
+    description: Decryption token for dtools
+runs:
+  using: "composite"
+  steps:
+
+    - name: Generate PiwikPRO access tokens
+      uses: PiwikPRO/github-app-token-generator@v1
+      id: get-token
+      with:
+        private-key: ${{ inputs.reporeader-private-key }}
+        app-id: ${{ inputs.reporeader-application-id }}
+
+    - name: Install dtools
+      shell: bash
+      env:
+        PP_GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        PP_DTOOLS_TOKEN: ${{ inputs.dtools-token }}
+      run: |
+        curl -H "Authorization: token $PP_GITHUB_TOKEN" -H 'Accept: application/vnd.github.v3.raw' 'https://api.github.com/repos/PiwikPRO/Developers-Tools/contents/scripts/download-dtools.sh' | bash
+        dtools dcr login
