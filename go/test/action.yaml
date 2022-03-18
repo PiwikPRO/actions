@@ -46,10 +46,9 @@ runs:
     - name: Run coverage action
       uses: PiwikPRO/actions/coverage@1.0.0
       if: ${{ inputs.cov == 'true' }}
-      id: get-token
       with:
         aws-access-key-id: ${{ inputs.cov-aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.cov-aws-secret-access-key }}
         head-coverage: "10"
-        github-token: ${{ inputs.dtools-token }}
+        github-token: ${{ steps.get-token.outputs.token }}
         threshold: ${{ inputs.cov-threshold }}
