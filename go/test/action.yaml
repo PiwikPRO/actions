@@ -39,7 +39,7 @@ runs:
       if: ${{ inputs.cov == 'true' }}
       id: get-coverage
       shell: bash
-      run: echo "::set-output name=coverage::$(go tool cover -func cover.out | grep total | awk '{print substr($3, 1, length($3)-1)}'"
+      run: echo "::set-output name=coverage::$(go tool cover -func cover.out | grep total | awk '{print substr($3, 1, length($3)-1)}')"
 
     - name: Generate PiwikPRO access token for coverage action
       uses: PiwikPRO/github-app-token-generator@v1
