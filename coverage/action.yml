@@ -1,0 +1,54 @@
+name: AWS S3 Code Coverage
+description: Store code coverages of repo branches on AWS S3 bucket
+inputs:
+  aws-access-key-id: 
+    required: true
+    description: AWS Access Key ID
+  aws-secret-access-key:
+    required: true
+    description: AWS Secret Access Key
+  head-coverage:
+    required: true
+    description: Coverage of the current branch
+  github-token:
+    required: true
+    description: Github app generated github token for status check update
+  threshold:
+    required: false
+    description: Code coverage percertage threshold at which coverage is no longer compared to base branch
+    default: '80'
+runs:
+  using: composite
+  steps:
+    - uses: unfor19/install-aws-cli-action@v1
+
+    - name: Update current branch coverage (pull_request)
+      if: ${{ github.event_name == 'pull_request' }}
+      shell: bash
+      run: |
+        ${{ github.action_path }}/covtool.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.head_ref }}
+
+    - name: Update current branch coverage (push)
+      if: ${{ github.event_name == 'push' }}
+      shell: bash
+      run: |
+        ${{ github.action_path }}/covtool.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }}
+
+    - name: Compare coverage
+      shell: bash
+      if: ${{ github.event_name == 'pull_request' }}
+      run: |
+        ${{ github.action_path }}/covtool.py --action compare --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.base_ref }} --threshold ${{ inputs.threshold }}
+
+
+    - name: Update status with success
+      shell: bash
+      if: ${{ github.event_name == 'pull_request' }}
+      run: |
+        curl -X POST -H "Accept: application/vnd.github.v3+json" "https://user:${{ inputs.github-token }}@api.github.com/repos/${GITHUB_REPOSITORY}/check-runs" -d "{\"head_sha\": \"${{ github.event.after }}\", \"name\": \"Coverage\", \"conclusion\": \"success\", \"output\": {\"title\": \"${{ inputs.head-coverage }}%\", \"summary\": \"${{ inputs.head-coverage }}%\"}}" -qqq >> /dev/null
+
+    - name: Update status with error
+      shell: bash
+      if: ${{ failure() && github.event_name == 'pull_request' }}
+      run: |
+        curl -X POST -H "Accept: application/vnd.github.v3+json" "https://user:${{ inputs.github-token }}@api.github.com/repos/${GITHUB_REPOSITORY}/check-runs" -d "{\"head_sha\": \"${{ github.event.after }}\", \"name\": \"Coverage\", \"conclusion\": \"failure\", \"output\": {\"title\": \"${{ inputs.head-coverage }}%\", \"summary\": \"${{ inputs.head-coverage }}%\"}}" -qqq >> /dev/null
