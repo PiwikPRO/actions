@@ -22,12 +22,10 @@ runs:
   steps:
     - uses: unfor19/install-aws-cli-action@v1
 
-    - name: Update head branch
+    - name: Update current branch coverage
       shell: bash
-      if: ${{ github.event_name == 'push' }}
       run: |
         ${{ github.action_path }}/covtool.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }}
-
 
     - name: Compare coverage
       shell: bash
