@@ -27,8 +27,7 @@ runs:
     - name: Build binary
       shell: bash
       run: |
-        go get -u github.com/gobuffalo/packr/packr
-        CGO_ENABLED=1 GOOS=linux GOARCH=amd64 packr build -a -tags netgo -ldflags '-w -extldflags "-static"' -o ${{ inputs.binary-name }} ${{ inputs.main-file }}
+        CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o ${{ inputs.binary-name }} ${{ inputs.main-file }}
 
     - name: Release the binary if on tag
       uses: softprops/action-gh-release@v1
