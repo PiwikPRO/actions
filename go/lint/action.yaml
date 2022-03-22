@@ -1,18 +1,72 @@
 name: 'Lint go project'
 description: 'Sets up go and runs go linters'
+inputs:
+  inclint:
+    required: false
+    description: If incremental checking of linter errors should be enabled
+    default: "false"
+  inclint-aws-access-key-id:
+    required: false
+    description: AWS Access Key ID used for storing amount of linter errors
+  inclint-aws-secret-access-key:
+    required: false
+    description: AWS Secret Access Key used for storing amount of linter errors
+  inclint-reporeader-private-key:
+    required: true
+    description: Private key for token generator application
+  inclint-reporeader-application-id:
+    required: true
+    description: Application ID of token generator application
+  inclint-threshold:
+    required: false
+    default: 5
+    description: How many linter errors should be fixed with every PR
 runs:
   using: "composite"
   steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          # Downgraded to 1.17, because currently the linter does not support go 1.18
-          # https://github.com/golangci/golangci-lint/issues/2374
-          go-version: 1.17.x
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.18.x
 
-      - name: Run linters
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: v1.43.0
-          # Extended timeout to ensure all the linters are installed before it hits
-          args: --exclude-use-default=false --timeout=300s
+    - name: Run linters
+      if: ${{ inputs.inclint == 'false' }}
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.45.0
+        # Extended timeout to ensure all the linters are installed before it hits
+        args: --exclude-use-default=false --timeout=300s
+
+
+    - name: Run linters (with incremental improvements)
+      if: ${{ inputs.inclint == 'true' }}
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.45.0
+        args: --exclude-use-default=false --issues-exit-code=0 --timeout=300s -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
+
+
+    - name: Extract amount of linter errors
+      if: ${{ inputs.inclint == 'true' }}
+      id: get-linter-errors
+      shell: bash
+      run: echo "::set-output name=lintererrors::$(cat /tmp/golangci-inclint-results.txt | wc -l)"
+
+
+    - name: Generate PiwikPRO access token for inclint action
+      uses: PiwikPRO/github-app-token-generator@v1
+      if: ${{ inputs.inclint == 'true' }}
+      id: get-token
+      with:
+        private-key: ${{ inputs.inclint-reporeader-private-key }}
+        app-id: ${{ inputs.inclint-reporeader-application-id }}
+
+    - name: Run inclint action
+      uses: PiwikPRO/actions/inclint@3.0.0
+      if: ${{ inputs.inclint == 'true' }}
+      with:
+        aws-access-key-id: ${{ inputs.inclint-aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.inclint-aws-secret-access-key }}
+        head-linter-errors: ${{ steps.get-linter-errors.outputs.lintererrors }}
+        github-token: ${{ steps.get-token.outputs.token }}
+        threshold: ${{ inputs.inclint-threshold }}

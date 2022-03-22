@@ -1,0 +1,41 @@
+name: AWS S3 Linter errors
+description: Make sure, that each consecutive PR improves amount of active linter errors
+inputs:
+  aws-access-key-id: 
+    required: true
+    description: AWS Access Key ID
+  aws-secret-access-key:
+    required: true
+    description: AWS Secret Access Key
+  head-linter-errors:
+    required: true
+    description: Amount of linter errors of the current branch
+  github-token:
+    required: true
+    description: Github app generated github token for status check update
+  threshold:
+    required: false
+    description: Amount of linter errors, that should be fixed with every PR
+    default: '5'
+runs:
+  using: composite
+  steps:
+    - uses: unfor19/install-aws-cli-action@v1
+
+    - name: Update current branch linter-errors (pull_request)
+      if: ${{ github.event_name == 'pull_request' }}
+      shell: bash
+      run: |
+        ${{ github.action_path }}/inclint.py --action update --head-linter-errors ${{ inputs.head-linter-errors }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.head_ref }}
+
+    - name: Update current branch linter-errors (push)
+      if: ${{ github.event_name == 'push' }}
+      shell: bash
+      run: |
+        ${{ github.action_path }}/inclint.py --action update --head-linter-errors ${{ inputs.head-linter-errors }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }}
+
+    - name: Compare amount of linter errors
+      shell: bash
+      if: ${{ github.event_name == 'pull_request' }}
+      run: |
+        ${{ github.action_path }}/inclint.py --action compare --head-linter-errors ${{ inputs.head-linter-errors }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.base_ref }} --threshold ${{ inputs.threshold }}

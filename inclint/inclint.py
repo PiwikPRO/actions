@@ -3,7 +3,6 @@ import argparse
 import copy
 import logging
 import os
-import sys
 import uuid
 import subprocess
 
@@ -25,12 +24,12 @@ class S3Client:
         os.mkdir(self.workdir)
 
     def get(self, key):
-        the_file = os.path.join(self.workdir, "coverage.txt")
+        the_file = os.path.join(self.workdir, "inclint.txt")
         subprocess.run([
             'aws',
             's3',
             'cp',
-            os.path.join(self.url, key, "coverage.txt"),
+            os.path.join(self.url, key, "inclint.txt"),
             the_file,
         ], env=self._env(), check=True)
         
@@ -38,7 +37,7 @@ class S3Client:
             return f.read()
 
     def set(self, key, value):
-        the_file = os.path.join(self.workdir, "coverage.txt")
+        the_file = os.path.join(self.workdir, "inclint.txt")
         with open(the_file, 'w') as f:
             f.write(str(value))
         subprocess.run([
@@ -46,7 +45,7 @@ class S3Client:
             's3',
             'cp',
             the_file,
-            os.path.join(self.url, key, "coverage.txt"),
+            os.path.join(self.url, key, "inclint.txt"),
 
         ], env=self._env(), check=True)
 
@@ -61,7 +60,7 @@ class S3Client:
         return base_env
 
 
-class CoverageFromS3:
+class LinterErrorsFromS3:
 
     def __init__(self, client, forgiving=True):
         self.client = client
@@ -69,14 +68,14 @@ class CoverageFromS3:
 
     def get(self, project, branch):
         try:
-            return float(self.client.get(generate_s3_key(project, branch)))
+            return int(self.client.get(generate_s3_key(project, branch)))
         except Exception as e:
             if self.forgiving:
                 logger.error(e)
                 logger.warning(
-                    f"Could not download coverage for project {project}, branch {branch}, assuming it's 0"
+                    f"Could not download amount of errors for project {project}, branch {branch}, assuming it's a lot"
                 )
-                return 0
+                return 99999
             else:
                 raise
 
@@ -84,13 +83,13 @@ class CoverageFromS3:
         self.client.set(generate_s3_key(project, branch), value)
 
 
-class PrepopulatedCoverage:
+class PrepopulatedLinterErrors:
 
-    def __init__(self, coverage):
-        self.coverage = float(coverage)
+    def __init__(self, amount_of_errors):
+        self.amount_of_errors = int(amount_of_errors)
 
     def get(self, project, branch):
-        return self.coverage
+        return self.amount_of_errors
 
     def set(self, project, branch):
         raise NotImplementedError()
@@ -104,23 +103,28 @@ class CompareSettings:
         self.threshold = threshold
 
 
-def compare_coverage(
-    head_coverage, 
-    base_coverage, 
+def compare_linter_errors(
+    head_linter_errors, 
+    base_linter_errors, 
     settings
 ):
 
-    head_coverage_value = head_coverage.get(settings.project, settings.branch)
-    if head_coverage_value > settings.threshold:
-        logger.info(
-            f'HEAD coverage ({head_coverage_value}) is greater than theshold ({settings.threshold}), no need to compare with base branch'
-        )
+    head_linter_errors_value = head_linter_errors.get(settings.project, settings.branch)
+    if head_linter_errors_value == 0:
+        logger.info("No linter errors!")
         return
 
-    base_coverage_value = base_coverage.get(settings.project, settings.branch)
-    if base_coverage_value > head_coverage_value:
+    base_linter_errors_value = base_linter_errors.get(settings.project, settings.branch)
+    if base_linter_errors_value - head_linter_errors_value < 0:
         raise RuntimeError(
-            f'Base coverage ({base_coverage_value}) is greater than HEAD coverage ({head_coverage_value}), failing the build'
+            "Head branch contains more linter errors than base branch! "
+            f"Head has {head_linter_errors_value}, base has {base_linter_errors_value}"
+        )
+    
+    if base_linter_errors_value - head_linter_errors_value < settings.threshold:
+        raise RuntimeError(
+            f"Head branch should contain at least {settings.threshold} less linter errors than base branch! "
+            f"Head has {head_linter_errors_value}, base has {base_linter_errors_value}"
         )
 
 
@@ -134,27 +138,27 @@ ACTION_COMPARE = 'compare'
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser(
-        description="Allows comparing coverage between branches and updating the coverage in S3"
+        description="Allows comparing linter errors between branches and updating linter errors in S3"
     )
     argument_parser.add_argument(
         '--action', required=True,
         help=f'Action, one of: {ACTION_UPDATE}, {ACTION_COMPARE}',
     )
     
-    # Coverage
+    # Linter errors
     argument_parser.add_argument(
-        '--head-coverage', required=True,
-        help='Head coverage, should be numeric'
+        '--head-linter-errors', required=True,
+        help='Head linter errors, should be numeric'
     )
     argument_parser.add_argument(
-        '--threshold', default=80,
-        help='Threshhold at which comparison results don\'t matter, should be numeric'
+        '--threshold', default=5,
+        help='Threshhold - this much linters must be fixed with every PR'
     )
 
     # AWS
     argument_parser.add_argument(
-        '--aws-url', required=False, default='s3://github-code-coverage/365days/coverage/',
-        help='AWS url (for example s3://github-code-coverage/365days/coverage/) '
+        '--aws-url', required=False, default='s3://github-code-coverage/365days/inclint/',
+        help='AWS url (for example s3://github-code-coverage/365days/inclint/) '
     )
     argument_parser.add_argument(
         '--aws-aki', required=True,
@@ -176,16 +180,16 @@ if __name__ == "__main__":
     )
     argument_parser.add_argument(
         '--branch', required=True,
-        help='Github ref or branch name'
+        help='AWS Region'
     )
 
     args = argument_parser.parse_args()
 
-    coverage_from_s3 = CoverageFromS3(S3Client(args.aws_url, args.aws_aki, args.aws_sac, args.aws_region))
+    linter_errors_from_s3 = LinterErrorsFromS3(S3Client(args.aws_url, args.aws_aki, args.aws_sac, args.aws_region))
     if args.action == ACTION_COMPARE:
-        compare_coverage(
-            PrepopulatedCoverage(args.head_coverage),
-            coverage_from_s3,
+        compare_linter_errors(
+            PrepopulatedLinterErrors(args.head_linter_errors),
+            linter_errors_from_s3,
             CompareSettings(
                 args.project,
                 normalize_branch(args.branch),
@@ -193,10 +197,10 @@ if __name__ == "__main__":
             )
         )
     elif args.action == ACTION_UPDATE:
-        coverage_from_s3.set(
+        linter_errors_from_s3.set(
             args.project,
             normalize_branch(args.branch),
-            args.head_coverage
+            args.head_linter_errors
         )
     else:
         raise RuntimeError("Invalid action")
