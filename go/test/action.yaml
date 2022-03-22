@@ -50,7 +50,7 @@ runs:
         app-id: ${{ inputs.cov-reporeader-application-id }}
 
     - name: Run coverage action
-      uses: PiwikPRO/actions/coverage@1.0.0
+      uses: PiwikPRO/actions/coverage@3.0.1
       if: ${{ inputs.cov == 'true' }}
       with:
         aws-access-key-id: ${{ inputs.cov-aws-access-key-id }}

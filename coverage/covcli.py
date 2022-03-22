@@ -118,10 +118,13 @@ def compare_coverage(
         return
 
     base_coverage_value = base_coverage.get(settings.project, settings.branch)
-    if base_coverage_value > head_coverage_value:
+    if base_coverage_value >= head_coverage_value:
         raise RuntimeError(
-            f'Base coverage ({base_coverage_value}) is greater than HEAD coverage ({head_coverage_value}), failing the build'
+            f'Head coverage ({head_coverage_value}) should be greater than base coverage ({base_coverage_value}), failing the build'
         )
+    logger.info(
+        f'Head coverage ({head_coverage_value}) should be greater than base coverage ({base_coverage_value}) - OK!'
+    )
 
 
 def normalize_branch(branch):

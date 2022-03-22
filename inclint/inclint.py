@@ -193,7 +193,7 @@ if __name__ == "__main__":
             CompareSettings(
                 args.project,
                 normalize_branch(args.branch),
-                float(args.threshold)
+                int(args.threshold)
             )
         )
     elif args.action == ACTION_UPDATE:
