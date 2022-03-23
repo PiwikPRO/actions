@@ -1,0 +1,19 @@
+name: 'Piwik PRO dtools push'
+description: 'Pushes docker images with dtools'
+inputs:
+  dtools-token:
+    required: true
+    description: Decryption token for dtools
+  image:
+    required: true
+    description: Image, that should be pushed to the registry
+runs:
+  using: "composite"
+  steps:
+
+    - name: Push the image
+      shell: bash
+      env:
+        PP_DTOOLS_TOKEN: ${{ inputs.dtools-token }}
+      run: |
+        dtools dcr push --image ${{ inputs.image }} --dest-tag ${{ github.ref_name }} --acr-only

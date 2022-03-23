@@ -20,7 +20,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: unfor19/install-aws-cli-action@v1
+    - uses: unfor19/install-aws-cli-action@f2649938c0ed0514cfc5448f0b96516580d34e53
 
     - name: Update current branch coverage (pull_request)
       if: ${{ github.event_name == 'pull_request' }}

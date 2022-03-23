@@ -10,9 +10,6 @@ inputs:
   head-linter-errors:
     required: true
     description: Amount of linter errors of the current branch
-  github-token:
-    required: true
-    description: Github app generated github token for status check update
   threshold:
     required: false
     description: Amount of linter errors, that should be fixed with every PR

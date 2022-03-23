@@ -19,7 +19,7 @@ inputs:
     description: Application ID of token generator application
   inclint-threshold:
     required: false
-    default: 5
+    default: 1
     description: How many linter errors should be fixed with every PR
 runs:
   using: "composite"
@@ -31,27 +31,18 @@ runs:
 
     - name: Run linters
       if: ${{ inputs.inclint == 'false' }}
-      uses: golangci/golangci-lint-action@v2
+      uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
       with:
         version: v1.45.0
         # Extended timeout to ensure all the linters are installed before it hits
         args: --exclude-use-default=false --timeout=300s
-
 
     - name: Run linters (with incremental improvements)
       if: ${{ inputs.inclint == 'true' }}
       uses: golangci/golangci-lint-action@v2
       with:
         version: v1.45.0
-        args: --exclude-use-default=false --issues-exit-code=0 --timeout=300s -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
-
-
-    - name: Extract amount of linter errors
-      if: ${{ inputs.inclint == 'true' }}
-      id: get-linter-errors
-      shell: bash
-      run: echo "::set-output name=lintererrors::$(cat /tmp/golangci-inclint-results.txt | wc -l)"
-
+        args: --exclude-use-default=false --issues-exit-code=0 --timeout=300s -c ${{ github.action_path }}/.golangci.yml
 
     - name: Generate PiwikPRO access token for inclint action
       uses: PiwikPRO/github-app-token-generator@v1
@@ -61,12 +52,47 @@ runs:
         private-key: ${{ inputs.inclint-reporeader-private-key }}
         app-id: ${{ inputs.inclint-reporeader-application-id }}
 
+    - name: Re-run linters (uses cache) to extract amount of linter errors
+      if: ${{ inputs.inclint == 'true' }}
+      shell: bash
+      run: golangci-lint run --exclude-use-default=false --issues-exit-code=0 --timeout=300s  --out-format tab -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
+
+    - name: Extract amount of linter errors
+      if: ${{ inputs.inclint == 'true' }}
+      id: get-linter-errors
+      shell: bash
+      run: echo "::set-output name=lintererrors::$(cat /tmp/golangci-inclint-results.txt | wc -l)"
+    
+    - name: Export linter output as text
+      if: ${{ inputs.inclint == 'true' }}
+      id: get-linter-output
+      shell: bash
+      # Hacks in order to support multiline output :|
+      run: |
+          LINTER_OUTPUT=$(cat /tmp/golangci-inclint-results.txt)
+          if [ -z "$LINTER_OUTPUT" ]
+          then
+                LINTER_OUTPUT="No linter errors! 🎉"
+          fi
+          echo "LINTER_OUTPUT<<EOF" >> $GITHUB_ENV
+          echo "$LINTER_OUTPUT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+    
+    - uses: mshick/add-pr-comment@5cd99bf9c186219af43341076f1fe9c09e5a9934
+      if: ${{ inputs.inclint == 'true' }}
+      with:
+        message: |
+          ## Linter errors (${{ steps.get-linter-errors.outputs.lintererrors }})
+          *please consider fixing some of them if the linter fails:*
+
+          ${{ env.LINTER_OUTPUT }}"
+        repo-token: ${{ steps.get-token.outputs.token }}
+
     - name: Run inclint action
-      uses: PiwikPRO/actions/inclint@3.0.0
+      uses: PiwikPRO/actions/inclint@master
       if: ${{ inputs.inclint == 'true' }}
       with:
         aws-access-key-id: ${{ inputs.inclint-aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.inclint-aws-secret-access-key }}
         head-linter-errors: ${{ steps.get-linter-errors.outputs.lintererrors }}
-        github-token: ${{ steps.get-token.outputs.token }}
         threshold: ${{ inputs.inclint-threshold }}
