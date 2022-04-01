@@ -225,7 +225,7 @@ Example usage (in other action)
 
 ## Inclint (internal)
 
-This action should not probably used directly by workflows, rather by other actions, that implement linter tests for given languages. The action allows storing amount of linter errors for given branch in AWS S3 and comparing amount of linter errors results during PRs. It ensures, that amount of linter errors is incrementally decreased with time, by enforcing small improvement with every PR.
+This action should not probably used directly by workflows, rather by other actions, that implement linter tests for given languages. The action allows storing number of linter errors for given branch in AWS S3 and comparing number of linter errors results during PRs. It ensures, that number of linter errors is incrementally decreased over time, by enforcing small improvement with every PR.
 
 Example usage
 ```yaml
