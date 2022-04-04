@@ -30,7 +30,7 @@ runs:
         CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o ${{ inputs.binary-name }} ${{ inputs.main-file }}
 
     - name: Release the binary if on tag
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: ${{ inputs.binary-name }}
