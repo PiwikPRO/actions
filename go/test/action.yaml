@@ -33,7 +33,7 @@ runs:
 
     - name: Run tests
       shell: bash
-      run: go test ./... -v -coverprofile cover.out
+      run: go test ./... -v -coverpkg=./... -coverprofile cover.out
 
     - name: Extract coverage
       if: ${{ inputs.cov == 'true' }}
