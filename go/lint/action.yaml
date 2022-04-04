@@ -39,7 +39,7 @@ runs:
 
     - name: Run linters (with incremental improvements)
       if: ${{ inputs.inclint == 'true' }}
-      uses: golangci/golangci-lint-action@v2
+      uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
       with:
         version: v1.45.0
         args: --exclude-use-default=false --issues-exit-code=0 --timeout=300s -c ${{ github.action_path }}/.golangci.yml
