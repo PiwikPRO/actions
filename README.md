@@ -46,6 +46,7 @@ Example usage:
         with:
           dtools-token: ${{ secrets.DTOOLS_TOKEN }}
           image: "framework/oma"
+          destination-tag: my-custom-tag # option, by default GitHub ref name
 
 ...
 ```
