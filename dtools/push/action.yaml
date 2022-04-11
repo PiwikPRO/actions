@@ -10,7 +10,7 @@ inputs:
   destination-tag:
     required: false
     default: ${{ github.ref_name }}
-    description: Push image to registry with given tag
+    description: Image tag, that should be pushed to the registry
 runs:
   using: "composite"
   steps:
