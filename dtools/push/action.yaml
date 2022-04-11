@@ -7,6 +7,10 @@ inputs:
   image:
     required: true
     description: Image, that should be pushed to the registry
+  destination-tag:
+    required: false
+    default: ${{ github.ref_name }}
+    description: Image tag, that should be pushed to the registry
 runs:
   using: "composite"
   steps:
@@ -16,4 +20,4 @@ runs:
       env:
         PP_DTOOLS_TOKEN: ${{ inputs.dtools-token }}
       run: |
-        dtools dcr push --image ${{ inputs.image }} --dest-tag ${{ github.ref_name }} --acr-only
+        dtools dcr push --image ${{ inputs.image }} --dest-tag ${{ inputs.destination-tag }} --acr-only
