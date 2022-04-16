@@ -22,14 +22,35 @@ inputs:
     required: false
     default: 80
     description: Application ID of token generator application
+
   
+  goprivate-repos:
+    required: false
+    default: ""
+    description: Allows setting GOPRIVATE variable before the tests are executed
+  goprivate-reporeader-private-key:
+    required: false
+    description: Private key for token generator application
+  goprivate-reporeader-application-id:
+    required: false
+    description: Application ID of token generator application
+
 runs:
   using: "composite"
   steps:
+
     - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.18.x
+
+    - name: Configure private dependencies
+      uses: PiwikPRO/actions/go/goprivate@master
+      if: ${{ inputs.goprivate-repos != '' }}
+      with:
+        repos: ${{ inputs.goprivate-repos }}
+        reporeader-private-key: ${{ inputs.goprivate-reporeader-private-key }}
+        reporeader-application-id: ${{ inputs.goprivate-reporeader-application-id }}
 
     - name: Run tests
       shell: bash

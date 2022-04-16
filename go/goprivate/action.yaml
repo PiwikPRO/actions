@@ -1,0 +1,32 @@
+name: 'Configure private go dependencies'
+description: 'Configures GOPRIVATE env var and git in order to use private go dependencies'
+
+inputs:
+  repos:
+    required: true
+    description: Allows setting GOPRIVATE variable before the tests are executed
+  reporeader-private-key:
+    required: true
+    description: Private key for token generator application
+  reporeader-application-id:
+    required: true
+    description: Application ID of token generator application
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Generate PiwikPRO access token for private repositories
+      uses: PiwikPRO/github-app-token-generator@v1
+      if: ${{ inputs.repos != '' }}
+      id: get-token
+      with:
+        private-key: ${{ inputs.reporeader-private-key }}
+        app-id: ${{ inputs.reporeader-application-id }}
+
+    - name: Configure remote golang repositories
+      if: ${{ inputs.repos != '' }}
+      shell: bash
+      run: |
+        go env -w GOPRIVATE=${{ inputs.repos }}
+        git config --global url."https://USER:${{ steps.get-token.outputs.token }}@github.com".insteadOf "https://github.com"

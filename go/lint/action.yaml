@@ -21,6 +21,17 @@ inputs:
     required: false
     default: 1
     description: How many linter errors should be fixed with every PR
+  
+  goprivate-repos:
+    required: false
+    default: ""
+    description: Allows setting GOPRIVATE variable before the tests are executed
+  goprivate-reporeader-private-key:
+    required: false
+    description: Private key for token generator application
+  goprivate-reporeader-application-id:
+    required: true
+    description: Application ID of token generator application
 runs:
   using: "composite"
   steps:
@@ -28,6 +39,14 @@ runs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.18.x
+
+    - name: Configure private dependencies
+      uses: PiwikPRO/actions/go/goprivate@master
+      if: ${{ inputs.goprivate-repos != '' }}
+      with:
+        repos: ${{ inputs.goprivate-repos }}
+        reporeader-private-key: ${{ inputs.goprivate-reporeader-private-key }}
+        reporeader-application-id: ${{ inputs.goprivate-reporeader-application-id }}
 
     - name: Run linters
       if: ${{ inputs.inclint == 'false' }}
