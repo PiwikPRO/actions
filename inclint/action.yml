@@ -14,6 +14,10 @@ inputs:
     required: false
     description: Amount of linter errors, that should be fixed with every PR
     default: '5'
+  linter-config-id:
+    required: false
+    description: To avoid errors when linter configuration changes, you can put here eg. sha256 of your linter config file. If this value differs, the amount of linter errors between base and head will not be compared.
+    default: ''
 runs:
   using: composite
   steps:
@@ -29,10 +33,10 @@ runs:
       if: ${{ github.event_name == 'push' }}
       shell: bash
       run: |
-        ${{ github.action_path }}/inclint.py --action update --head-linter-errors ${{ inputs.head-linter-errors }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }}
+        ${{ github.action_path }}/inclint.py --action update --head-linter-errors ${{ inputs.head-linter-errors }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }} --linter-config-id "${{ inputs.linter-config-id }}"
 
     - name: Compare amount of linter errors
       shell: bash
       if: ${{ github.event_name == 'pull_request' }}
       run: |
-        ${{ github.action_path }}/inclint.py --action compare --head-linter-errors ${{ inputs.head-linter-errors }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.base_ref }} --threshold ${{ inputs.threshold }}
+        ${{ github.action_path }}/inclint.py --action compare --head-linter-errors ${{ inputs.head-linter-errors }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.base_ref }}  --linter-config-id "${{ inputs.linter-config-id }}" --threshold ${{ inputs.threshold }}

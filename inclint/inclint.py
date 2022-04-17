@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def generate_s3_key(project, branch):
-    return f'{project}/@{branch}'
+def generate_s3_key(project, branch, linter_config_id):
+    linter_config_part = f'/linter-config-id-{linter_config_id}' if linter_config_id else ''
+    return f'{project}/@{branch}{linter_config_part}'
 
 class S3Client:
 
@@ -66,9 +67,9 @@ class LinterErrorsFromS3:
         self.client = client
         self.forgiving = forgiving
 
-    def get(self, project, branch):
+    def get(self, project, branch, linter_config_id):
         try:
-            return int(self.client.get(generate_s3_key(project, branch)))
+            return int(self.client.get(generate_s3_key(project, branch, linter_config_id)))
         except Exception as e:
             if self.forgiving:
                 logger.error(e)
@@ -79,8 +80,8 @@ class LinterErrorsFromS3:
             else:
                 raise
 
-    def set(self, project, branch, value):
-        self.client.set(generate_s3_key(project, branch), value)
+    def set(self, project, branch, linter_config_id, value):
+        self.client.set(generate_s3_key(project, branch, linter_config_id), value)
 
 
 class PrepopulatedLinterErrors:
@@ -88,18 +89,19 @@ class PrepopulatedLinterErrors:
     def __init__(self, amount_of_errors):
         self.amount_of_errors = int(amount_of_errors)
 
-    def get(self, project, branch):
+    def get(self, project, branch, linter_config_id):
         return self.amount_of_errors
 
-    def set(self, project, branch):
+    def set(self, project, branch, linter_config_id):
         raise NotImplementedError()
 
 
 class CompareSettings:
 
-    def __init__(self, project, branch, threshold):
+    def __init__(self, project, branch, linter_config_id, threshold):
         self.project = project
         self.branch = branch
+        self.linter_config_id = linter_config_id
         self.threshold = threshold
 
 
@@ -109,12 +111,12 @@ def compare_linter_errors(
     settings
 ):
 
-    head_linter_errors_value = head_linter_errors.get(settings.project, settings.branch)
+    head_linter_errors_value = head_linter_errors.get(settings.project, settings.branch, settings.linter_config_id)
     if head_linter_errors_value == 0:
         logger.info("No linter errors!")
         return
 
-    base_linter_errors_value = base_linter_errors.get(settings.project, settings.branch)
+    base_linter_errors_value = base_linter_errors.get(settings.project, settings.branch, settings.linter_config_id)
     if base_linter_errors_value - head_linter_errors_value < 0:
         raise RuntimeError(
             "Head branch contains more linter errors than base branch! "
@@ -182,6 +184,11 @@ if __name__ == "__main__":
         '--branch', required=True,
         help='AWS Region'
     )
+    argument_parser.add_argument(
+        '--linter-config-id', default="",
+        help='To avoid errors when linter configuration changes, you can put here eg. sha256 of your linter config file. '
+            'If this value differs, the amount of linter errors between base and head will not be compared.'
+    )
 
     args = argument_parser.parse_args()
 
@@ -193,6 +200,7 @@ if __name__ == "__main__":
             CompareSettings(
                 args.project,
                 normalize_branch(args.branch),
+                args.linter_config_id,
                 int(args.threshold)
             )
         )
@@ -200,6 +208,7 @@ if __name__ == "__main__":
         linter_errors_from_s3.set(
             args.project,
             normalize_branch(args.branch),
+            args.linter_config_id,
             args.head_linter_errors
         )
     else:

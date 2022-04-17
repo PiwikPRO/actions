@@ -1,6 +1,16 @@
 name: 'Lint go project'
 description: 'Sets up go and runs go linters'
 inputs:
+  go-version:
+    required: false
+    description: Version of go
+    default: "1.18.x"
+  
+  golangci-lint-version:
+    required: false
+    description: Version of golangci-lint
+    default: "v1.45.0"
+
   inclint:
     required: false
     description: If incremental checking of linter errors should be enabled
@@ -38,7 +48,7 @@ runs:
     - name: Install Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.18.x
+        go-version: ${{ inputs.go-version }}
 
     - name: Configure private dependencies
       uses: PiwikPRO/actions/go/goprivate@master
@@ -52,7 +62,7 @@ runs:
       if: ${{ inputs.inclint == 'false' }}
       uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
       with:
-        version: v1.45.0
+        version: ${{ inputs.golangci-lint-version }}
         # Extended timeout to ensure all the linters are installed before it hits
         args: --exclude-use-default=false --timeout=300s
 
@@ -60,7 +70,7 @@ runs:
       if: ${{ inputs.inclint == 'true' }}
       uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
       with:
-        version: v1.45.0
+        version: ${{ inputs.golangci-lint-version }}
         args: --exclude-use-default=false --issues-exit-code=0 --timeout=300s -c ${{ github.action_path }}/.golangci.yml
 
     - name: Generate PiwikPRO access token for inclint action
@@ -107,6 +117,13 @@ runs:
           ${{ env.LINTER_OUTPUT }}"
         repo-token: ${{ steps.get-token.outputs.token }}
 
+    - name: Generate SHA256 of golangci-lint config file
+      if: ${{ inputs.inclint == 'true' }}
+      id: get-config-sha
+      shell: bash
+      run: echo "::set-output name=linter-config-sha::$(sha256sum ${{ github.action_path }}/.golangci.yml | awk '{ print $1 }' | tr -d '\n')"
+    
+
     - name: Run inclint action
       uses: PiwikPRO/actions/inclint@master
       if: ${{ inputs.inclint == 'true' }}
@@ -114,4 +131,5 @@ runs:
         aws-access-key-id: ${{ inputs.inclint-aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.inclint-aws-secret-access-key }}
         head-linter-errors: ${{ steps.get-linter-errors.outputs.lintererrors }}
+        linter-config-id: "${{ inputs.go-version }}-${{ inputs.golangci-lint-version }}-${{ steps.get-config-sha.outputs.linter-config-sha }}"
         threshold: ${{ inputs.inclint-threshold }}
