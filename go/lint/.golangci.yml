@@ -2,8 +2,8 @@ linters-settings:
   dupl:
     threshold: 95
   funlen:
-    lines: 65
-    statements: 40
+    lines: 85
+    statements: 30
   gocognit:
     min-complexity: 25
   goconst:
@@ -13,7 +13,6 @@ linters-settings:
 
 
 linters:
-  disable-all: true
   enable:
     - revive
     - ifshort

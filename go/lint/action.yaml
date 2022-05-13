@@ -60,7 +60,7 @@ runs:
 
     - name: Run linters
       if: ${{ inputs.inclint == 'false' }}
-      uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
+      uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc
       with:
         version: ${{ inputs.golangci-lint-version }}
         # Extended timeout to ensure all the linters are installed before it hits
@@ -68,7 +68,7 @@ runs:
 
     - name: Run linters (with incremental improvements)
       if: ${{ inputs.inclint == 'true' }}
-      uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
+      uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc
       with:
         version: ${{ inputs.golangci-lint-version }}
         args: --exclude-use-default=false --issues-exit-code=0 --timeout=300s -c ${{ github.action_path }}/.golangci.yml
