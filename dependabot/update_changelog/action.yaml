@@ -1,0 +1,29 @@
+name: 'Piwik PRO dependabot update changelog'
+description: 'It updates changelog when new pull request is created by dependabot'
+inputs:
+  user-email:
+    description: 'user email used to commit changes by dependabot'
+    required: true
+  user-name:
+    description: 'user name used to commit changes by dependabot'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+        ref: ${{ github.head_ref }}
+    - name: Install and configure dependencies
+      run: |
+        pip install python-kacl
+        echo ${{ inputs.token }} | gh auth login --with-token
+    - name: Add changelog entry
+      run: |
+        PR_TITLE=`gh pr view ${{ github.event.number }} --json title --jq .title`
+        kacl-cli add security "$PR_TITLE" --modify
+    - name: Commit and push changes
+      run: |
+        git config --local user.email '${{ inputs.user-email }}' && git config --local user.name '${{ inputs.user-name }}'
+        git add CHANGELOG.md && git commit -m 'Update changelog'
+        git push "https://dependabot:${{ github.token }}@github.com/${{ github.repository }}.git" ${{ github.head_ref }}
