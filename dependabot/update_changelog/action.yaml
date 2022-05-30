@@ -15,14 +15,17 @@ runs:
         persist-credentials: false
         ref: ${{ github.head_ref }}
     - name: Install and configure dependencies
+      shell: bash
       run: |
         pip install python-kacl
         echo ${{ inputs.token }} | gh auth login --with-token
     - name: Add changelog entry
+      shell: bash
       run: |
         PR_TITLE=`gh pr view ${{ github.event.number }} --json title --jq .title`
         kacl-cli add security "$PR_TITLE" --modify
     - name: Commit and push changes
+      shell: bash
       run: |
         git config --local user.email '${{ inputs.user-email }}' && git config --local user.name '${{ inputs.user-name }}'
         git add CHANGELOG.md && git commit -m 'Update changelog'
