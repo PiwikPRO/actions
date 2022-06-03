@@ -18,7 +18,7 @@ runs:
       shell: bash
       run: |
         pip install python-kacl
-        echo ${{ inputs.token }} | gh auth login --with-token
+        echo ${{ github.token }} | gh auth login --with-token
     - name: Add changelog entry
       shell: bash
       run: |
