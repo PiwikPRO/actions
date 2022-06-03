@@ -22,7 +22,6 @@ runs:
     - name: Add changelog entry
       shell: bash
       run: |
-#        PR_TITLE=`gh pr view ${{ github.event.number }} --json title --jq .title`
         PR_TITLE=`[test] hardcoded title`
         kacl-cli add security "$PR_TITLE" --modify
     - name: Commit and push changes
