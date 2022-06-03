@@ -4,9 +4,11 @@ inputs:
   user-email:
     description: 'user email used to commit changes by dependabot'
     required: true
+    default: "49699333+dependabot[bot]@users.noreply.github.com"
   user-name:
     description: 'user name used to commit changes by dependabot'
     required: true
+    default: "dependabot[bot]"
 runs:
   using: 'composite'
   steps:
@@ -14,7 +16,7 @@ runs:
       with:
         persist-credentials: false
         ref: ${{ github.head_ref }}
-    - name: Install and configure dependencies
+    - name: Install python-kacl and login to GitHub...
       shell: bash
       run: |
         pip install python-kacl
