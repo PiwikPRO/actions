@@ -6,7 +6,7 @@ Custom github actions used both internally and externally by Piwik PRO employees
 
 [Dependabot](https://github.com/dependabot) is a tool to automated dependency updates built into GitHub.
 
-### 
+### Update changelog
 
 It updates changelog for pull requests created by Dependabot
 
