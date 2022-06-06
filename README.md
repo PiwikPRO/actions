@@ -2,12 +2,37 @@
 
 Custom github actions used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
 
+## Dependabot
+
+[Dependabot](https://github.com/dependabot) is a tool to automated dependency updates built into GitHub.
+
+### 
+
+It updates changelog for pull requests created by Dependabot
+
+Example usage: 
+```yaml
+name: Update changelog when Dependabot creates pull request
+on:
+    pull_request_target:
+        types: [ labeled ]
+
+jobs:
+    update_changelog:
+        if: ${{ github.event.label.name == 'dependencies' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Update changelog
+              uses: PiwikPRO/actions/dependabot/update_changelog@dependabot
+```
+
+Info: You should copy not only step, but also another parts above (run only on labeled pull requests with label `dependencies`) to work it correctly.
 
 ## Dtools
 
 Dtools is internal Piwik PRO CLI used to abstract docker registry and artifacts manipulation. It is proprietary, requires secrets present only in Piwik PRO Github organization and thus is not usable outside of Piwik PRO. 
 
-## Setup
+### Setup
 
 Downloads and installs dtools binary on worker node.
 
@@ -31,7 +56,7 @@ Example usage:
 ...
 ```
 
-## Push
+### Push
 
 Pushes the image to docker registry (currently ACR only)
 
@@ -51,7 +76,7 @@ Example usage:
 ...
 ```
 
----------
+---
 
 ## Go
 
