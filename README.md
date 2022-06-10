@@ -114,7 +114,31 @@ on:
   push:
     branches: ["master"]
 ```
+### Python Lint
 
+Run various python linters:
+  * Flake8 - Check against pep8 violation( https://flake8.pycqa.org/en/latest/).
+  * Black - Enforce `Black` code style( https://black.readthedocs.io/en/stable/).
+  * Isort - Sort and format imports( https://pycqa.github.io/isort/).
+
+
+Example usage:
+```yaml
+...
+  steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      # Simple linting, uses predefined configuration file from this repository:
+      - name: Run linters
+        uses: PiwikPRO/actions/python/lint@master
+        with:
+          use-black: true
+          use-flake: true
+          use-isort: true
+
+...
+```
 ### Test
 
 Installs golang and runs tests

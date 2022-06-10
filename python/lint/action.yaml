@@ -1,0 +1,43 @@
+name: 'Lint python project'
+description: 'Runs few python linter'
+inputs:
+  python-version:
+    required: false
+    description: Version of python
+    default: "3.10.x"
+  use-black:
+    required: false
+    description: Use black linter
+    default: true
+  use-flake:
+    required: false
+    description: Use Flake8 linter
+    default: true
+  use-isort:
+    required: false
+    description: Use Isort linter
+    default: true
+runs:
+  using: "composite"
+  steps:
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Run isort linter
+      if: ${{ inputs.use-isort == 'true' }}
+      uses: jamescurtin/isort-action@master
+      with:
+        configuration: --check-only --diff --settings-path ${{ github.action_path }}/.isort.cfg
+        requirementsFiles: ${{ inputs.requirements_files }} 
+    - name: Run Black linter
+      if: ${{ inputs.use-black == 'true' }}
+      uses: psf/black@stable
+      with:
+        options: --check --verbose --config ${{ github.action_path }}/pyproject.toml
+        src: "."
+    - name: Run flake8 linter
+      if: ${{ inputs.use-flake == 'true' }}
+      uses: py-actions/flake8@v2
+      with:
+        args: "--config ${{ github.action_path }}/flake8.ini"
