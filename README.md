@@ -139,6 +139,36 @@ Example usage:
 
 ...
 ```
+### Upload Pytest code coverage report
+
+When using pytest you may install pytest-cov in addition. Correctly run and configured 
+will produce an HTML code coverage report. When upload can be browsed in a comfortable manner.
+
+
+Example usage:
+```yaml
+...
+  steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Run tests
+        shell: bash
+        run: |
+          pytest -c ${{ github.workspace }}/test-conf/pytest.ini \
+            --html=artifacts/pytest-html/index.html \
+            --cov-config=${{ github.workspace }}/test-conf/coveragerc.ini \
+            --cov=project \
+            --cov-report=html \
+            "${{ github.workspace }}"
+      - name: Run linters
+        uses: PiwikPRO/actions/python/coverage@master
+        with:
+          aws-access-key-id: ${{ secrets.COVERAGE_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.COVERAGE_S3_SECRET_ACCESS_KEY }}
+
+...
+```
+
 ### Test
 
 Installs golang and runs tests

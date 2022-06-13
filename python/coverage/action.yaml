@@ -1,0 +1,39 @@
+name: 'Upload code coverage'
+description: 'Upload code coverage report for pytests.'
+inputs:
+  python-version:
+    required: false
+    description: Version of python
+    default: "3.10.x"
+  code-coverage-path:
+    required: false
+    description: Path to pytests code coverage report dir.
+    default: "artifacts/html-coverage/"
+  aws-access-key-id: 
+    required: true
+    description: AWS Access Key ID
+  aws-secret-access-key:
+    required: true
+    description: AWS Secret Access Key
+  aws-region:
+    required: true
+    description: AWS Region
+    default: eu-central-1
+  aws-bucket:
+    required: true
+    description: AWS Bucket
+    default: github-code-coverage
+runs:
+  using: "composite"
+  steps:
+    - uses: unfor19/install-aws-cli-action@v1
+    - name: Copy report
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+      run: aws s3 cp --recursive ${{ github.workspace }}/${{ inputs.code-coverage-path }} s3://${{ inputs.aws-bucket }}/${{ github.repository }}/@${{ github.ref_name }}/pytest_report/
+    - name: Report URL
+      shell: bash
+      run: echo https://s3.amazonaws.com/${{ inputs.aws-bucket }}/${{ github.repository }}/@${{ github.ref_name }}/pytest_report/index.html
