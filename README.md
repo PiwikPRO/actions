@@ -114,6 +114,32 @@ on:
   push:
     branches: ["master"]
 ```
+
+### Push dir to s3
+
+Pushes provided dir to s3.
+
+Example usage:
+```yaml
+...
+  steps:
+      - name: Producing some artifacts
+        shell: bash
+        run: make
+
+      - name: Upload artifacts
+        uses: PiwikPRO/actions/s3/upload@master
+        with:
+          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          aws-bucket: my-sweet-artifacts-bucket
+          aws-region: eu-central-1
+          src-path: artifacts/
+          dst-path: ${{ github.repository }}/@${{ github.ref_name }}/artifacts/
+          echo-destination-index-html: true
+...
+```
+
 ### Python Lint
 
 Run various python linters:

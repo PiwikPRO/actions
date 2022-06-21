@@ -1,0 +1,44 @@
+name: 'Upload to S3'
+description: 'Upload recursively to s3.'
+inputs:
+  src-path:
+    required: false
+    description: Path to dir that may be uploaded. Path must be relative to `github.workspace`. 
+    default: 'artifacts/'
+  dst-path:
+    required: false
+    description: Path to destination dir. Must end with '/'.
+    default: "${{ github.repository }}/@${{ github.ref_name }}/artifacts/"
+  aws-access-key-id: 
+    required: true
+    description: AWS Access Key ID
+  aws-secret-access-key:
+    required: true
+    description: AWS Secret Access Key
+  aws-bucket:
+    required: true
+    description: AWS Bucket
+  aws-region:
+    required: false
+    description: AWS Region
+    default: eu-central-1
+  echo-destination-index-html:
+    required:  false
+    description: Print url to index.html in copied dir. 
+    default: 'true'
+runs:
+  using: 'composite'
+  steps:
+    - uses: unfor19/install-aws-cli-action@v1
+    - name: Copy to s3
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+      run: aws s3 cp --recursive ${{ github.workspace }}/${{ inputs.src-path }} s3://${{ inputs.aws-bucket }}/${{ inputs.dst-path }}
+
+    - name: Report URL
+      if: ${{ inputs.echo-destination-index-html == 'true' }}
+      shell: bash
+      run: echo https://s3.amazonaws.com/${{ inputs.aws-bucket }}/${{ inputs.dst-path }}index.html
