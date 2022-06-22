@@ -23,7 +23,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Update changelog
-              uses: PiwikPRO/actions/dependabot/update_changelog@dependabot
+              uses: PiwikPRO/actions/dependabot/update_changelog@master
 ```
 
 Info: You should copy not only step, but also another parts above (run only on labeled pull requests with label `dependencies`) to work it correctly.
