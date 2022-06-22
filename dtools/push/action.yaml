@@ -11,6 +11,10 @@ inputs:
     required: false
     default: ${{ github.ref_name }}
     description: Image tag, that should be pushed to the registry
+  include-registry:
+    required: true
+    default: acr
+    description: List of names of the registries where an image should be pushed (ecr, acr, docker_hub, internal_acr)
 runs:
   using: "composite"
   steps:
@@ -20,4 +24,4 @@ runs:
       env:
         PP_DTOOLS_TOKEN: ${{ inputs.dtools-token }}
       run: |
-        dtools dcr push --image ${{ inputs.image }} --dest-tag ${{ inputs.destination-tag }} --acr-only
+        dtools dcr push --image ${{ inputs.image }} --dest-tag ${{ inputs.destination-tag }} --include-registry ${{ inputs.include-registry }}
