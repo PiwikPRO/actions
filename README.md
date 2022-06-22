@@ -5,13 +5,13 @@ Custom github actions used both internally and externally by Piwik PRO employees
 
 ## Dtools
 
-Dtools is internal Piwik PRO CLI used to abstract docker registry and artifacts manipulation. It is proprietary, requires secrets present only in Piwik PRO Github organization and thus is not usable outside of Piwik PRO. 
+Dtools is internal Piwik PRO CLI used to abstract docker registry and artifacts manipulation. It is proprietary, requires secrets present only in Piwik PRO Github organization and thus is not usable outside of Piwik PRO.
 
 ## Setup
 
 Downloads and installs dtools binary on worker node.
 
-Example usage: 
+Example usage:
 ```yaml
 ...
   steps:
@@ -25,6 +25,7 @@ Example usage:
           dtools-token: ${{ secrets.DTOOLS_TOKEN }}
           reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
           reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
+          include-registry: acr # acr is default value, could be a list (ecr, acr, docker_hub, internal_acr)
 
       - name: Build the image
         run: docker build .
@@ -35,7 +36,7 @@ Example usage:
 
 Pushes the image to docker registry (currently ACR only)
 
-Example usage: 
+Example usage:
 ```yaml
 ...
   steps:
@@ -47,6 +48,7 @@ Example usage:
           dtools-token: ${{ secrets.DTOOLS_TOKEN }}
           image: "framework/oma"
           destination-tag: my-custom-tag # optional, by default GitHub ref name
+          include-registry: acr # acr is default value, could be a list (ecr, acr, docker_hub, internal_acr)
 
 ...
 ```
@@ -62,7 +64,7 @@ Contains common logic for continuous integration of Piwik PRO golang projects.
 Installs golang and golangci-lint, runs linter tests.
 
 
-Example usage: 
+Example usage:
 ```yaml
 ...
   steps:
@@ -228,7 +230,7 @@ Example usage:
 
 ### Attach binary as github release when tag is built
 
-Runs go build and releases the binary when the tag is built. 
+Runs go build and releases the binary when the tag is built.
 
 This action can also automatically update the version of your binary to match the tag, it assumes a certain convention:
 1. It checks if there is `cmd/version.go` file present
@@ -238,7 +240,7 @@ This action can also automatically update the version of your binary to match th
 If `cmd/version.go` file does not exists, the version is not updated.
 
 
-Example usage: 
+Example usage:
 ```yaml
 ...
   steps:

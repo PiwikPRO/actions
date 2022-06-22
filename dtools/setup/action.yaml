@@ -10,6 +10,10 @@ inputs:
   dtools-token:
     required: true
     description: Decryption token for dtools
+  include-registry:
+    required: true
+    default: acr
+    description: List of names of the registries where an image should be pushed (ecr, acr, docker_hub, internal_acr)
 runs:
   using: "composite"
   steps:
@@ -28,4 +32,4 @@ runs:
         PP_DTOOLS_TOKEN: ${{ inputs.dtools-token }}
       run: |
         curl -H "Authorization: token $PP_GITHUB_TOKEN" -H 'Accept: application/vnd.github.v3.raw' 'https://api.github.com/repos/PiwikPRO/Developers-Tools/contents/scripts/download-dtools.sh' | bash
-        dtools dcr login
+        dtools dcr login --include-registry ${{ inputs.include-registry }}
