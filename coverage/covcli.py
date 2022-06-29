@@ -3,7 +3,7 @@ import argparse
 import copy
 import logging
 import os
-import sys
+import re
 import uuid
 import subprocess
 
@@ -13,6 +13,7 @@ logger.setLevel(logging.INFO)
 
 def generate_s3_key(project, branch):
     return f'{project}/@{branch}'
+
 
 class S3Client:
 
@@ -33,7 +34,7 @@ class S3Client:
             os.path.join(self.url, key, "coverage.txt"),
             the_file,
         ], env=self._env(), check=True)
-        
+
         with open(the_file) as f:
             return f.read()
 
@@ -98,17 +99,26 @@ class PrepopulatedCoverage:
 
 class CompareSettings:
 
-    def __init__(self, project, branch, threshold):
+    def __init__(self, project, branch, threshold, skip_on_hotfix):
         self.project = project
         self.branch = branch
         self.threshold = threshold
+        self.skip_on_hotfix = skip_on_hotfix
+
+
+def is_hotfix(branch):
+    return 'hotfix' in branch.lower()
 
 
 def compare_coverage(
-    head_coverage, 
-    base_coverage, 
+    head_coverage,
+    base_coverage,
     settings
 ):
+    if settings.skip_on_hotfix and is_hotfix(settings.branch):
+        logger.info(
+            f'{settings.branch} is a hotfix branch. Skipping coverage comparison.')
+        return
 
     head_coverage_value = head_coverage.get(settings.project, settings.branch)
     if head_coverage_value > settings.threshold:
@@ -143,7 +153,7 @@ if __name__ == "__main__":
         '--action', required=True,
         help=f'Action, one of: {ACTION_UPDATE}, {ACTION_COMPARE}',
     )
-    
+
     # Coverage
     argument_parser.add_argument(
         '--head-coverage', required=True,
@@ -152,6 +162,9 @@ if __name__ == "__main__":
     argument_parser.add_argument(
         '--threshold', default=80,
         help='Threshhold at which comparison results don\'t matter, should be numeric'
+    )
+    argument_parser.add_argument(
+        '--skip-on-hotfix', action=argparse.BooleanOptionalAction, default=True
     )
 
     # AWS
@@ -184,7 +197,8 @@ if __name__ == "__main__":
 
     args = argument_parser.parse_args()
 
-    coverage_from_s3 = CoverageFromS3(S3Client(args.aws_url, args.aws_aki, args.aws_sac, args.aws_region))
+    coverage_from_s3 = CoverageFromS3(
+        S3Client(args.aws_url, args.aws_aki, args.aws_sac, args.aws_region))
     if args.action == ACTION_COMPARE:
         compare_coverage(
             PrepopulatedCoverage(args.head_coverage),
@@ -192,7 +206,8 @@ if __name__ == "__main__":
             CompareSettings(
                 args.project,
                 normalize_branch(args.branch),
-                float(args.threshold)
+                float(args.threshold),
+                args.skip_on_hotfix
             )
         )
     elif args.action == ACTION_UPDATE:
