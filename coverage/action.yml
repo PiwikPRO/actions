@@ -1,7 +1,11 @@
 name: AWS S3 Code Coverage
 description: Store code coverages of repo branches on AWS S3 bucket
 inputs:
-  aws-access-key-id: 
+  python-version:
+    required: false
+    description: Version of python
+    default: "3.10.x"
+  aws-access-key-id:
     required: true
     description: AWS Access Key ID
   aws-secret-access-key:
@@ -20,6 +24,11 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
     - uses: unfor19/install-aws-cli-action@f2649938c0ed0514cfc5448f0b96516580d34e53
 
     - name: Update current branch coverage (pull_request)
