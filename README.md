@@ -167,31 +167,6 @@ Example usage:
 ...
 ```
 
-### Python Lint
-
-Run various python linters:
-  * Flake8 - Check against pep8 violation (https://flake8.pycqa.org/en/latest/).
-  * Black - Enforce `Black` code style (https://black.readthedocs.io/en/stable/).
-  * Isort - Sort and format imports (https://pycqa.github.io/isort/).
-
-
-Example usage:
-```yaml
-...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-
-      # Simple linting, uses predefined configuration file from this repository:
-      - name: Run linters
-        uses: PiwikPRO/actions/python/lint@master
-        with:
-          use-black: true
-          use-flake: true
-          use-isort: true
-
-...
-```
 ### Test
 
 Installs golang and runs tests
@@ -280,6 +255,63 @@ Example usage:
 
 ...
 ```
+
+
+## Python
+
+### Lint
+
+Run various python linters:
+  * Flake8 - Check against pep8 violation (https://flake8.pycqa.org/en/latest/).
+  * Black - Enforce `Black` code style (https://black.readthedocs.io/en/stable/).
+  * Isort - Sort and format imports (https://pycqa.github.io/isort/).
+
+
+Example usage:
+```yaml
+...
+  steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      # Simple linting, uses predefined configuration file from this repository:
+      - name: Run linters
+        uses: PiwikPRO/actions/python/lint@master
+        with:
+          use-black: true
+          use-flake: true
+          use-isort: true
+
+...
+```
+
+**Configure VSCode to use common linter configuration**
+
+You can configure your local environment to use common configuration placed in this repository.
+First, make sure, that `black` and `flake8` are downloaded and available in your PATH.
+Then clone this repository and set apropriate settings in preferences:
+
+`ctrl+shift+p -> Preferences: Open settings (JSON)`
+
+and set:
+```
+{
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--config",
+        "/home/kosto/Projects/promil/actions/python/lint/pyproject.toml"
+    ],
+    "editor.formatOnSave": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--config",
+        "/home/kosto/Projects/promil/actions/python/lint/flake8.ini"
+    ]
+}
+```
+Replace `/home/kkaragiorgis/Projects/promil` to wherever you cloned `actions` repository.
+
+
 
 ## Coverage (internal)
 
