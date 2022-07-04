@@ -1,7 +1,11 @@
 name: AWS S3 Linter errors
 description: Make sure, that each consecutive PR improves amount of active linter errors
 inputs:
-  aws-access-key-id: 
+  python-version:
+    required: false
+    description: Version of python
+    default: "3.10.x"
+  aws-access-key-id:
     required: true
     description: AWS Access Key ID
   aws-secret-access-key:
@@ -21,6 +25,11 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
     - uses: unfor19/install-aws-cli-action@v1
 
     - name: Update current branch linter-errors (pull_request)

@@ -1,7 +1,11 @@
 name: AWS S3 Code Coverage
 description: Store code coverages of repo branches on AWS S3 bucket
 inputs:
-  aws-access-key-id: 
+  python-version:
+    required: false
+    description: Version of python
+    default: "3.10.x"
+  aws-access-key-id:
     required: true
     description: AWS Access Key ID
   aws-secret-access-key:
@@ -20,25 +24,30 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
     - uses: unfor19/install-aws-cli-action@f2649938c0ed0514cfc5448f0b96516580d34e53
 
     - name: Update current branch coverage (pull_request)
       if: ${{ github.event_name == 'pull_request' }}
       shell: bash
       run: |
-        ${{ github.action_path }}/covcli.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.head_ref }}
+        ${{ github.action_path }}/covcli.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.head_ref }} --current-branch ${{ github.head_ref }}
 
     - name: Update current branch coverage (push)
       if: ${{ github.event_name == 'push' }}
       shell: bash
       run: |
-        ${{ github.action_path }}/covcli.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }}
+        ${{ github.action_path }}/covcli.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }} --current-branch ${{ github.ref }}
 
     - name: Compare coverage
       shell: bash
       if: ${{ github.event_name == 'pull_request' }}
       run: |
-        ${{ github.action_path }}/covcli.py --action compare --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.base_ref }} --threshold ${{ inputs.threshold }}
+        ${{ github.action_path }}/covcli.py --action compare --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.base_ref }} --threshold ${{ inputs.threshold }} --current-branch ${{ github.head_ref }}
 
 
     - name: Update status with success
