@@ -35,19 +35,19 @@ runs:
       if: ${{ github.event_name == 'pull_request' }}
       shell: bash
       run: |
-        ${{ github.action_path }}/covcli.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.head_ref }}
+        ${{ github.action_path }}/covcli.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.head_ref }} --current-branch ${{ github.head_ref }}
 
     - name: Update current branch coverage (push)
       if: ${{ github.event_name == 'push' }}
       shell: bash
       run: |
-        ${{ github.action_path }}/covcli.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }}
+        ${{ github.action_path }}/covcli.py --action update --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.ref }} --current-branch ${{ github.ref }}
 
     - name: Compare coverage
       shell: bash
       if: ${{ github.event_name == 'pull_request' }}
       run: |
-        ${{ github.action_path }}/covcli.py --action compare --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.base_ref }} --threshold ${{ inputs.threshold }}
+        ${{ github.action_path }}/covcli.py --action compare --head-coverage ${{ inputs.head-coverage }} --aws-aki ${{ inputs.aws-access-key-id }} --aws-sac "${{ inputs.aws-secret-access-key }}" --project ${{ github.repository }} --branch ${{ github.base_ref }} --threshold ${{ inputs.threshold }} --current-branch ${{ github.head_ref }}
 
 
     - name: Update status with success

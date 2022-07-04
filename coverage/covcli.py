@@ -113,9 +113,10 @@ def is_hotfix(branch):
 def compare_coverage(
     head_coverage,
     base_coverage,
-    settings
+    settings,
+    current_branch
 ):
-    if settings.skip_on_hotfix and is_hotfix(settings.branch):
+    if settings.skip_on_hotfix and is_hotfix(current_branch):
         logger.info(
             f'{settings.branch} is a hotfix branch. Skipping coverage comparison.')
         return
@@ -155,6 +156,10 @@ if __name__ == "__main__":
     )
 
     # Coverage
+    argument_parser.add_argument(
+        '--current-branch', required=True,
+        help='Current branch. Should be passed from workflow.'
+    )
     argument_parser.add_argument(
         '--head-coverage', required=True,
         help='Head coverage, should be numeric'
@@ -208,7 +213,8 @@ if __name__ == "__main__":
                 normalize_branch(args.branch),
                 float(args.threshold),
                 args.skip_on_hotfix
-            )
+            ),
+            normalize_branch(args.current_branch)
         )
     elif args.action == ACTION_UPDATE:
         coverage_from_s3.set(
