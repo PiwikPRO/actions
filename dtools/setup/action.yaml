@@ -13,7 +13,7 @@ inputs:
   include-registry:
     required: true
     default: acr
-    description: List of names of the registries where an image should be pushed (ecr, acr, docker_hub, internal_acr)
+    description: List of names of the registries where an image should be pushed (ecr, acr, docker_hub, internal_acr). Possible field delimiters are space, semicolon and comma.
 runs:
   using: "composite"
   steps:
@@ -24,7 +24,12 @@ runs:
       with:
         private-key: ${{ inputs.reporeader-private-key }}
         app-id: ${{ inputs.reporeader-application-id }}
-
+    - name: Parse register names and render args for dtools
+      id: render-dtools-registry-args
+      shell: bash
+      run: |
+        DTOOLS_ARGS=`echo "${{ inputs.include-registry }}" | sed "s/[ ;,]/\n/g" |  awk 'NF {sarg="--include-registry "$0; printf "%s ",sarg}'`;
+        echo "::set-output name=args::$DTOOLS_ARGS";
     - name: Install dtools
       shell: bash
       env:
@@ -32,4 +37,4 @@ runs:
         PP_DTOOLS_TOKEN: ${{ inputs.dtools-token }}
       run: |
         curl -H "Authorization: token $PP_GITHUB_TOKEN" -H 'Accept: application/vnd.github.v3.raw' 'https://api.github.com/repos/PiwikPRO/Developers-Tools/contents/scripts/download-dtools.sh' | bash
-        dtools dcr login --include-registry ${{ inputs.include-registry }}
+        dtools dcr login ${{ steps.render-dtools-registry-args.outputs.args }}

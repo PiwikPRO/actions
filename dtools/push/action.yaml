@@ -14,14 +14,19 @@ inputs:
   include-registry:
     required: true
     default: acr
-    description: List of names of the registries where an image should be pushed (ecr, acr, docker_hub, internal_acr)
+    description: List of names of the registries where an image should be pushed (ecr, acr, docker_hub, internal_acr). Possible field delimiters are space, semicolon and comma.
 runs:
   using: "composite"
   steps:
-
+    - name: Parse register names and render args for dtools
+      id: render-dtools-registry-args
+      shell: bash
+      run: |
+        DTOOLS_ARGS=`echo "${{ inputs.include-registry }}" | sed "s/[ ;,]/\n/g" |  awk 'NF {sarg="--include-registry "$0; printf "%s ",sarg}'`;
+        echo "::set-output name=args::$DTOOLS_ARGS";
     - name: Push the image
       shell: bash
       env:
         PP_DTOOLS_TOKEN: ${{ inputs.dtools-token }}
       run: |
-        dtools dcr push --image ${{ inputs.image }} --dest-tag ${{ inputs.destination-tag }} --include-registry ${{ inputs.include-registry }}
+        dtools dcr push --image ${{ inputs.image }} --dest-tag ${{ inputs.destination-tag }} ${{ steps.render-dtools-registry-args.outputs.args }}
