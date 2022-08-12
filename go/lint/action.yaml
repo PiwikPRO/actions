@@ -9,7 +9,15 @@ inputs:
   golangci-lint-version:
     required: false
     description: Version of golangci-lint
-    default: "v1.45.2"
+    default: "v1.46.2"
+  golangci-lint-concurrency:
+    required: false
+    description: Concurrency for golangci-lint
+    default: 8
+  golangci-lint-timeout:
+    required: false
+    description: Timeout for golangci-lint
+    default: "300s"
 
   inclint:
     required: false
@@ -31,7 +39,7 @@ inputs:
     required: false
     default: 1
     description: How many linter errors should be fixed with every PR
-  
+
   goprivate-repos:
     required: false
     default: ""
@@ -46,7 +54,7 @@ runs:
   using: "composite"
   steps:
     - name: Install Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: ${{ inputs.go-version }}
 
@@ -60,18 +68,20 @@ runs:
 
     - name: Run linters
       if: ${{ inputs.inclint == 'false' }}
-      uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
+      # golangci-lint-action: 3.2.0 (commit of tag used instead of tag to avoid tag overwrite)
+      uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc
       with:
         version: ${{ inputs.golangci-lint-version }}
         # Extended timeout to ensure all the linters are installed before it hits
-        args: --exclude-use-default=false --timeout=300s
+        args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --timeout=${{ inputs.golangci-lint-timeout }}
 
     - name: Run linters (with incremental improvements)
       if: ${{ inputs.inclint == 'true' }}
-      uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018
+      # golangci-lint-action: 3.2.0 (commit of tag used instead of tag to avoid tag overwrite)
+      uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc
       with:
         version: ${{ inputs.golangci-lint-version }}
-        args: --exclude-use-default=false --issues-exit-code=0 --timeout=300s -c ${{ github.action_path }}/.golangci.yml
+        args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
 
     - name: Generate PiwikPRO access token for inclint action
       uses: PiwikPRO/github-app-token-generator@v1
@@ -84,14 +94,14 @@ runs:
     - name: Re-run linters (uses cache) to extract amount of linter errors
       if: ${{ inputs.inclint == 'true' }}
       shell: bash
-      run: golangci-lint run --exclude-use-default=false --issues-exit-code=0 --timeout=300s  --out-format tab -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
+      run: golangci-lint run --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }}  --out-format tab -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
 
     - name: Extract amount of linter errors
       if: ${{ inputs.inclint == 'true' }}
       id: get-linter-errors
       shell: bash
       run: echo "::set-output name=lintererrors::$(cat /tmp/golangci-inclint-results.txt | wc -l)"
-    
+
     - name: Export linter output as text
       if: ${{ inputs.inclint == 'true' }}
       id: get-linter-output
@@ -106,7 +116,7 @@ runs:
           echo "LINTER_OUTPUT<<EOF" >> $GITHUB_ENV
           echo "$LINTER_OUTPUT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-    
+
     - uses: mshick/add-pr-comment@5cd99bf9c186219af43341076f1fe9c09e5a9934
       if: ${{ inputs.inclint == 'true' }}
       with:
@@ -122,7 +132,7 @@ runs:
       id: get-config-sha
       shell: bash
       run: echo "::set-output name=linter-config-sha::$(sha256sum ${{ github.action_path }}/.golangci.yml | awk '{ print $1 }' | tr -d '\n')"
-    
+
 
     - name: Run inclint action
       uses: PiwikPRO/actions/inclint@master
