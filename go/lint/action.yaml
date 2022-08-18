@@ -4,8 +4,8 @@ inputs:
   go-version:
     required: false
     description: Version of go
-    default: "1.18.x"
-
+    default: "1.19.x"
+  
   golangci-lint-version:
     required: false
     description: Version of golangci-lint
