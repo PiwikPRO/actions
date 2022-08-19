@@ -1,0 +1,22 @@
+name: 'Piwik PRO dtools s3 download'
+description: 'Downloads content from s3'
+inputs:
+  dtools-token:
+    required: true
+    description: Decryption token for dtools
+  data:
+    required: true
+    description: What to download
+  ref:
+    required: false
+    default: master
+    description: Revision
+runs:
+  using: "composite"
+  steps:
+    - name: Download data fom s3
+      shell: bash
+      env:
+        PP_DTOOLS_TOKEN: ${{ inputs.dtools-token }}
+      run: |
+        dtools s3 download ${{ inputs.data }} --ref ${{ inputs.ref }}
