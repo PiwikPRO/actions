@@ -32,7 +32,6 @@ Info: You should copy not only step, but also another parts above (run only on l
 
 It is possible to configure the step that using aws-cli binary to make the connection through proxy. To do this, you must set the appropriate [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-proxy.html).
 
-Detailed infromation about proxy you can find [here](https://secure.cldsrv.biz/f/87609).
 
 Ready URIs are available under organization level secrets:
 
