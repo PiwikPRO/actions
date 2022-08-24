@@ -26,6 +26,12 @@ inputs:
     required:  false
     description: Print url to index.html in copied dir. 
     default: 'true'
+  aws-http-proxy:
+    required: false
+    description: URI for aws-cli HTTP proxy
+  aws-https-proxy:
+    required: false
+    description: URI for aws-cli HTTPS proxy
 runs:
   using: 'composite'
   steps:
@@ -36,6 +42,8 @@ runs:
         AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
         AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+        HTTP_PROXY: ${{ inputs.aws-http-proxy }}
+        HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
       run: aws s3 cp --recursive ${{ github.workspace }}/${{ inputs.src-path }} s3://${{ inputs.aws-bucket }}/${{ inputs.dst-path }}
 
     - name: Report URL

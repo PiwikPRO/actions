@@ -28,6 +28,44 @@ jobs:
 
 Info: You should copy not only step, but also another parts above (run only on labeled pull requests with label `dependencies`) to work it correctly.
 
+## Using aws-cli with proxy
+
+It is possible to configure the step that using aws-cli binary to make the connection through proxy. To do this, you must set the appropriate [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-proxy.html).
+
+
+Ready URIs are available under organization level secrets:
+
+```
+FORWARD_PROXY_HTTP
+FORWARD_PROXY_HTTPS
+```
+
+Example usage:
+```yaml
+...
+  steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO
+      - name: Download dtools
+        uses: PiwikPRO/actions/dtools/setup@master
+        with:
+          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
+          reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
+          reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
+          include-registry: acr # acr is default value, could be a list (ecr, acr, docker_hub, internal_acr)
+
+      - name: Download events
+        uses: PiwikPRO/actions/dtools/s3_download
+        env:
+          HTTP_PROXY: ${{ secrets.FORWARD_PROXY_HTTP }}
+          HTTPS_PROXY: ${{ secrets.FORWARD_PROXY_HTTPS }}
+        with:
+          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
+...
+```
+
 ## Dtools
 
 Dtools is internal Piwik PRO CLI used to abstract docker registry and artifacts manipulation. It is proprietary, requires secrets present only in Piwik PRO Github organization and thus is not usable outside of Piwik PRO.
@@ -161,6 +199,8 @@ Example usage:
           aws-secret-access-key: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           aws-bucket: my-sweet-artifacts-bucket
           aws-region: eu-central-1
+          aws-http-proxy: ${{ secrets.FORWARD_PROXY_HTTP }}
+          aws-https-proxy: ${{ secrets.FORWARD_PROXY_HTTPS }}          
           src-path: artifacts/
           dst-path: ${{ github.repository }}/@${{ github.ref_name }}/artifacts/
           echo-destination-index-html: true
