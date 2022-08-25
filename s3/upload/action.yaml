@@ -36,6 +36,12 @@ runs:
   using: 'composite'
   steps:
     - uses: unfor19/install-aws-cli-action@v1
+
+    - name: Generate index.html if it doesn't exist
+      if: ${{ inputs.echo-destination-index-html == 'true' }}
+      shell: bash
+      run: python ${{ github.action_path }}/create-index-html-if-not-exists.py ${{ github.workspace }}/${{ inputs.src-path }}
+
     - name: Copy to s3
       shell: bash
       env:
@@ -49,4 +55,4 @@ runs:
     - name: Report URL
       if: ${{ inputs.echo-destination-index-html == 'true' }}
       shell: bash
-      run: echo https://s3.amazonaws.com/${{ inputs.aws-bucket }}/${{ inputs.dst-path }}index.html
+      run: echo https://${{ inputs.aws-bucket }}.s3.amazonaws.com/${{ inputs.dst-path }}index.html
