@@ -1,6 +1,12 @@
 name: 'Piwik PRO godtools docker image push'
 description: 'Installs godtools'
 inputs:
+  godtools-config:
+    required: true
+    description: godtools encrypted configuration
+  godtools-key:
+    required: true
+    description: godtools encryption key
   image:
     required: true
     description: Image, that should be pushed to the registry
@@ -24,8 +30,8 @@ runs:
         docker tag piwikprocloud/organization piwikprocloud/organization:tmp-$(git rev-parse --short HEAD) && 
         godtools docker push --registry-id "${{ inputs.include-registry }}" piwikprocloud/organization:tmp-$(git rev-parse --short HEAD)
       env:
-        GODTOOLS_CONFIG: ${{ secrets.GODTOOLS_CONFIG }}
-        GODTOOLS_KEY: ${{ secrets.GODTOOLS_KEY }}
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
 
     - name: Push production docker image
       if: startsWith(github.ref, 'refs/tags')
@@ -34,5 +40,6 @@ runs:
         docker tag piwikprocloud/organization piwikprocloud/organization:${{ github.ref_name }} &&
         godtools docker push --registry-id "${{ inputs.include-registry }}" piwikprocloud/organization:${{ github.ref_name }}
       env:
-        GODTOOLS_CONFIG: ${{ secrets.GODTOOLS_CONFIG }}
-        GODTOOLS_KEY: ${{ secrets.GODTOOLS_KEY }}
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
+

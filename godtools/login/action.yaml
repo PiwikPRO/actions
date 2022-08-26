@@ -1,6 +1,12 @@
 name: 'Piwik PRO godtools docker login'
 description: 'Installs godtools'
 inputs:
+  godtools-config:
+    required: true
+    description: godtools encrypted configuration
+  godtools-key:
+    required: true
+    description: godtools encryption key
   registries:
     required: false
     default: acr, docker-hub
@@ -12,5 +18,5 @@ runs:
       shell: bash
       run: godtools docker login --registry-id "${{ inputs.include-registry }}"
       env:
-        GODTOOLS_CONFIG: ${{ secrets.GODTOOLS_CONFIG }}
-        GODTOOLS_KEY: ${{ secrets.GODTOOLS_KEY }}
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
