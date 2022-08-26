@@ -17,12 +17,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Generate PiwikPRO access tokens
-      uses: PiwikPRO/github-app-token-generator@v1
-      id: get-token
-      with:
-        private-key: ${{ inputs.reporeader-private-key }}
-        app-id: ${{ inputs.reporeader-application-id }}
     - name: Push tmp docker image
       if: "!startsWith(github.ref, 'refs/tags')"
       shell: bash
