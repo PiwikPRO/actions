@@ -28,7 +28,7 @@ runs:
       shell: bash
       run: |
         docker tag piwikprocloud/organization piwikprocloud/organization:tmp-$(git rev-parse --short HEAD) && 
-        godtools docker push --registry-id "${{ inputs.include-registry }}" piwikprocloud/organization:tmp-$(git rev-parse --short HEAD)
+        godtools docker push --registry-id "${{ inputs.registries }}" piwikprocloud/organization:tmp-$(git rev-parse --short HEAD)
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
@@ -38,7 +38,7 @@ runs:
       shell: bash
       run: |
         docker tag piwikprocloud/organization piwikprocloud/organization:${{ github.ref_name }} &&
-        godtools docker push --registry-id "${{ inputs.include-registry }}" piwikprocloud/organization:${{ github.ref_name }}
+        godtools docker push --registry-id "${{ inputs.registries }}" piwikprocloud/organization:${{ github.ref_name }}
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}

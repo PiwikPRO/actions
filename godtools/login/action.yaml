@@ -16,7 +16,7 @@ runs:
   steps:
     - name: Login to docker registries
       shell: bash
-      run: godtools docker login --registry-id "${{ inputs.include-registry }}"
+      run: godtools docker login --registry-id "${{ inputs.registries }}"
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
