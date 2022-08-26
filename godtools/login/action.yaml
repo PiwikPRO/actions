@@ -1,9 +1,6 @@
 name: 'Piwik PRO godtools docker login'
 description: 'Installs godtools'
 inputs:
-  image:
-    required: true
-    description: Image, that should be pushed to the registry
   registries:
     required: false
     default: acr, docker-hub
