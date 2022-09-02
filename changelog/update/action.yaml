@@ -20,6 +20,7 @@ runs:
         retVal=$?
         if [ $retVal -ne 0 ]; then
             echo "Update CHANGELOG.md"
+            exit 1
         fi
         echo "OK!"
       env:
