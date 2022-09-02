@@ -1,5 +1,9 @@
 name: Verify CHANGELOG.md
 description: Verify CHANGELOG.md against Keep a Changelog format
+inputs:
+  github-token:
+    required: true
+    description: GitHub token for GitHub CLI
 runs:
   using: "composite"
   steps:
@@ -16,4 +20,4 @@ runs:
 
         gh pr diff | grep "diff --git a/CHANGELOG.md b/CHANGELOG.md" && echo 'OK!'
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
