@@ -17,5 +17,10 @@ runs:
         fi
 
         gh pr diff | grep "diff --git a/CHANGELOG.md b/CHANGELOG.md" && echo 'OK!'
+        retVal=$?
+        if [ $retVal -ne 0 ]; then
+            echo "Update CHANGELOG.md"
+        fi
+        echo "OK!"
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
