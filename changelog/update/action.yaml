@@ -16,7 +16,7 @@ runs:
           exit
         fi
 
-        gh pr diff | grep "diff --git a/CHANGELOG.md b/CHANGELOG.md" && echo 'OK!'
+        gh pr diff | grep "diff --git a/CHANGELOG.md b/CHANGELOG.md"
         retVal=$?
         if [ $retVal -ne 0 ]; then
             echo "Update CHANGELOG.md"
