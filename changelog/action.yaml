@@ -15,3 +15,5 @@ runs:
         fi
 
         gh pr diff | grep "diff --git a/CHANGELOG.md b/CHANGELOG.md" && echo 'OK!'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
