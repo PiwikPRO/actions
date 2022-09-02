@@ -1,0 +1,8 @@
+name: Verify CHANGELOG.md
+description: Verify CHANGELOG.md against Keep a Changelog format
+runs:
+  using: "composite"
+  steps:
+    - name: Verify Keep a changelog format
+      shell: bash
+      run: pip install python-kacl && kacl-cli verify
