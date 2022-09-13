@@ -1,0 +1,27 @@
+name: Check if CHANGELOG.md is updated
+description: Check if CHANGELOG.md is updated
+inputs:
+  github-token:
+    required: true
+    description: GitHub token for GitHub CLI
+runs:
+  using: "composite"
+  steps:
+    - name: Verify if CHANGELOG.md is updated
+      shell: bash
+      run: |
+        COMMIT_MESSAGE=$(git log --format=%B -n 1 ${{github.event.after}})
+        if [[ "$COMMIT_MESSAGE" == *"[skip-cl]"* ]]; then
+          echo "Skipping CHANGELOG.md update verification"
+          exit
+        fi
+
+        gh pr diff | grep "diff --git a/CHANGELOG.md b/CHANGELOG.md"
+        retVal=$?
+        if [ $retVal -ne 0 ]; then
+            echo "Update CHANGELOG.md"
+            exit 1
+        fi
+        echo "OK!"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}

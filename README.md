@@ -28,6 +28,32 @@ jobs:
 
 Info: You should copy not only step, but also another parts above (run only on labeled pull requests with label `dependencies`) to work it correctly.
 
+## Changelog
+
+Keep a changelog validator:
+- `update` for checking if CHANGELOG.md has been updated on pull request. If commit message consists `[skip-cl]` verification is skipped
+- `verify` check kacl structure using [python-kacl](https://github.com/mschmieder/python-kacl)
+
+Example usage:
+```
+name: Check changelog update
+on: pull_request
+jobs:
+  check_changelog_update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Verify CHANGELOG.md kacl-cl structure
+        uses: PiwikPRO/actions/changelog/verify@feature/PPCDEV-15732-github-actions
+      - name: Check if CHANGELOG.md is updated
+        uses: PiwikPRO/actions/changelog/update@feature/PPCDEV-15732-github-actions
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
 ## Using aws-cli with proxy
 
 It is possible to configure the step that using aws-cli binary to make the connection through proxy. To do this, you must set the appropriate [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-proxy.html).
