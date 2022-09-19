@@ -47,9 +47,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
       - name: Verify CHANGELOG.md kacl-cl structure
-        uses: PiwikPRO/actions/changelog/verify@feature/PPCDEV-15732-github-actions
+        uses: PiwikPRO/actions/changelog/verify@master
       - name: Check if CHANGELOG.md is updated
-        uses: PiwikPRO/actions/changelog/update@feature/PPCDEV-15732-github-actions
+        uses: PiwikPRO/actions/changelog/update@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
