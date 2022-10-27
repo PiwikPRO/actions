@@ -31,7 +31,7 @@ Info: You should copy not only step, but also another parts above (run only on l
 ## Changelog
 
 Keep a changelog validator:
-- `update` for checking if CHANGELOG.md has been updated on pull request. If commit message consists `[skip-cl]` verification is skipped
+- `update` for checking if CHANGELOG.md has been updated on pull request. If commit message consists `skip-cl` verification is skipped
 - `verify` check kacl structure using [python-kacl](https://github.com/mschmieder/python-kacl)
 
 Example usage:

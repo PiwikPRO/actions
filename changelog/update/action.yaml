@@ -11,7 +11,7 @@ runs:
       shell: bash
       run: |
         COMMIT_MESSAGE=$(git log --format=%B -n 1 ${{github.event.after}})
-        if [[ "$COMMIT_MESSAGE" == *"[skip-cl]"* ]]; then
+        if [[ "$COMMIT_MESSAGE" == *"skip-cl"* ]]; then
           echo "Skipping CHANGELOG.md update verification"
           exit
         fi
