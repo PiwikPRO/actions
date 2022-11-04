@@ -17,7 +17,7 @@ runs:
         private-key: ${{ inputs.reporeader-private-key }}
         app-id: ${{ inputs.reporeader-application-id }}
     - name: Download godtools
-      uses: dsaltares/fetch-gh-release-asset@c3deec3cfc2231c6f842eef6d624b55223743c43
+      uses: dsaltares/fetch-gh-release-asset@3942ce82f1192754cd487a86f03eef6eeb89b5da
       with:
         repo: 'PiwikPRO/godtools'
         file: 'godtools'
