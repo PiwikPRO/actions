@@ -1,0 +1,27 @@
+name: 'Piwik PRO godtools setup job'
+description: 'Installs godtools'
+inputs:
+  reporeader-private-key:
+    required: true
+    description: Private key for PiwikPRO/github-app-token-generator action
+  reporeader-application-id:
+    required: true
+    description: Application ID for PiwikPRO/github-app-token-generator action
+runs:
+  using: "composite"
+  steps:
+    - name: Generate PiwikPRO access tokens
+      uses: PiwikPRO/github-app-token-generator@v1
+      id: get-token
+      with:
+        private-key: ${{ inputs.reporeader-private-key }}
+        app-id: ${{ inputs.reporeader-application-id }}
+    - name: Download godtools
+      uses: dsaltares/fetch-gh-release-asset@3942ce82f1192754cd487a86f03eef6eeb89b5da
+      with:
+        repo: 'PiwikPRO/godtools'
+        file: 'godtools'
+        token: ${{ steps.get-token.outputs.token }}
+    - name: Setup godtools
+      shell: bash
+      run: chmod +x godtools && sudo mv -f godtools /usr/bin/godtools && godtools --version
