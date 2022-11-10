@@ -34,7 +34,7 @@ runs:
       if: ${{ inputs.use-black == 'true' }}
       uses: psf/black@ae2c0758c9e61a385df9700dc9c231bf54887041
       with:
-        options: --check --verbose --config ${{ github.action_path }}/pyproject.toml
+        options: --check --config ${{ github.action_path }}/pyproject.toml
         src: "."
     - name: Run flake8 linter
       if: ${{ inputs.use-flake == 'true' }}
