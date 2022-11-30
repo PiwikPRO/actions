@@ -1,0 +1,18 @@
+name: "Piwik PRO cosign download"
+description: "Download cosign binary"
+inputs:
+  version:
+    required: false
+    description: "Version of cosign binary"
+    default: latest
+runs:
+  using: "composite"
+  steps:
+    - name: "Download binary"
+      shell: bash
+      run: |
+        URL=`curl -s https://api.github.com/repos/sigstore/cosign/releases/${{ inputs.version }} | jq -r '.assets[] | select(.name=="cosign-linux-amd64") | .browser_download_url'`;
+        wget -q $URL --output-document cosign;
+        chmod +x cosign;
+        mkdir -p $HOME/.local/bin;
+        mv cosign $HOME/.local/bin;
