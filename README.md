@@ -372,7 +372,18 @@ and set:
     "python.linting.flake8Args": [
         "--config",
         "/home/kosto/Projects/promil/actions/python/lint/flake8.ini"
-    ]
+    ],
+    "isort.args": [
+        "--profile",
+        "black",
+        "--sp",
+        "/home/kosto/Projects/promil/actions/python/lint/.isort.cfg"
+    ],
+    "[python]": {
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    }
 }
 ```
 Replace `/home/kkaragiorgis/Projects/promil` to wherever you cloned `actions` repository.
