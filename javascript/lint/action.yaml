@@ -1,0 +1,43 @@
+---
+name: "Lint JavaScript, JSON, YAML and Markdown"
+description: "Runs a couple of linters"
+
+inputs:
+  install-command:
+    required: false
+    description: "Command used to install linters"
+    default: "npm install prettier@^2.8.3 eslint@^8.33.0"
+  use-prettier:
+    required: false
+    description: "Use prettier to check formatting"
+    default: 'true'
+  prettier-args:
+    required: false
+    description: "Arguments passed to prettier"
+    default: "--check ."
+  use-eslint:
+    required: false
+    description: "Use eslint to verify code quality"
+    default: 'true'
+  eslint-args:
+    required: false
+    description: "Arguments passed to eslint"
+    default: "--quiet ."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install linters
+      shell: bash
+      run: ${{ inputs.install-command }}
+    - name: Set PATH
+      shell: bash
+      run: echo PATH="$PWD/node_modules/.bin:$PATH" >> "$GITHUB_ENV"
+    - name: Run prettier
+      if: ${{ inputs.use-prettier == 'true' }}
+      shell: bash
+      run: prettier ${{ inputs.prettier-args }}
+    - name: Run eslint
+      if: ${{ inputs.use-eslint == 'true' }}
+      shell: bash
+      run: eslint ${{ inputs.eslint-args }}

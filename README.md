@@ -428,3 +428,27 @@ Example usage
         threshold: ${{ inputs.inclint-threshold }}
 
 ```
+
+## JavaScript
+
+### Lint
+
+This action runs [prettier](https://prettier.io) and [eslint](https://eslint.org/)
+on the target repository.
+This action does not provide any configuration for the linters,
+it relies on a configfile (such as `package.json`) located in the target repository.
+
+```yaml
+# Basic usage
+      - uses: actions/checkout@v3
+      - name: Run linters
+        uses: PiwikPRO/actions/javascript/lint@PPONP-910
+
+# If eslint and prettier are defined in the package.json
+      - uses: actions/checkout@v3
+      - name: Run linters
+        uses: PiwikPRO/actions/javascript/lint@PPONP-910
+        with:
+          install-command: npm install
+```
+
