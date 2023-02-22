@@ -1,6 +1,10 @@
 name: 'Piwik PRO golang binary builder and releaser'
 description: 'Uses packr to build go program and exposes it as github release'
 inputs:
+  cgo-enabled:
+    required: false
+    description: CGO_ENABLED build flag, allows using C libraries
+    default: 1
   binary-name:
     required: true
     description: Name of the binary, that should be released
@@ -27,7 +31,7 @@ runs:
     - name: Build binary
       shell: bash
       run: |
-        CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o ${{ inputs.binary-name }} ${{ inputs.main-file }}
+        CGO_ENABLED=${{ inputs.cgo-enabled }} GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o ${{ inputs.binary-name }} ${{ inputs.main-file }}
 
     - name: Release the binary if on tag
       uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
