@@ -3,8 +3,8 @@ description: "Download cosign binary"
 inputs:
   version:
     required: false
-    description: "Version of cosign binary"
-    default: latest
+    description: "Specific release id, selected from https://github.com/sigstore/cosign/releases"
+    default: "80120049" # v1.13.1
 runs:
   using: "composite"
   steps:
