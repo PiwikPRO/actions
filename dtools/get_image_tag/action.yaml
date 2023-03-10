@@ -1,0 +1,40 @@
+name: 'Piwik PRO dtools get image tag'
+description: 'Determine image tag based on ref_name'
+outputs:
+  tag:
+    description: calculated tag
+    value: ${{ steps.get-tag.outputs.tag }}
+runs:
+  using: "composite"
+  steps:
+    - name: Determine image tag
+      id: get-tag
+      # pipefail explicitly removed
+      shell: bash --noprofile --norc -ex {0}
+      run: >
+        bash --version;
+        if [[ "${{ github.ref_type }}" == "tag" ]]; then
+          DEST_TAG="${{ github.ref_name }}"
+        else
+          case "${{ github.ref_name }}" in
+            'master')
+              DEST_TAG="latest"
+              ;;
+            'dev')
+              DEST_TAG="dev"
+              ;;
+            'develop')
+              DEST_TAG="dev"
+              ;;
+            *)
+              # Remove feature/ or bugfix/ prefix, and then parse ticket number in PPROF-1111-bleble-blabla
+              SED=$(echo "${{ github.ref_name }}" | grep -Po "(\w+-\d+)|(release/\d+.\d+)" | head -n1 | sed -E 's/\/|\./-/g')
+              if [[ -z "$SED" ]]; then
+                # Fallback to devbranch-sanitized-name-of-the-branch
+                SED=$(echo "${{ github.ref_name }}" | sed -E 's/\/|\./-/g')
+              fi
+              DEST_TAG="tmp-$SED"
+              ;;
+          esac
+        fi;
+        echo "tag=$(echo $DEST_TAG)" >> $GITHUB_OUTPUT
