@@ -428,3 +428,29 @@ Example usage
         threshold: ${{ inputs.inclint-threshold }}
 
 ```
+
+## JavaScript
+
+### LTS-lint
+
+This action runs [prettier](https://prettier.io) and [eslint](https://eslint.org/)
+on the target repository. It is currently used exclusively in the
+[onprem platform](https://github.com/PiwikPRO/Promil-platform-onprem)
+by the LTS team.
+This action does not provide any configuration for the linters,
+it relies on a configfile (such as `package.json`) located in the target repository,
+making it as generic as possible.
+
+```yaml
+# Basic usage
+      - uses: actions/checkout@v3
+      - name: Run linters
+        uses: PiwikPRO/actions/javascript/lts-lint@master
+
+# If eslint and prettier are defined in the package.json
+      - uses: actions/checkout@v3
+      - name: Run linters
+        uses: PiwikPRO/actions/javascript/lts-lint@master
+        with:
+          install-command: npm install
+```
