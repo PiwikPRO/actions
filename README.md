@@ -144,6 +144,32 @@ Example usage:
 
 ---
 
+### Get image tag
+
+Determine image tag based on ref_name. Use git tag or `latest`, `dev` for branches respectively `master`, `dev`. In other cases `devbranch-{jira_issue}` or `devbranch-{preprocessed_branch_name}` as fallback.
+
+Example usage:
+```yaml
+...
+  steps:
+
+      # Copy-pasting this snippet is enough, as secrets.DTOOLS_TOKEN is exposed on organization level in Piwik PRO
+      - name: Determine image tag
+        id: get_image_tag
+        uses: PiwikPRO/actions/dtools/get_image_tag@master
+      - name: Push the image to registry
+        uses: PiwikPRO/actions/dtools/push@master
+        with:
+          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
+          image: "fancy_image_name"
+          destination-tag: ${{ steps.get_image_tag.outputs.tag }}
+          include-registry: acr
+
+...
+```
+
+---
+
 ## Go
 
 Contains common logic for continuous integration of Piwik PRO golang projects.
