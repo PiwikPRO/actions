@@ -26,18 +26,18 @@ runs:
         python-version: ${{ inputs.python-version }}
     - name: Run isort linter
       if: ${{ inputs.use-isort == 'true' }}
-      uses: jamescurtin/isort-action@f555d1d11ca0529654eb6d1f017f9e4a269ffa7f
+      uses: jamescurtin/isort-action@f14e57e1d457956c45a19c05a89cccdf087846e5 # 1.1.0
       with:
         configuration: --check-only --diff --settings-path ${{ github.action_path }}/.isort.cfg
-        requirementsFiles: ${{ inputs.requirements_files }} 
+        requirementsFiles: ${{ inputs.requirements_files }}
     - name: Run Black linter
       if: ${{ inputs.use-black == 'true' }}
-      uses: psf/black@ae2c0758c9e61a385df9700dc9c231bf54887041
+      uses: psf/black@b0d1fba7ac3be53c71fb0d3211d911e629f8aecb # 23.1.0
       with:
         options: --check --config ${{ github.action_path }}/pyproject.toml
         src: "."
     - name: Run flake8 linter
       if: ${{ inputs.use-flake == 'true' }}
-      uses: py-actions/flake8@6b71483a8fe60d4cb967d3aa4ee56e5e52711d30
+      uses: py-actions/flake8@2014ef764424fd7699d615323c17836092bec9b9 # 2.2.1
       with:
         args: "--config ${{ github.action_path }}/flake8.ini"
