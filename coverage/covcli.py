@@ -4,8 +4,8 @@ import copy
 import logging
 import os
 import re
-import uuid
 import subprocess
+import uuid
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -129,12 +129,12 @@ def compare_coverage(
         return
 
     base_coverage_value = base_coverage.get(settings.project, settings.branch)
-    if base_coverage_value >= head_coverage_value:
+    if base_coverage_value > head_coverage_value:
         raise RuntimeError(
-            f'Head coverage ({head_coverage_value}) should be greater than base coverage ({base_coverage_value}), failing the build'
+            f'Head coverage ({head_coverage_value}) should be greater or equal than base coverage ({base_coverage_value}), failing the build'
         )
     logger.info(
-        f'Head coverage ({head_coverage_value}) should be greater than base coverage ({base_coverage_value}) - OK!'
+        f'Head coverage ({head_coverage_value}) should be greater or equal than base coverage ({base_coverage_value}) - OK!'
     )
 
 
