@@ -9,7 +9,7 @@ inputs:
   golangci-lint-version:
     required: false
     description: Version of golangci-lint
-    default: "v1.48.0"
+    default: "v1.52.2"
   golangci-lint-concurrency:
     required: false
     description: Concurrency for golangci-lint
