@@ -18,7 +18,6 @@ linters:
     - revive
     - ifshort
     - staticcheck
-    - depguard
     - gosec
     - dogsled
     - godox
