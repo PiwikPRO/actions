@@ -100,7 +100,7 @@ runs:
       if: ${{ inputs.inclint == 'true' }}
       id: get-linter-errors
       shell: bash
-      run: echo "::set-output name=lintererrors::$(cat /tmp/golangci-inclint-results.txt | wc -l)"
+      run: echo "lintererrors=$(cat /tmp/golangci-inclint-results.txt | wc -l)" >> $GITHUB_OUTPUT
 
     - name: Export linter output as text
       if: ${{ inputs.inclint == 'true' }}
@@ -131,7 +131,7 @@ runs:
       if: ${{ inputs.inclint == 'true' }}
       id: get-config-sha
       shell: bash
-      run: echo "::set-output name=linter-config-sha::$(sha256sum ${{ github.action_path }}/.golangci.yml | awk '{ print $1 }' | tr -d '\n')"
+      run: echo "linter-config-sha=$(sha256sum ${{ github.action_path }}/.golangci.yml | awk '{ print $1 }' | tr -d '\n')" >> $GITHUB_OUTPUT
 
 
     - name: Run inclint action
