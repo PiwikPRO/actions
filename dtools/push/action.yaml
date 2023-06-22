@@ -23,7 +23,7 @@ runs:
       shell: bash
       run: |
         DTOOLS_ARGS=`echo "${{ inputs.include-registry }}" | sed "s/[ ;,]/\n/g" |  awk 'NF {sarg="--include-registry "$0; printf "%s ",sarg}'`;
-        echo "::set-output name=args::$DTOOLS_ARGS";
+        echo "args=$DTOOLS_ARGS" >> $GITHUB_OUTPUT;
     - name: Push the image
       shell: bash
       env:
