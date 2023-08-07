@@ -10,7 +10,7 @@ inputs:
   registries:
     required: false
     default: acr, docker-hub
-    description: List of registries to which login will be performed (ecr, acr, docker_hub, internal_acr).
+    description: List of registries to which login will be performed (ecr, acr, docker-hub, internal-acr).
 runs:
   using: "composite"
   steps:

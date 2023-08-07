@@ -13,7 +13,7 @@ inputs:
   registries:
     required: false
     default: acr
-    description: List of names of the registries where an image should be pushed (ecr, acr, docker_hub, internal_acr).
+    description: List of names of the registries where an image should be pushed (ecr, acr, docker-hub, internal-acr).
 runs:
   using: "composite"
   steps:
