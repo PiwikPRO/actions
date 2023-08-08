@@ -25,7 +25,7 @@ runs:
       if: "!startsWith(github.ref, 'refs/tags')"
       shell: bash
       run: |
-        ["${{ inputs.tag-latest }}" = "true"] && docker tag ${{ inputs.image }} ${{ inputs.image }}:tmp-$(git rev-parse --short HEAD); 
+        [ "${{ inputs.tag-latest }}" = "true" ] && docker tag ${{ inputs.image }} ${{ inputs.image }}:tmp-$(git rev-parse --short HEAD);
         godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:tmp-$(git rev-parse --short HEAD)
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
@@ -35,7 +35,7 @@ runs:
       if: startsWith(github.ref, 'refs/tags')
       shell: bash
       run: |
-        ["${{ inputs.tag-latest }}" = "true"] && docker tag ${{ inputs.image }} ${{ inputs.image }}:${{ github.ref_name }};
+        [ "${{ inputs.tag-latest }}" = "true" ] && docker tag ${{ inputs.image }} ${{ inputs.image }}:${{ github.ref_name }};
         godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ github.ref_name }}
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
