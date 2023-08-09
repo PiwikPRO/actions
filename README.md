@@ -94,79 +94,9 @@ Example usage:
 
 ## Dtools
 
-Dtools is internal Piwik PRO CLI used to abstract docker registry and artifacts manipulation. It is proprietary, requires secrets present only in Piwik PRO Github organization and thus is not usable outside of Piwik PRO.
+Dtools are deprecated now, please use [godtools](https://github.com/PiwikPRO/godtools) instead.
 
-### Setup
-
-Downloads and installs dtools binary on worker node.
-
-Example usage:
-```yaml
-...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-
-      # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO
-      - name: Download dtools
-        uses: PiwikPRO/actions/dtools/setup@master
-        with:
-          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
-          reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
-          reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
-          include-registry: acr # acr is default value, could be a list (ecr, acr, docker_hub, internal_acr)
-
-      - name: Build the image
-        run: docker build .
-...
-```
-
-### Push
-
-Pushes the image to docker registry (currently ACR only)
-
-Example usage:
-```yaml
-...
-  steps:
-
-      # Copy-pasting this snippet is enough, as secrets.DTOOLS_TOKEN is exposed on organization level in Piwik PRO
-      - name: Push the image to registry
-        uses: PiwikPRO/actions/dtools/push@master
-        with:
-          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
-          image: "framework/oma"
-          destination-tag: my-custom-tag # optional, by default GitHub ref name
-          include-registry: acr # acr is default value, could be a list (ecr, acr, docker_hub, internal_acr)
-
-...
-```
-
----
-
-### Get image tag
-
-Determine image tag based on ref_name. Use git tag or `latest`, `dev` for branches respectively `master`, `dev`. In other cases `devbranch-{jira_issue}` or `devbranch-{preprocessed_branch_name}` as fallback.
-
-Example usage:
-```yaml
-...
-  steps:
-
-      # Copy-pasting this snippet is enough, as secrets.DTOOLS_TOKEN is exposed on organization level in Piwik PRO
-      - name: Determine image tag
-        id: get_image_tag
-        uses: PiwikPRO/actions/dtools/get_image_tag@master
-      - name: Push the image to registry
-        uses: PiwikPRO/actions/dtools/push@master
-        with:
-          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
-          image: "fancy_image_name"
-          destination-tag: ${{ steps.get_image_tag.outputs.tag }}
-          include-registry: acr
-
-...
-```
+Possible actions you can find [here](https://github.com/PiwikPRO/actions/tree/master/godtools).
 
 ---
 
