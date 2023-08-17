@@ -1,5 +1,30 @@
 # Actions
 
+<!--toc:start-->
+- [Actions](#actions)
+  - [Dependabot](#dependabot)
+    - [Update changelog](#update-changelog)
+  - [Changelog](#changelog)
+  - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
+  - [Dtools](#dtools)
+  - [Godtools](#godtools)
+    - [Login](#login)
+    - [Push](#push)
+    - [Setup](#setup)
+  - [Go](#go)
+    - [Lint](#lint)
+    - [Push dir to s3](#push-dir-to-s3)
+    - [Test](#test)
+    - [Integration tests setup (pytest)](#integration-tests-setup-pytest)
+    - [Attach binary as github release when tag is built](#attach-binary-as-github-release-when-tag-is-built)
+  - [Python](#python)
+    - [Lint](#lint)
+  - [Coverage (internal)](#coverage-internal)
+  - [Inclint (internal)](#inclint-internal)
+  - [JavaScript](#javascript)
+    - [LTS-lint](#lts-lint)
+<!--toc:end-->
+
 Custom github actions used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
 
 ## Dependabot
@@ -94,9 +119,63 @@ Example usage:
 
 ## Dtools
 
-Dtools are deprecated now, please use [godtools](https://github.com/PiwikPRO/godtools) instead.
+Dtools are deprecated now, please use [godtools](#godtools) instead.
 
-Possible actions you can find [here](https://github.com/PiwikPRO/actions/tree/master/godtools).
+## Godtools
+
+[Godtools](https://github.com/PiwikPRO/godtools) is a tool for performing operations that require sharing sensitive credentials such as pulling docker images or s3 artifacts.
+
+### Login
+
+Allows to authenticate to docker registries.
+
+Example usage:
+
+```yaml
+---
+steps:
+  - name: Login to docker registries with godtools
+    uses: PiwikPRO/actions/godtools/login@master
+    with:
+      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+      godtools-key: ${{ secrets.GODTOOLS_KEY }}
+      registries: acr, docker_hub
+```
+
+### Push
+
+Allows to push docker images to authenticated registries.
+
+Example usage:
+
+```yaml
+---
+steps:
+  - name: Push container image
+    uses: PiwikPRO/actions/godtools/push@master
+    with:
+      image: piwikprocloud/astronauth
+      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+      godtools-key: ${{ secrets.GODTOOLS_KEY }}
+```
+
+### Setup
+
+Downloads latest version of the `godtools` binary and makes it available in `PATH`.
+
+Example usage:
+
+```yaml
+---
+steps:
+  - name: Download and setup godtools
+    uses: PiwikPRO/actions/godtools/setup@master
+    with:
+      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+      godtools-key: ${{ secrets.GODTOOLS_KEY }}
+      reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
+      reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
+```
 
 ---
 
