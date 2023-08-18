@@ -125,40 +125,6 @@ Dtools are deprecated now, please use [godtools](#godtools) instead.
 
 [Godtools](https://github.com/PiwikPRO/godtools) is a tool for performing operations that require sharing sensitive credentials such as pulling docker images or s3 artifacts.
 
-### Login
-
-Allows to authenticate to docker registries.
-
-Example usage:
-
-```yaml
----
-steps:
-  - name: Login to docker registries with godtools
-    uses: PiwikPRO/actions/godtools/login@master
-    with:
-      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
-      godtools-key: ${{ secrets.GODTOOLS_KEY }}
-      registries: acr, docker_hub
-```
-
-### Push
-
-Allows to push docker images to authenticated registries.
-
-Example usage:
-
-```yaml
----
-steps:
-  - name: Push container image
-    uses: PiwikPRO/actions/godtools/push@master
-    with:
-      image: piwikprocloud/astronauth
-      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
-      godtools-key: ${{ secrets.GODTOOLS_KEY }}
-```
-
 ### Setup
 
 Downloads latest version of the `godtools` binary and makes it available in `PATH`.
@@ -175,6 +141,40 @@ steps:
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
       reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
       reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
+```
+
+### Login
+
+Allows to authenticate to docker registries. It requires [setup](#setup) action.
+
+Example usage:
+
+```yaml
+---
+steps:
+  - name: Login to docker registries with godtools
+    uses: PiwikPRO/actions/godtools/login@master
+    with:
+      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+      godtools-key: ${{ secrets.GODTOOLS_KEY }}
+      registries: acr, docker_hub
+```
+
+### Push
+
+Allows to push docker images to authenticated registries. It requires both [setup](#setup) and [login](#login) actions.
+
+Example usage:
+
+```yaml
+---
+steps:
+  - name: Push container image
+    uses: PiwikPRO/actions/godtools/push@master
+    with:
+      image: piwikprocloud/astronauth
+      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+      godtools-key: ${{ secrets.GODTOOLS_KEY }}
 ```
 
 ---
