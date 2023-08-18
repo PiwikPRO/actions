@@ -172,7 +172,7 @@ steps:
   - name: Push container image
     uses: PiwikPRO/actions/godtools/push@master
     with:
-      image: piwikprocloud/astronauth
+      image: repository/image
       godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
 ```
