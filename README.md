@@ -177,6 +177,24 @@ steps:
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
 ```
 
+### Download S3 artifacts
+
+Allows to download artifacts from S3, like EventKeeper's `events`. It requires [setup](#setup) action.
+
+Example usage:
+
+```yaml
+---
+steps:
+  - name: Download events
+    uses: PiwikPRO/actions/godtools/push@master
+    with:
+      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+      godtools-key: ${{ secrets.GODTOOLS_KEY }}
+      data: events
+      ref: master
+```
+
 ---
 
 ## Go
