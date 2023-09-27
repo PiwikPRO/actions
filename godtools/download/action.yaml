@@ -7,9 +7,9 @@ inputs:
   godtools-key:
     required: true
     description: godtools encryption key
-  data:
+  artifacts:
     required: true
-    description: What to download
+    description: Type of artifacts to download (events etc.)
   ref:
     required: false
     default: master
@@ -20,7 +20,7 @@ runs:
     - name: Download data fom artifactory
       shell: bash
       run: |
-        godtools s3 download ${{ inputs.data }} --ref ${{ inputs.ref }}
+        godtools s3 download ${{ inputs.artifacts }} --ref ${{ inputs.ref }}
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
