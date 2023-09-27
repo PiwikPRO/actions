@@ -194,7 +194,7 @@ steps:
     with:
       godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
-      data: events
+      artifacts: events
       ref: master
 ```
 
