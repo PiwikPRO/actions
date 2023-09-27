@@ -1,0 +1,26 @@
+name: 'Piwik PRO godtools download'
+description: 'Downloads content from artifactory'
+inputs:
+  godtools-config:
+    required: true
+    description: godtools encrypted configuration
+  godtools-key:
+    required: true
+    description: godtools encryption key
+  artifacts:
+    required: true
+    description: Type of artifacts to download (events etc.)
+  ref:
+    required: false
+    default: master
+    description: Revision
+runs:
+  using: "composite"
+  steps:
+    - name: Download data fom artifactory
+      shell: bash
+      run: |
+        godtools s3 download ${{ inputs.artifacts }} --ref ${{ inputs.ref }}
+      env:
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
