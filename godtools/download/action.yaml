@@ -1,5 +1,5 @@
-name: 'Piwik PRO godtools s3 download'
-description: 'Downloads content from s3'
+name: 'Piwik PRO godtools download'
+description: 'Downloads content from artifactory'
 inputs:
   godtools-config:
     required: true
@@ -17,7 +17,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Download data fom s3
+    - name: Download data fom artifactory
       shell: bash
       run: |
         godtools s3 download ${{ inputs.data }} --ref ${{ inputs.ref }}

@@ -177,9 +177,9 @@ steps:
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
 ```
 
-### Download S3 artifacts
+### Download artifacts
 
-Allows to download artifacts from S3, like EventKeeper's `events`. It requires [setup](#setup) action.
+Allows to download artifacts, like EventKeeper's `events`. It requires [setup](#setup) action.
 
 Example usage:
 
@@ -187,7 +187,10 @@ Example usage:
 ---
 steps:
   - name: Download events
-    uses: PiwikPRO/actions/godtools/push@master
+    uses: PiwikPRO/actions/godtools/download@master
+    env:
+      HTTP_PROXY: ${{ secrets.FORWARD_PROXY_HTTP }}
+      HTTPS_PROXY: ${{ secrets.FORWARD_PROXY_HTTPS }}
     with:
       godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
