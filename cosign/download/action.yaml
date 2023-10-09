@@ -4,7 +4,9 @@ inputs:
   version:
     required: false
     description: "Specific release id, selected from https://github.com/sigstore/cosign/releases"
-    default: "80120049" # v1.13.1
+    # Find ID by tag:
+    # curl https://api.github.com/repos/sigstore/cosign/releases | jq '.[] | select(.tag_name == "v2.2.0").id'
+    default: "119502144" # v2.2.0
 runs:
   using: "composite"
   steps:
