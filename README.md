@@ -157,7 +157,7 @@ steps:
     with:
       godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
-      registries: acr, docker_hub
+      registries: acr, docker-hub
 ```
 
 ### Push
