@@ -199,7 +199,7 @@ class FileIndexLoader:
                 json.dumps({"file": item.file, "repo": item.repo}),
             )
         for removed in index.removed:
-            filesystem.delete(path.join(fspath, item.repo, hash(removed.file)))
+            filesystem.delete(path.join(fspath, removed.repo, hash(removed.file)))
 
     @classmethod
     @contextmanager
