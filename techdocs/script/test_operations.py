@@ -16,6 +16,7 @@ from operations import (
     FileIndexItem,
     FileIndexLoader,
     FilesystemOperation,
+    UnnecessaryOperationsFilteringDetector,
 )
 
 
@@ -191,3 +192,37 @@ def test_delete():
     assert operations[1].destination_abs is None
     assert index.items == (FileIndexItem("a-file", "Promil"),)
     assert index.removed == (FileIndexItem("a-file-that-does-not-exist-anymore", "Promil"),)
+
+
+def test_filtering():
+    fs = MockFilesystem(
+        {
+            "/tmp/Promil/a-file": "a-file-content",
+            "/tmp/dst/a-file": "a-file-content",
+            "/tmp/dst/a-file-that-does-not-exist-anymore": "blabla",
+        }
+    )
+    mock_detector = Mock(
+        detect=Mock(
+            return_value=[
+                FilesystemOperation(
+                    source_abs="/tmp/Promil/a-file",
+                    destination_abs="/tmp/dst/a-file",
+                    type=FilesystemOperation.TYPE_COPY,
+                ),
+                FilesystemOperation(
+                    source_abs="/tmp/dst/a-file-that-does-not-exist-anymore",
+                    destination_abs=None,
+                    type=FilesystemOperation.TYPE_DELETE,
+                ),
+            ]
+        )
+    )
+    detector = UnnecessaryOperationsFilteringDetector(mock_detector)
+
+    operations = detector.detect(fs)
+
+    assert len(operations) == 1
+    assert operations[0].type == FilesystemOperation.TYPE_DELETE
+    assert operations[0].source_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
+    assert operations[0].destination_abs is None
