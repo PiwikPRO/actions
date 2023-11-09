@@ -24,6 +24,10 @@ class Filesystem:
         with open(file) as f:
             return f.read()
 
+    def read_bytes(self, file):
+        with open(file, "rb") as f:
+            return f.read()
+
     def delete(self, file):
         os.remove(file)
 
@@ -59,6 +63,11 @@ class MockFilesystem:
         if file not in self.files:
             raise FileNotFoundError(f"File {file} not found")
         return self.files[file]
+
+    def read_bytes(self, file):
+        if file not in self.files:
+            raise FileNotFoundError(f"File {file} not found")
+        return self.files[file].encode()
 
     def delete(self, file):
         if file not in self.files:

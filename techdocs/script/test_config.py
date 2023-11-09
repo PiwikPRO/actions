@@ -50,12 +50,12 @@ from filesystem import MockFilesystem
                     {
                         "project": "promil",
                         "source": "README.md",
-                        "destination": "docs/promil/bla.md",
+                        "destination": "bla.md",
                     },
                     {
                         "project": "promil",
                         "source": "docs/blabla",
-                        "destination": "docs/promil/somedir/",
+                        "destination": "somedir/",
                         "exclude": ["docs/internal/*"],
                     },
                 ],
@@ -68,12 +68,12 @@ from filesystem import MockFilesystem
                     {
                         "project": "promil",
                         "source": "README.md",
-                        "destination": "docs/promil/bla.md",
+                        "destination": "bla.md",
                     },
                     {
                         "project": "foo",
                         "source": "docs/*",
-                        "destination": "docs/promil/somedir/",
+                        "destination": "somedir/",
                         "exclude": ["docs/internal/*"],
                     },
                 ],
@@ -86,12 +86,12 @@ from filesystem import MockFilesystem
                     {
                         "project": "promil",
                         "source": "README.md",
-                        "destination": "docs/promil/bla.md",
+                        "destination": "bla.md",
                     },
                     {
                         "project": "promil",
                         "source": "docs/**/somepath/*",
-                        "destination": "docs/promil/somedir/file.md",
+                        "destination": "somedir/file.md",
                         "exclude": ["docs/internal/*"],
                     },
                 ],

@@ -7,16 +7,46 @@ import pytest
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "."))
 
-from config import Config
+from config import Config, ConfigDocumentEntry
 from filesystem import MockFilesystem
 from operations import (
     CopyDetector,
     DeleteDetector,
+    FileIndex,
+    FileIndexItem,
+    FileIndexLoader,
     FilesystemOperation,
-    Index,
-    IndexItem,
-    IndexLoader,
 )
+
+
+def test_copy():
+    fs = MockFilesystem(
+        {
+            "/tmp/Promil/docs/README.md": "readme",
+            "/tmp/Promil/docs/inner/setup.md": "setup",
+            "/tmp/Promil/docs/inner/maintenance.md": "maintenance",
+            "/tmp/dst/projects.json": json.dumps({"promil": {"path": "docs/promil"}}),
+        }
+    )
+
+    detector = CopyDetector(
+        "/tmp/Promil",
+        "/tmp/dst",
+        Config([ConfigDocumentEntry("promil", "docs/*", ".", [])]),
+    )
+
+    operations = detector.detect(fs)
+
+    assert len(operations) == 3
+    assert operations[0].type == FilesystemOperation.TYPE_COPY
+    assert operations[0].source_abs == "/tmp/Promil/docs/README.md"
+    assert operations[0].destination_abs == "/tmp/dst/docs/promil/README.md"
+    assert operations[1].type == FilesystemOperation.TYPE_COPY
+    assert operations[1].source_abs == "/tmp/Promil/docs/inner/setup.md"
+    assert operations[1].destination_abs == "/tmp/dst/docs/promil/inner/setup.md"
+    assert operations[2].type == FilesystemOperation.TYPE_COPY
+    assert operations[2].source_abs == "/tmp/Promil/docs/inner/maintenance.md"
+    assert operations[2].destination_abs == "/tmp/dst/docs/promil/inner/maintenance.md"
 
 
 @pytest.mark.parametrize(
@@ -46,7 +76,7 @@ from operations import (
         ),
     ),
 )
-def test_copy_create_operation(
+def test_copy_create_operation_variants(
     file, rule_source, rule_destination, expected_source, expected_destination
 ):
     detector = CopyDetector("/home/foobar", "/tmp/Tech-docs", Config([]))
@@ -79,7 +109,7 @@ def test_index_load():
         }
     )
 
-    items = IndexLoader.load("/foo/index", fs).items
+    items = FileIndexLoader.load("/foo/index", fs).items
 
     assert items[0].file == "heheszek"
     assert items[0].repo == "Promil-platform-foo"
@@ -89,14 +119,14 @@ def test_index_load():
 def test_index_save():
     fs = MockFilesystem({})
 
-    index = Index(
+    index = FileIndex(
         (
-            IndexItem("heheszek", "Promil-platform-foo"),
-            IndexItem("foo/bar", "Promil-platform-foo"),
-            IndexItem("baz/huehue", "Promil-platform-bar"),
+            FileIndexItem("heheszek", "Promil-platform-foo"),
+            FileIndexItem("foo/bar", "Promil-platform-foo"),
+            FileIndexItem("baz/huehue", "Promil-platform-bar"),
         )
     )
-    IndexLoader.save(index, "/foo/index", fs)
+    FileIndexLoader.save(index, "/foo/index", fs)
 
     assert list(sorted(fs.scan("/foo/index", ".*"))) == list(
         sorted(
@@ -137,10 +167,10 @@ def test_delete():
             ]
         )
     )
-    index = Index(
+    index = FileIndex(
         (
-            IndexItem("a-file", "Promil"),
-            IndexItem("a-file-that-does-not-exist-anymore", "Promil"),
+            FileIndexItem("a-file", "Promil"),
+            FileIndexItem("a-file-that-does-not-exist-anymore", "Promil"),
         )
     )
     detector = DeleteDetector(
@@ -159,5 +189,5 @@ def test_delete():
     assert operations[1].type == FilesystemOperation.TYPE_DELETE
     assert operations[1].source_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
     assert operations[1].destination_abs is None
-    assert index.items == (IndexItem("a-file", "Promil"),)
-    assert index.removed == (IndexItem("a-file-that-does-not-exist-anymore", "Promil"),)
+    assert index.items == (FileIndexItem("a-file", "Promil"),)
+    assert index.removed == (FileIndexItem("a-file-that-does-not-exist-anymore", "Promil"),)

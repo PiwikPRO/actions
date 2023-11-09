@@ -116,11 +116,39 @@ class DeleteDetector:
                 self.index.remove(item)
 
         for item in child_result_files_to_be_copied:
-            self.index.add(IndexItem(item, self.repo))
+            self.index.add(FileIndexItem(item, self.repo))
         return child_result
 
 
-class Index:
+def hash(some_str):
+    return sha256(some_str.encode()).hexdigest()
+
+
+def hashb(data):
+    return sha256(data).hexdigest()
+
+
+class UnnecessaryOperationsFilteringDetector:
+    def __init__(self, child) -> None:
+        self.child = child
+
+    def detect(self, filesystem):
+        return list(filter(self.requires_changes_on_fs(filesystem), self.child.detect(filesystem)))
+
+    def requires_changes_on_fs(self, filesystem):
+        def inner(operation):
+            if operation.type == operation.TYPE_DELETE:
+                return True
+            if (not filesystem.is_file(operation.destination_abs)) or hashb(
+                filesystem.read_bytes(operation.source_abs)
+            ) != hashb(filesystem.read_bytes(operation.destination_abs)):
+                return True
+            return False
+
+        return inner
+
+
+class FileIndex:
     def __init__(self, items: tuple):
         self.items = items
         self.removed = ()
@@ -134,7 +162,7 @@ class Index:
             if item.repo == existing_item.repo:
                 return
             # If it's the same file coming from a different repo, raise an error
-            raise IndexError(
+            raise FileIndexError(
                 f"The file {item.file} is already indexed from repository {existing_item.repo}"
             )
         # If the loop ends, it means the file is not indexed yet, so add it
@@ -149,31 +177,29 @@ class Index:
 
 
 @dataclass
-class IndexItem:
+class FileIndexItem:
     file: str
     repo: str
 
 
-class IndexLoader:
+class FileIndexLoader:
     @classmethod
     def load(cls, fspath, filesystem):
         items = []
         for file in filesystem.scan(fspath, ".*"):
             cnt = json.loads(filesystem.read_string(path.join(fspath, file)))
-            items.append(IndexItem(cnt["file"], cnt["repo"]))
-        return Index(tuple(items))
+            items.append(FileIndexItem(cnt["file"], cnt["repo"]))
+        return FileIndex(tuple(items))
 
     @classmethod
     def save(cls, index, fspath, filesystem):
         for item in index.items:
             filesystem.write_string(
-                path.join(fspath, item.repo, sha256(item.file.encode()).hexdigest()),
+                path.join(fspath, item.repo, hash(item.file)),
                 json.dumps({"file": item.file, "repo": item.repo}),
             )
         for removed in index.removed:
-            filesystem.delete(
-                path.join(fspath, item.repo, sha256(removed.file.encode()).hexdigest())
-            )
+            filesystem.delete(path.join(fspath, item.repo, hash(removed.file)))
 
     @classmethod
     @contextmanager
@@ -184,7 +210,7 @@ class IndexLoader:
             cls.save(index, fspath, filesystem)
 
 
-class IndexError(Exception):
+class FileIndexError(Exception):
     pass
 
 
