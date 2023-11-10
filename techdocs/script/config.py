@@ -1,8 +1,8 @@
 import abc
-from typing import List
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from os import path
+from typing import List
 
 import nodes
 
@@ -13,6 +13,7 @@ class ConfigError(Exception):
 
 @dataclass
 class ConfigDocumentEntry:
+    project: str
     source: str
     destination: str
     exclude: List[str]
@@ -20,50 +21,46 @@ class ConfigDocumentEntry:
 
 @dataclass
 class Config:
-    project: str
     documents: ConfigDocumentEntry
 
 
 # Validators applied to the whole config
-class RootValidator(abc.ABC):
+class ConfigValidator(abc.ABC):
     @abc.abstractmethod
     def validate(self, config: dict):
         pass
 
 
-# Validators applied to each entry in the documents section
-class EntryValidator(abc.ABC):
-    @abc.abstractmethod
-    def validate(self, project: str, entry_config: dict):
-        pass
-
-
 class ConfigLoader:
     @classmethod
-    def default(cls, to_path, filesystem) -> "ConfigLoader":
+    def default(cls, from_path, to_path, filesystem) -> "ConfigLoader":
         return cls(
             filesystem,
-            [ProjectKeyMustExist(), DocumentsKeyMustExist(), DocumentsKeyMustBeList()],
+            [DocumentsKeyMustExist(), DocumentsKeyMustBeList()],
             [
                 SourceKeyMustExist(),
                 SourceKeyMustBeFileOrContainWildcard(),
                 DestinationKeyMustExist(),
                 ExcludeIfExistsMustBeList(),
-                DestinationPathMustBePrefixedWithProjectDocsPath(
-                    ProjectDetailsReader(to_path, filesystem)
-                ),
+                SourceFileMustExist(from_path, filesystem),
+                WildardsInTheMiddleAreApplicableOnlyToDirectories(),
+                IfSourceIsDirectoryThenDestinationMustAlsoBeDirectory(),
+                ProjectKeyMustExist(),
+                ProjectMustExist(ProjectDetailsReader(to_path, filesystem)),
+                PathMustNotBeAbsolute("source"),
+                PathMustNotBeAbsolute("destination"),
             ],
         )
 
     def __init__(
         self,
         filesystem,
-        root_validators: List[RootValidator],
-        entry_validators: List[EntryValidator],
+        config_validators: List[ConfigValidator],
+        document_validators: List[ConfigValidator],
     ):
         self.filesystem = filesystem
-        self.root_validators = root_validators
-        self.entry_validators = entry_validators
+        self.config_validators = config_validators
+        self.document_validators = document_validators
 
     def load(self, config_path: str) -> Config:
         try:
@@ -74,70 +71,129 @@ class ConfigLoader:
             raw_policy = json.loads(config_json)
         except ValueError:
             raise ConfigError(f"Config file `{config_path}` is not a valid JSON file")
-        for validator in self.root_validators:
+        for validator in self.config_validators:
             validator.validate(raw_policy)
         rules = []
         for document_rule in raw_policy["documents"]:
-            for validator in self.entry_validators:
-                validator.validate(raw_policy["project"], document_rule)
+            for validator in self.document_validators:
+                validator.validate(document_rule)
             rules.append(
                 ConfigDocumentEntry(
+                    document_rule["project"],
                     document_rule["source"],
                     document_rule["destination"],
                     document_rule["exclude"] if "exclude" in document_rule else [],
                 )
             )
-        return Config(raw_policy["project"], rules)
+        return Config(rules)
 
 
-class ProjectKeyMustExist(RootValidator):
+class ProjectKeyMustExist(ConfigValidator):
     def validate(self, config):
         if "project" not in config:
-            raise ConfigError("Config must contain a project name under `project` key")
+            raise ConfigError(
+                f"Each document entry must contain a project name under `project` key. Offending config: {config}"
+            )
 
 
-class DocumentsKeyMustExist(RootValidator):
+class DocumentsKeyMustExist(ConfigValidator):
     def validate(self, config):
         if "documents" not in config:
             raise ConfigError(
-                "Config must contain a documents section under `documents` key"
+                f"Config must contain a documents section under `documents` key. Offending config: {config}"
             )
 
 
-class DocumentsKeyMustBeList(RootValidator):
+class DocumentsKeyMustBeList(ConfigValidator):
     def validate(self, config):
         if not isinstance(config["documents"], list):
-            raise ConfigError("Config's `documents` key must be a list")
-
-
-class SourceKeyMustExist(EntryValidator):
-    def validate(self, project, config):
-        if "source" not in config:
-            raise ConfigError("Document rule must contain a source under `source` key")
-
-
-class SourceKeyMustBeFileOrContainWildcard(EntryValidator):
-    def validate(self, project, config):
-        if (not nodes.looks_fileish(config["source"])) and (
-            not "*" in config["source"]
-        ):
             raise ConfigError(
-                f"Source: `{config['source']}`  must either contain a wildcard or be a file"
+                f"Config's `documents` key must be a list. Offending config: {config}"
             )
 
 
-class DestinationKeyMustExist(EntryValidator):
-    def validate(self, project, config):
+class SourceKeyMustExist(ConfigValidator):
+    def validate(self, config):
+        if "source" not in config:
+            raise ConfigError(
+                f"Document rule must contain a source under `source` key. Offending config: {config}"
+            )
+
+
+class SourceKeyMustBeFileOrContainWildcard(ConfigValidator):
+    def validate(self, config):
+        if (not nodes.looks_fileish(config["source"])) and (not "*" in config["source"]):
+            raise ConfigError(
+                f"Source: `{config['source']}`  must either contain a wildcard or be a file. Offending config: {config}"
+            )
+
+
+class DestinationKeyMustExist(ConfigValidator):
+    def validate(self, config):
         if "destination" not in config:
             raise ConfigError(
-                "Document rule must contain a destination under `destination` key"
+                f"Document rule must contain a destination under `destination` key. Offending config: {config}"
             )
 
 
-class ExcludeIfExistsMustBeList(EntryValidator):
-    def validate(self, project, config):
+class ExcludeIfExistsMustBeList(ConfigValidator):
+    def validate(self, config):
         if "exclude" in config and not isinstance(config["exclude"], list):
-            raise ConfigError("Document rule's `exclude` key must be a list")
+            raise ConfigError(
+                f"Document rule's `exclude` key must be a list. Offending config: {config}"
+            )
+
+
+class PathMustNotBeAbsolute(ConfigValidator):
+    def __init__(self, key) -> None:
+        self.key = key
+
+    def validate(self, config):
+        if path.isabs(config[self.key]):
+            raise ConfigError(
+                f"Path `{config[self.key]}` must not be absolute. Offending config: {config}"
+            )
+
+
+class ProjectMustExist(ConfigValidator):
+    def __init__(self, project_reader) -> None:
+        self.reader = project_reader
+
+    def validate(self, config: dict) -> dict:
+        try:
+            doc_path = self.reader.doc_path(config["project"])
+        except ProjectDoesNotExist:
+            raise ConfigError(
+                f"Project `{config['project']}` does not exist. Offending config: {config}"
+            )
+
+
+class SourceFileMustExist(ConfigValidator):
+    def __init__(self, from_path, filesystem):
+        self.from_path = from_path
+        self.filesystem = filesystem
+
+    def validate(self, config):
+        if nodes.looks_fileish(config["source"]) and not self.filesystem.is_file(
+            path.join(self.from_path, config["source"])
+        ):
+            raise ConfigError(f"Source file `{config['source']}` does not exist")
+
+
+class IfSourceIsDirectoryThenDestinationMustAlsoBeDirectory(ConfigValidator):
+    def validate(self, config):
+        if nodes.looks_dirish(config["source"]) and not nodes.looks_dirish(config["destination"]):
+            raise ConfigError(
+                f"Source is a directory but destination is not. Did you forget to add a trailing slash to desination? Offending config: {config}"
+            )
+
+
+class WildardsInTheMiddleAreApplicableOnlyToDirectories(ConfigValidator):
+    def validate(self, config):
+        if "*" in config["source"][:-1] and not nodes.looks_dirish(config["destination"]):
+            raise ConfigError(
+                f"Putting wildcards in the middle of the pattern is only supported if the destination is a directory. Offending config: {config}"
+            )
 
 
 # Reads the projects.json file and returns the path to the project's docs directory in Tech-docs repository
@@ -163,23 +219,3 @@ class ProjectDetailsReader:
 
 class ProjectDoesNotExist(Exception):
     pass
-
-
-class DestinationPathMustBePrefixedWithProjectDocsPath:
-    def __init__(self, project_reader: ProjectDetailsReader) -> None:
-        self.reader = project_reader
-
-    def validate(self, project, config):
-        try:
-            if not config["destination"].startswith(self.reader.doc_path(project)):
-                raise ConfigError(
-                    f"Destination path `{config['destination']}` must be prefixed with project docs path `{self.reader.doc_path(project)}`"
-                )
-        except KeyError:
-            raise ConfigError(
-                f"Project `{project}` does not exist in project details file"
-            )
-        except FileNotFoundError:
-            raise ConfigError(
-                f"File `projects.json` was not found in the destination directory"
-            )
