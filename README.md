@@ -552,5 +552,5 @@ and adjust the config, so it matches the files you'd like to push. Each entry in
 
 * `project`, **required**, docusaurus project in Tech-docs, you can lookup available projects [here](https://github.com/PiwikPRO/Tech-docs/blob/master/projects.json). Examples: `promil`, `piwik-pro`
 * `source`, **required**, relative path to files in your repository. May include a wildcard or be path to single concrete file. Examples: `docs/*`, `docs/*/*.md`, `README.md`
-* `destination`, **required**, relative path to a project directory in Tech-docs. Directories MUST be suffixed by a slash. Examples: `barman/`, `services/apps.md`
+* `destination`, **required**, relative path to a `project` directory in Tech-docs. Directories MUST be suffixed by a slash. Examples: `barman/`, `services/apps.md`
 * `exclude`, *optional*, relative path to files, that will be ignored, from the ones qualified by `source` parameter. Uses wildcard as `source` does. Examples: `docs/inner/*`, `docs/secret.md`
