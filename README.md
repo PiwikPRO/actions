@@ -554,3 +554,17 @@ and adjust the config, so it matches the files you'd like to push. Each entry in
 * `source`, **required**, relative path to files in your repository. May include a wildcard or be path to single concrete file. Examples: `docs/*`, `docs/*/*.md`, `README.md`
 * `destination`, **required**, relative path to a `project` directory in Tech-docs. Directories MUST be suffixed by a slash. Examples: `barman/`, `services/apps.md`
 * `exclude`, *optional*, relative path to files, that will be ignored, from the ones qualified by `source` parameter. Uses wildcard as `source` does. Examples: `docs/inner/*`, `docs/secret.md`
+
+If you'd like to use branch other than `master` as a branch that pushes documentation to Tech-docs `master` branch, you can configure it as follows:
+
+```yaml
+...
+jobs:
+  push:
+    uses: PiwikPRO/actions/.github/workflows/push_docs.yaml@master
+    secrets: inherit
+    with:
+      main_branch: "develop"
+      config: ...
+
+```

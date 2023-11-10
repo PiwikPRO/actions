@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           CURRENT_BRANCH="${{ github.ref_name }}"
-          BRANCH=$(echo '${{ github.repository }}-'$CURRENT_BRANCH | sed 's/[^a-zA-Z0-9]/-/g; y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/')
+          BRANCH=$(echo '${{ github.repository }}-'$CURRENT_BRANCH | 's/[^a-zA-Z0-9]/-/g;' | tr '[:upper:]' '[:lower:]'])
           echo "TECH_DOCS_BRANCH=$BRANCH" >> $GITHUB_ENV
 
       - name: Set Tech-docs branch name (master)
