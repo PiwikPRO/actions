@@ -519,7 +519,7 @@ making it as generic as possible.
 
 ### Tech docs push
 
-The workflow used to push the local documentation in any Piwik PRO repository to central Tech-docs portal. In order to use it, paste the following content into `.github/workflow/docs.yaml` in your repository:
+Workflow for pushing local documentation of any Piwik PRO repository to central [Tech-docs](https://github.com/PiwikPRO/Tech-docs) portal. In order to use it, paste the following content into `.github/workflow/docs.yaml` in your repository:
 
 ```yaml
 name: Documentation
