@@ -1,0 +1,48 @@
+name: 'Run Tech-docs copier script. This should not be used directly by end-users, please use the reusable workflow instead.'
+inputs:
+  from:
+    required: true
+  to:
+    required: true
+  index:
+    required: true
+  config:
+    required: true
+  dry-run:
+    required: false
+    default: 'false'
+outputs:
+  changes:
+    description: "Textual description of changes"
+    value: ${{ steps.dry-run.outputs.changes }}
+  count:
+    description: "Count of performed changes"
+    value: ${{ steps.dry-run.outputs.count }}
+runs:
+  using: 'composite'
+  steps:
+   
+    - name: Create config
+      shell: bash
+      run: |
+        echo $CONFIG > /tmp/config.json
+      env:
+        CONFIG: ${{ inputs.config }}
+        
+    - name: Dry run
+      id: dry-run
+      shell: bash
+      run: |
+        python ${{ github.action_path }}/script/cli.py copy --from ${{ inputs.from }} --to ${{ inputs.to }} --index ${{ inputs.index }} --config /tmp/config.json --dry-run > /tmp/out.log
+        echo "count=$(cat /tmp/out.log | wc -l)" >> $GITHUB_OUTPUT
+
+        echo "changes<<EOF" >> $GITHUB_OUTPUT
+        echo $(cat /tmp/out.log) >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+
+    - name: Copy the files
+      if: ${{ inputs.dry-run == 'false' }}
+      shell: bash
+      run: |
+        python ${{ github.action_path }}/script/cli.py copy --from ${{ inputs.from }} --to ${{ inputs.to }} --index ${{ inputs.index }} --config /tmp/config.json

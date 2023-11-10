@@ -1,4 +1,4 @@
-# Actions
+# Shared github actions
 
 <!--toc:start-->
 - [Actions](#actions)
@@ -23,15 +23,19 @@
   - [Inclint (internal)](#inclint-internal)
   - [JavaScript](#javascript)
     - [LTS-lint](#lts-lint)
+- [Reusable workflows](#workflows)
+  - [Tech docs push](#tech-docs-push)
 <!--toc:end-->
 
-Custom github actions used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
+Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
 
-## Dependabot
+## Actions
+
+### Dependabot
 
 [Dependabot](https://github.com/dependabot) is a tool to automated dependency updates built into GitHub.
 
-### Update changelog
+#### Update changelog
 
 It updates changelog for pull requests created by Dependabot
 
@@ -53,7 +57,7 @@ jobs:
 
 Info: You should copy not only step, but also another parts above (run only on labeled pull requests with label `dependencies`) to work it correctly.
 
-## Changelog
+### Changelog
 
 Keep a changelog validator:
 - `update` for checking if CHANGELOG.md has been updated on pull request. If commit message consists `skip-cl` verification is skipped
@@ -79,7 +83,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-## Using aws-cli with proxy
+### Using aws-cli with proxy
 
 It is possible to configure the step that using aws-cli binary to make the connection through proxy. To do this, you must set the appropriate [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-proxy.html).
 
@@ -117,15 +121,15 @@ Example usage:
 ...
 ```
 
-## Dtools
+### Dtools
 
 Dtools are deprecated now, please use [godtools](#godtools) instead.
 
-## Godtools
+### Godtools
 
 [Godtools](https://github.com/PiwikPRO/godtools) is a tool for performing operations that require sharing sensitive credentials such as pulling docker images or s3 artifacts.
 
-### Setup
+#### Setup
 
 Downloads latest version of the `godtools` binary and makes it available in `PATH`.
 
@@ -143,7 +147,7 @@ steps:
       reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
 ```
 
-### Login
+#### Login
 
 Allows to authenticate to docker registries. It requires [setup](#setup) action.
 
@@ -160,7 +164,7 @@ steps:
       registries: acr, docker-hub
 ```
 
-### Push
+#### Push
 
 Allows to push docker images to authenticated registries. It requires both [setup](#setup) and [login](#login) actions.
 
@@ -177,7 +181,7 @@ steps:
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
 ```
 
-### Download artifacts
+#### Download artifacts
 
 Allows to download artifacts, like EventKeeper's `events`. It requires [setup](#setup) action.
 
@@ -200,11 +204,11 @@ steps:
 
 ---
 
-## Go
+### Go
 
 Contains common logic for continuous integration of Piwik PRO golang projects.
 
-### Lint
+#### Lint
 
 Installs golang and golangci-lint, runs linter tests.
 
@@ -262,7 +266,7 @@ on:
     branches: ["master"]
 ```
 
-### Push dir to s3
+#### Push dir to s3
 
 Pushes provided dir to s3.
 
@@ -289,7 +293,7 @@ Example usage:
 ...
 ```
 
-### Test
+#### Test
 
 Installs golang and runs tests
 
@@ -328,7 +332,7 @@ on:
     branches: ["master"]
 ```
 
-### Integration tests setup (pytest)
+#### Integration tests setup (pytest)
 
 As most of our golang projects use pytest for integration tests, this action installs golang and pytest, but does not run the tests. The tests are not launched automatically by this action, because most of the integration tests suited require additional configuration in the form of env vars, and unfortunately Github Actions does not allow dynamic injection of configuration (eg. env vars) into already configured step.
 
@@ -350,7 +354,7 @@ Example usage:
 ...
 ```
 
-### Attach binary as github release when tag is built
+#### Attach binary as github release when tag is built
 
 Runs go build and releases the binary when the tag is built.
 
@@ -379,9 +383,9 @@ Example usage:
 ```
 
 
-## Python
+### Python
 
-### Lint
+#### Lint
 
 Run various python linters:
   * Flake8 - Check against pep8 violation (https://flake8.pycqa.org/en/latest/).
@@ -446,7 +450,7 @@ Replace `/home/kkaragiorgis/Projects/promil` to wherever you cloned `actions` re
 
 
 
-## Coverage (internal)
+### Coverage (internal)
 
 This action should not probably used directly by workflows, rather by other actions, that implement unit tests for given languages. The action allows storing coverge of given branch in AWS S3 and comparing coverage results during PRs. It ensures, that coverage is incrementally improved with time, by enforcing small improvement with every PR, up to given threshold (currently 80%).
 
@@ -466,7 +470,7 @@ Example usage (in other action)
 ```
 
 
-## Inclint (internal)
+### Inclint (internal)
 
 This action should not probably used directly by workflows, rather by other actions, that implement linter tests for given languages. The action allows storing number of linter errors for given branch in AWS S3 and comparing number of linter errors results during PRs. It ensures, that number of linter errors is incrementally decreased over time, by enforcing small improvement with every PR.
 
@@ -485,9 +489,9 @@ Example usage
 
 ```
 
-## JavaScript
+### JavaScript
 
-### LTS-lint
+#### LTS-lint
 
 This action runs [prettier](https://prettier.io) and [eslint](https://eslint.org/)
 on the target repository. It is currently used exclusively in the
@@ -510,3 +514,43 @@ making it as generic as possible.
         with:
           install-command: npm install
 ```
+
+## Workflows
+
+### Tech docs push
+
+The workflow used to push the local documentation in any Piwik PRO repository to central Tech-docs portal. In order to use it, paste the following content into `.github/workflow/docs.yaml` in your repository:
+
+```yaml
+name: Documentation
+on: [push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  push:
+
+    uses: PiwikPRO/actions/.github/workflows/push_docs.yaml@master
+    secrets: inherit
+    with:
+      config: |
+        {
+          "documents": [
+            {
+              "source": "docs/*",
+              "destination": "architects/",
+              "project": "promil",
+              "exclude": ["docs/internal/*]
+            }
+          ]
+        }
+```
+
+and adjust the config, so it matches the files you'd like to push. Each entry in `documents` has the following keys:
+
+* `source`, **required**, docusaurus project in Tech-docs, you can lookup available projects [here](https://github.com/PiwikPRO/Tech-docs/blob/master/projects.json). Examples: `promil`, `piwik-pro`
+* `source`, **required**, relative path to files in your repository. May include a wildcard or be path to single concrete file. Examples: `docs/*`, `docs/*/*.md`, `README.md`
+* `destination`, **required**, relative path to a project directory in Tech-docs. Directories MUST be suffixed by a slash. Examples: `barman/`, `services/apps.md`
+* `exclude`, *optional*, relative path to files, that will be ignored, from the ones qualified by `source` parameter. Uses wildcard as `source` does. Examples: `docs/inner/*`, `docs/secret.md`

@@ -50,7 +50,7 @@ if __name__ == "__main__":
                     ),
                     fs,
                     PrintingExecutor() if args.dry_run else Executor(fs),
-                ).execute(args.from_path)
+                ).execute()
         except ConfigError as e:
             print(f"Config file load error: {e}")
             sys.exit(1)

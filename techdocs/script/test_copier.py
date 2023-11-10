@@ -50,10 +50,9 @@ def test_copier(filesystem):
         filesystem,
     )
 
-    copier.execute("/tmp/foo")
+    copier.execute()
 
     assert filesystem.is_file("/tmp/bar/docs/promil/bla.md")
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/one.md")
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/two.md")
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/inner/other-dir/foo.md")
-    # assert 1 == 2
