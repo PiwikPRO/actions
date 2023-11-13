@@ -75,7 +75,7 @@ jobs:
       
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
-        uses: PiwikPRO/actions/techdocs@arch-252-gh-workflow-for-tech-docs-copier
+        uses: PiwikPRO/actions/techdocs@master
         if: ${{ github.ref_name == env.MAIN_BRANCH || env.BRANCH_EXISTS == 'true' }}
         with:
           from: .
