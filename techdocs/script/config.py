@@ -174,6 +174,9 @@ class SourceFileMustExist(ConfigValidator):
         self.filesystem = filesystem
 
     def validate(self, config):
+        if nodes.looks_wildcardish(config["source"]):
+            # This validator is not applicable to wildcardish paths
+            return
         if nodes.looks_fileish(config["source"]) and not self.filesystem.is_file(
             path.join(self.from_path, config["source"])
         ):
@@ -184,7 +187,8 @@ class IfSourceIsDirectoryThenDestinationMustAlsoBeDirectory(ConfigValidator):
     def validate(self, config):
         if nodes.looks_dirish(config["source"]) and not nodes.looks_dirish(config["destination"]):
             raise ConfigError(
-                f"Source is a directory but destination is not. Did you forget to add a trailing slash to desination? Offending config: {config}"
+                f"Source is a directory but destination is not. Did you forget to add a trailing slash to desination? "
+                f"Offending config: {config}"
             )
 
 
@@ -192,7 +196,8 @@ class WildardsInTheMiddleAreApplicableOnlyToDirectories(ConfigValidator):
     def validate(self, config):
         if "*" in config["source"][:-1] and not nodes.looks_dirish(config["destination"]):
             raise ConfigError(
-                f"Putting wildcards in the middle of the pattern is only supported if the destination is a directory. Offending config: {config}"
+                f"Putting wildcards in the middle of the pattern is only supported if the destination is a directory. "
+                f"Offending config: {config}"
             )
 
 
