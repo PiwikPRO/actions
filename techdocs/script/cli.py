@@ -3,7 +3,7 @@ import os
 import sys
 
 from config import ConfigError, ConfigLoader
-from copier import Copier, Executor, PrintingExecutor
+from copier import Copier, Executor, PrintingExecutor, RelativeMarkdownListFormatter
 from filesystem import Filesystem
 from operations import (
     CopyDetector,
@@ -49,7 +49,9 @@ if __name__ == "__main__":
                         )
                     ),
                     fs,
-                    PrintingExecutor() if args.dry_run else Executor(fs),
+                    PrintingExecutor(RelativeMarkdownListFormatter(args.from_path, args.to_path))
+                    if args.dry_run
+                    else Executor(fs),
                 ).execute()
         except ConfigError as e:
             print(f"Config file load error: {e}")

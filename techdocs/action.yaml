@@ -37,7 +37,7 @@ runs:
         echo "count=$(cat /tmp/out.log | wc -l)" >> $GITHUB_OUTPUT
 
         echo "changes<<EOF" >> $GITHUB_OUTPUT
-        echo $(cat /tmp/out.log) >> $GITHUB_OUTPUT
+        cat /tmp/out.log >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
 
 
