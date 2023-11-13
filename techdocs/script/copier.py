@@ -4,8 +4,12 @@ class Copier:
         self.detector = detector
         self.executor = executor or Executor(filesystem)
 
-    def execute(self, from_path):
-        for operation in self.detector.detect(self.filesystem):
+    def execute(self):
+        operations = self.detector.detect(self.filesystem)
+        if len(operations) == 0:
+            print("Nothing to do")
+            return
+        for operation in operations:
             self.executor.execute(operation)
 
 

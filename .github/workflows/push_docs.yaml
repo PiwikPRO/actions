@@ -1,0 +1,127 @@
+name: 'Tech-docs copier'
+description: 'This should not be used directly by end-users, please use the reusable workflow instead.'
+on:
+  workflow_call:
+    inputs:
+      config:
+        required: true
+        type: string
+      main_branch:
+        default: master
+        required: false
+        type: string
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    env:
+      MAIN_BRANCH: ${{ inputs.main_branch }}
+      TOKEN: ""
+      TECH_DOCS_BRANCH: ""
+      BRANCH_EXISTS: ""
+      CHANGES: ""
+    steps:
+
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - uses: PiwikPRO/actions/github-app-token-generator@master
+        name: Generate token for tech docs pusher
+        id: get-token
+        with:
+          private-key: ${{ secrets.TECH_DOCS_PUSHER_PRIVATE_KEY }}
+          app-id: ${{ secrets.TECH_DOCS_PUSHER_APPLICATION_ID }}
+          repo: PiwikPRO/Tech-docs
+
+      - name: Check out Tech-docs
+        uses: actions/checkout@v3
+        with:
+          repository: 'PiwikPRO/Tech-docs'
+          token: ${{ steps.get-token.outputs.token }}
+          path: 'Tech-docs'
+
+      - name: Set Tech-docs branch name
+        if: github.ref_name != env.MAIN_BRANCH
+        shell: bash
+        run: |
+          CURRENT_BRANCH="${{ github.ref_name }}"
+          BRANCH=$(echo '${{ github.repository }}-'$CURRENT_BRANCH | 's/[^a-zA-Z0-9]/-/g;' | tr '[:upper:]' '[:lower:]'])
+          echo "TECH_DOCS_BRANCH=$BRANCH" >> $GITHUB_ENV
+
+      - name: Set Tech-docs branch name (master)
+        if: github.ref_name == env.MAIN_BRANCH
+        shell: bash
+        run: |
+          echo "TECH_DOCS_BRANCH=master" >> $GITHUB_ENV
+
+      - name: Check Remote Branch Existence
+        if: github.ref_name != env.MAIN_BRANCH
+        run: |
+          cd Tech-docs
+          if git ls-remote --heads --exit-code origin $TECH_DOCS_BRANCH > /dev/null; then
+            echo "Exists!"
+            echo "BRANCH_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "Doesn't exist!"
+            echo "BRANCH_EXISTS=false" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout Remote Branch
+        if: github.ref_name != env.MAIN_BRANCH && env.BRANCH_EXISTS == 'true'
+        run: |
+          cd Tech-docs
+          git fetch --depth 1 origin $TECH_DOCS_BRANCH
+          git checkout $TECH_DOCS_BRANCH
+      
+      - name: Run Copy Script in Dry Run Mode
+        id: dry-run
+        uses: PiwikPRO/actions/techdocs@master
+        if: ${{ github.ref_name == env.MAIN_BRANCH || env.BRANCH_EXISTS == 'true' }}
+        with:
+          from: .
+          to: Tech-docs
+          index: ${{ github.repository }}
+          dry-run: true
+          config: ${{ inputs.config }}
+
+      - name: Check for Changes
+        if: github.ref_name == env.MAIN_BRANCH || env.BRANCH_EXISTS == 'true'
+        run: |
+          CHANGED_FILES=${{ steps.dry-run.outputs.count }}
+          echo "Changed files count: $CHANGED_FILES"
+          echo "CHANGES=$CHANGED_FILES" >> $GITHUB_ENV
+
+      - name: Cleanup local branch if there are changes
+        if: github.ref_name != env.MAIN_BRANCH && env.BRANCH_EXISTS == 'true' && env.CHANGES != '0'
+        run: |
+          cd Tech-docs
+          git checkout master
+          git branch -d $TECH_DOCS_BRANCH
+          git checkout -b $TECH_DOCS_BRANCH
+
+      - name: Create Branch if Not Exists
+        if: github.ref_name != env.MAIN_BRANCH && env.BRANCH_EXISTS == 'false'
+        run: |
+          cd Tech-docs
+          git checkout -b $TECH_DOCS_BRANCH
+          echo "CHANGES=1" >> $GITHUB_ENV
+
+      - name: Run Copy Script
+        uses: PiwikPRO/actions/techdocs@master
+        if: env.CHANGES != '0'
+        with:
+          from: .
+          to: Tech-docs
+          index: ${{ github.repository }}
+          dry-run: false
+          config: ${{ inputs.config }}
+
+      - name: Push changes to Tech-docs
+        if: env.CHANGES != '0'
+        run: |
+          cd Tech-docs
+          git config --global user.email "${{github.event.pusher.email}}"
+          git config --global user.name "${{github.event.pusher.name}}"
+          git add --all
+          git commit -m "${{ github.event.head_commit.message }}"
+          git push origin $TECH_DOCS_BRANCH --force
