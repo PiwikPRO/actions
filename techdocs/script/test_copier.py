@@ -24,9 +24,14 @@ def filesystem():
                             "source": "docs/*",
                             "destination": "somedir/",
                             "exclude": [
-                                "docs/internal/*"
-                                "docs/*.txt"
+                                "docs/internal/*",
+                                "docs/*.txt",
                             ],
+                        },
+                        {
+                            "project": "promil",
+                            "source": "other/*.txt",
+                            "destination": "somedir/",
                         },
                     ],
                 }
@@ -38,6 +43,10 @@ def filesystem():
             "/tmp/foo/docs/inner/other-dir/foo.md": "blabla",
             "/tmp/foo/docs/two.md": "blabla",
             "/tmp/foo/docs/internal/int.md": "blabla",
+            "/tmp/foo/other/uno.txt": "blabla",
+            "/tmp/foo/other/due.txt": "blabla",
+            "/tmp/foo/other/non-text.md": "blabla",
+            "/tmp/foo/other/level/due.txt": "blabla",
             "/tmp/bar/projects.json": json.dumps({"promil": {"path": "docs/promil"}}),
         }
     )
@@ -63,3 +72,7 @@ def test_copier(filesystem):
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/inner/other-dir/foo.md")
     assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/first.txt")
     assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/second.txt")
+    assert filesystem.is_file("/tmp/bar/docs/promil/somedir/uno.txt")
+    assert filesystem.is_file("/tmp/bar/docs/promil/somedir/due.txt")
+    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/non-text.md")
+    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/level/due.txt")
