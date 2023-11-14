@@ -23,13 +23,18 @@ def filesystem():
                             "project": "promil",
                             "source": "docs/*",
                             "destination": "somedir/",
-                            "exclude": ["docs/internal/*"],
+                            "exclude": [
+                                "docs/internal/*"
+                                "docs/*.txt"
+                            ],
                         },
                     ],
                 }
             ),
             "/tmp/foo/README.md": "blabla",
             "/tmp/foo/docs/one.md": "blabla",
+            "/tmp/foo/docs/first.txt": "blabla",
+            "/tmp/foo/docs/second.txt": "blabla",
             "/tmp/foo/docs/inner/other-dir/foo.md": "blabla",
             "/tmp/foo/docs/two.md": "blabla",
             "/tmp/foo/docs/internal/int.md": "blabla",
@@ -56,3 +61,5 @@ def test_copier(filesystem):
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/one.md")
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/two.md")
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/inner/other-dir/foo.md")
+    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/first.txt")
+    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/second.txt")

@@ -49,6 +49,30 @@ from filesystem import MockFilesystem
                 "documents": [
                     {
                         "project": "promil",
+                        "source": "*.md",
+                        "destination": "docs/promil/",
+                    }
+                ],
+            },
+            True,  # Wildcard for file extension
+        ),
+        (
+            {
+                "documents": [
+                    {
+                        "project": "promil",
+                        "source": "*.md",
+                        "destination": "docs/promil/test.md",
+                    }
+                ],
+            },
+            False,  # Wildcard for file extension pointing single file
+        ),
+        (
+            {
+                "documents": [
+                    {
+                        "project": "promil",
                         "source": "README.md",
                         "destination": "bla.md",
                     },
