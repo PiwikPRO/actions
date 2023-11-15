@@ -8,3 +8,7 @@ def looks_fileish(fspath):
 
 def looks_dirish(fspath):
     return fspath.endswith("/") or fspath.endswith("*") or fspath == "."
+
+
+def looks_wildcardish(fspath):
+    return "*" in fspath
