@@ -137,6 +137,7 @@ jobs:
 
   pr:
     if: github.event_name == 'pull_request'
+    # FIXME - pull-request    pull_request:  types: [ opened, synchronize ]
     runs-on: ubuntu-latest
 
     permissions:
@@ -225,6 +226,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const diffCount = {{ env.COUNT }}
             const issue_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -233,9 +235,9 @@ jobs:
             
             * [Preview](https://docs.cldsrv.biz/${{ env.TECH_DOCS_HEAD_BRANCH }}/) (available after it's built, requires VPN)
             * If there are any issues with the preview, please check the [Tech-docs build logs](https://github.com/PiwikPRO/Tech-docs/actions/workflows/deploy.yaml)
-          
+            
             Docs affected by this PR:
-          
+            
             ${{ steps.dry-run.outputs.changes }}
             `
 
@@ -249,14 +251,24 @@ jobs:
             let techDocsComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
 
             if (techDocsComment) {
-              // Update the existing comment
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: techDocsComment.id,
-                body: description,
-              });
-              console.log('Updated the comment.');
+              if (diffCount === 0) {
+                // Delete the existing comment
+                await github.rest.issues.deleteComment({
+                  owner,
+                  repo,
+                  comment_id: techDocsComment.id,
+                });
+                console.log('Deleted the comment.');
+              } else {
+                // Update the existing comment
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: techDocsComment.id,
+                  body: description,
+                });
+                console.log('Updated the comment.');
+              }
             } else {
               // Create a new comment
               await github.rest.issues.createComment({
