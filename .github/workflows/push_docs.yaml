@@ -221,25 +221,49 @@ jobs:
           echo "Changed files count: $COUNT"
 
 
-      - uses: tzkhan/pr-update-action@9aa18814f624fddebd6ea38ad066182079a79416
-        if : env.COUNT != '0'
+      - name: Check and Update Comment
+        uses: actions/github-script@v7
         with:
-            repo-token: ${{ secrets.GITHUB_TOKEN }}
-            branch-regex: .*
-            lowercase-branch: false
-            title-template: ' '
-            replace-title: false
-            title-prefix-space: true
-            uppercase-title: false
-            body-template: |
-              This PR contains changes to the documentation. 
-              
-                * [Preview](https://docs.cldsrv.biz/${{ env.TECH_DOCS_HEAD_BRANCH }}/) (available after it's built, requires VPN)
-                * If there are any issues with the preview, please check the [Tech-docs build logs](https://github.com/PiwikPRO/Tech-docs/actions/workflows/deploy.yaml)
-              
-              Docs affected by this PR:
+          script: |
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const description = `
+            This PR contains changes to the documentation.
+            
+            * [Preview](https://docs.cldsrv.biz/${{ env.TECH_DOCS_HEAD_BRANCH }}/) (available after it's built, requires VPN)
+            * If there are any issues with the preview, please check the [Tech-docs build logs](https://github.com/PiwikPRO/Tech-docs/actions/workflows/deploy.yaml)
+          
+            Docs affected by this PR:
+          
+            ${{ steps.dry-run.outputs.changes }}
+            `
 
-              ${{ steps.dry-run.outputs.changes }}
-            replace-body: false
-            body-prefix-newline-count: 2
-            uppercase-body: false
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            // Filter for comments made by github-actions[bot]
+            let techDocsComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
+
+            if (techDocsComment) {
+              // Update the existing comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: techDocsComment.id,
+                body: description,
+              });
+              console.log('Updated the comment.');
+            } else {
+              // Create a new comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: description
+              });
+              console.log('Created a new comment.');
+            }
