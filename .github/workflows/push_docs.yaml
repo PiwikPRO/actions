@@ -72,7 +72,7 @@ jobs:
           cd Tech-docs
           git fetch --depth 1 origin $TECH_DOCS_BRANCH
           git checkout $TECH_DOCS_BRANCH
-      
+
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
         uses: PiwikPRO/actions/techdocs@master
@@ -168,8 +168,8 @@ jobs:
         run: |
           LOCAL_BASE_BRANCH=$(echo "${{ github.base_ref }}" | sed 's/refs\/heads\///')
           LOCAL_HEAD_BRANCH=$(echo "${{ github.head_ref }}" | sed 's/refs\/heads\///')
-          TECH_DOCS_BASE_BRANCH=$(echo '${{ github.repository }}-'$LOCAL_BASE_BRANCH | sed 's/[^a-zA-Z0-9]/-/g; y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/')
-          TECH_DOCS_HEAD_BRANCH=$(echo '${{ github.repository }}-'$LOCAL_HEAD_BRANCH | sed 's/[^a-zA-Z0-9]/-/g; y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/')
+          TECH_DOCS_BASE_BRANCH=$(echo '${{ github.repository }}-'$LOCAL_BASE_BRANCH | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+          TECH_DOCS_HEAD_BRANCH=$(echo '${{ github.repository }}-'$LOCAL_HEAD_BRANCH | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
           echo "TECH_DOCS_BASE_BRANCH=$TECH_DOCS_BASE_BRANCH" >> $GITHUB_ENV
           echo "TECH_DOCS_HEAD_BRANCH=$TECH_DOCS_HEAD_BRANCH" >> $GITHUB_ENV
           echo "Base branch name: $TECH_DOCS_BASE_BRANCH"
@@ -183,7 +183,7 @@ jobs:
           repository: 'PiwikPRO/Tech-docs'
           token: ${{ steps.get-token.outputs.token }}
           path: 'Tech-docs'
-      
+
 
       - name: Detect if base Tech-docs branch exists
         if: env.TECH_DOCS_BASE_BRANCH != 'master'
@@ -203,7 +203,7 @@ jobs:
           cd Tech-docs
           git fetch --depth 1 origin $TECH_DOCS_BASE_BRANCH
           git checkout $TECH_DOCS_BASE_BRANCH
-      
+
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
         uses: PiwikPRO/actions/techdocs@arch-256-update-pr-description-with-details
