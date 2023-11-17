@@ -138,7 +138,6 @@ jobs:
 
   pr:
     if: github.event_name == 'pull_request'
-    # FIXME - pull-request    pull_request:  types: [ opened, synchronize ]
     runs-on: ubuntu-latest
 
     permissions:
