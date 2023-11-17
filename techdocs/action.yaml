@@ -34,7 +34,9 @@ runs:
       shell: bash
       run: |
         python ${{ github.action_path }}/script/cli.py copy --from ${{ inputs.from }} --to ${{ inputs.to }} --index ${{ inputs.index }} --config /tmp/config.json --dry-run > /tmp/out.log
+        
         cat /tmp/out.log
+        
         echo "count=$(cat /tmp/out.log | wc -l)" >> $GITHUB_OUTPUT
 
         echo "changes<<EOF" >> $GITHUB_OUTPUT
