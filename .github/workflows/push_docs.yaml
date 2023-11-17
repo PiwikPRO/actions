@@ -221,10 +221,18 @@ jobs:
           echo "COUNT=$COUNT" >> $GITHUB_ENV
           echo "Changed files count: $COUNT"
 
+      - uses: PiwikPRO/actions/github-app-token-generator@master
+        if: env.COUNT != '0'
+        id: get-tech-docs-agent-token
+        with:
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
 
       - name: Check and Update Comment
         uses: actions/github-script@v7
+        if: env.COUNT != '0'
         with:
+          github-token: ${{ steps.get-tech-docs-agent-token.outputs.token }}
           script: |
             const diffCount = {{ env.COUNT }}
             const issue_number = context.issue.number;
