@@ -290,14 +290,14 @@ jobs:
                 await github.rest.issues.deleteComment({
                   owner,
                   repo,
-                  comment_id: techDocsComment.id,
+                  comment_id: techDocsCommentId,
                 });
                 console.log('Deleted the comment.');
               } else {
                 await github.rest.issues.updateComment({
                   owner,
                   repo,
-                  comment_id: techDocsComment.id,
+                  comment_id: techDocsCommentId,
                   body: description,
                 });
                 console.log('Updated the comment.');
