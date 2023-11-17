@@ -223,7 +223,7 @@ jobs:
           echo "Changed files count: $COUNT"
 
       - uses: PiwikPRO/actions/github-app-token-generator@master
-        if: env.COUNT != '0'
+        if: env.COUNT != '0'  # FIXME we need to check if there is a comment earlier before using that statement
         id: get-tech-docs-agent-token
         with:
           private-key: ${{ secrets.TECH_DOCS_AGENT_PRIVATE_KEY }}

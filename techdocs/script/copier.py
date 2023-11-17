@@ -26,7 +26,7 @@ class Executor:
         if operation.type == operation.TYPE_COPY:
             self.filesystem.copy(operation.source_abs, operation.destination_abs)
         elif operation.type == operation.TYPE_DELETE:
-            self.filesystem.delete(operation.source_abs)
+            self.filesystem.delete(operation.destination_abs)
 
 
 class PrintingExecutor:
@@ -51,6 +51,7 @@ class RelativeMarkdownListFormatter:
         if operation.type == operation.TYPE_DELETE:
             return f"* [DELETE] {os.path.relpath(operation.destination_abs, self.to_root)}"
         elif operation.type == operation.TYPE_COPY:
-            return f"* [COPY] {os.path.relpath(operation.source_abs, self.from_root)} -> {os.path.relpath(operation.destination_abs, self.to_root)}"
+            return (f"* [COPY] {os.path.relpath(operation.source_abs, self.from_root)} -> "
+                    f"{os.path.relpath(operation.destination_abs, self.to_root)}")
 
         return ""

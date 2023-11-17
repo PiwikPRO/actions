@@ -22,7 +22,7 @@ class FilesystemOperation:
         if self.type == FilesystemOperation.TYPE_COPY:
             return "Copy file {} to {}".format(self.source_abs, self.destination_abs)
         elif self.type == FilesystemOperation.TYPE_DELETE:
-            return "Delete file {}".format(self.source_abs)
+            return "Delete file {}".format(self.destination_abs)
         else:
             return "Unknown operation"
 
@@ -107,10 +107,10 @@ class DeleteDetector:
                 child_result.append(
                     FilesystemOperation(
                         type=FilesystemOperation.TYPE_DELETE,
-                        source_abs=path.abspath(
+                        source_abs=None,
+                        destination_abs=path.abspath(
                             path.join(self.to_path, item.file),
                         ),
-                        destination_abs=None,
                     )
                 )
                 self.index.remove(item)
