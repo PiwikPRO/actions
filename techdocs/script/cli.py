@@ -32,6 +32,7 @@ if __name__ == "__main__":
             with FileIndexLoader.loaded(
                 os.path.join(args.to_path, INDEX_DIRECTORY), fs, not args.dry_run
             ) as index:
+                print(f"FROM:'{args.from_path}', TO:'{args.to_path}'")
                 Copier(
                     UnnecessaryOperationsFilteringDetector(
                         DeleteDetector(
