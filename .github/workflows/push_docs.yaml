@@ -228,7 +228,7 @@ jobs:
           private-key: ${{ secrets.TECH_DOCS_AGENT_PRIVATE_KEY }}
           app-id: ${{ secrets.TECH_DOCS_AGENT_APPLICATION_ID }}
 
-      - name: Check and Update Comment
+      - name: Prepare Pull Request Comment
         uses: actions/github-script@v7
         if: env.COUNT != '0'
         env:
@@ -236,33 +236,33 @@ jobs:
         with:
           github-token: ${{ steps.get-tech-docs-agent-token.outputs.token }}
           script: |
+            const botName = "piwik-pro-tech-docs-agent[bot]"
             const diffCount = process.env.COUNT;
             const issue_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const description = `
-            This PR contains changes to the documentation.
+              This PR contains changes to the documentation.
+  
+              * [Preview](https://docs.cldsrv.biz/${{ env.TECH_DOCS_HEAD_BRANCH }}/) (available after it's built, requires VPN)
+              * If there are any issues with the preview, please check the [Tech-docs build logs](https://github.com/PiwikPRO/Tech-docs/actions/workflows/deploy.yaml)
+  
+              Docs affected by this PR:
+  
+              ${{ steps.dry-run.outputs.changes }}
+              `
             
-            * [Preview](https://docs.cldsrv.biz/${{ env.TECH_DOCS_HEAD_BRANCH }}/) (available after it's built, requires VPN)
-            * If there are any issues with the preview, please check the [Tech-docs build logs](https://github.com/PiwikPRO/Tech-docs/actions/workflows/deploy.yaml)
-            
-            Docs affected by this PR:
-            
-            ${{ steps.dry-run.outputs.changes }}
-            `
-
             const comments = await github.rest.issues.listComments({
               owner,
               repo,
               issue_number,
             });
-
-            // Filter for comments made by github-actions[bot]
-            let techDocsComment = comments.data.find(comment => comment.user.login === 'unknown[bot]');
-
+            
+            // Filter for comments made by tech docs agent
+            let techDocsComment = comments.data.find(comment => comment.user.login === botName);
+            
             if (techDocsComment) {
               if (diffCount === 0) {
-                // Delete the existing comment
                 await github.rest.issues.deleteComment({
                   owner,
                   repo,
@@ -270,7 +270,6 @@ jobs:
                 });
                 console.log('Deleted the comment.');
               } else {
-                // Update the existing comment
                 await github.rest.issues.updateComment({
                   owner,
                   repo,
@@ -280,7 +279,6 @@ jobs:
                 console.log('Updated the comment.');
               }
             } else {
-              // Create a new comment
               await github.rest.issues.createComment({
                 owner,
                 repo,
