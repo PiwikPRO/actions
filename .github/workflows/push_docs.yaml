@@ -222,8 +222,32 @@ jobs:
           echo "COUNT=$COUNT" >> $GITHUB_ENV
           echo "Changed files count: $COUNT"
 
+      - name: Check for Tech Docs Agent Comment
+        id: check-bot-comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const botName = "piwik-pro-tech-docs-agent[bot]"
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+            
+            let techDocsComment = comments.data.find(comment => comment.user.login === botName);
+            
+            core.setOutput("techDocsCommentId", "");
+            if (techDocsComment) {
+              core.setOutput("techDocsCommentId", techDocsComment.id);   
+            }
+
       - uses: PiwikPRO/actions/github-app-token-generator@master
-        if: env.COUNT != '0'  # FIXME we need to check if there is a comment earlier before using that statement
+        if: env.COUNT != '0' || (env.COUNT == '0' && steps.check-bot-comment.outputs.techDocsCommentId != '')
         id: get-tech-docs-agent-token
         with:
           private-key: ${{ secrets.TECH_DOCS_AGENT_PRIVATE_KEY }}
@@ -231,25 +255,27 @@ jobs:
 
       - name: Prepare Pull Request Comment
         uses: actions/github-script@v7
-        if: env.COUNT != '0'
+        if: env.COUNT != '0' || (env.COUNT == '0' && steps.check-bot-comment.outputs.techDocsCommentId != '')
         env:
           COUNT: ${{ env.COUNT }}
+          TECH_DOCS_COMMENT_ID: ${{ steps.check-bot-comment.outputs.techDocsCommentId }}
         with:
           github-token: ${{ steps.get-tech-docs-agent-token.outputs.token }}
           script: |
             const botName = "piwik-pro-tech-docs-agent[bot]"
+            const techDocsCommentId = process.env.TECH_DOCS_COMMENT_ID 
             const diffCount = process.env.COUNT;
             const issue_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const description = `
               This PR contains changes to the documentation.
-  
+            
               * [Preview](https://docs.cldsrv.biz/${{ env.TECH_DOCS_HEAD_BRANCH }}/) (available after it's built, requires VPN)
               * If there are any issues with the preview, please check the [Tech-docs build logs](https://github.com/PiwikPRO/Tech-docs/actions/workflows/deploy.yaml)
-  
+            
               Docs affected by this PR:
-  
+            
               ${{ steps.dry-run.outputs.changes }}
               `
             
@@ -259,10 +285,7 @@ jobs:
               issue_number,
             });
             
-            // Filter for comments made by tech docs agent
-            let techDocsComment = comments.data.find(comment => comment.user.login === botName);
-            
-            if (techDocsComment) {
+            if (techDocsCommentId != "") {
               if (diffCount === 0) {
                 await github.rest.issues.deleteComment({
                   owner,
