@@ -231,10 +231,12 @@ jobs:
       - name: Check and Update Comment
         uses: actions/github-script@v7
         if: env.COUNT != '0'
+        env:
+          COUNT: ${{ env.COUNT }}
         with:
           github-token: ${{ steps.get-tech-docs-agent-token.outputs.token }}
           script: |
-            const diffCount = {{ env.COUNT }}
+            const diffCount = process.env.COUNT;
             const issue_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
