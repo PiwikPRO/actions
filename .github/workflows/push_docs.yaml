@@ -256,7 +256,7 @@ jobs:
             });
 
             // Filter for comments made by github-actions[bot]
-            let techDocsComment = comments.data.find(comment => comment.user.login === 'github-actions[bot]');
+            let techDocsComment = comments.data.find(comment => comment.user.login === 'unknown[bot]');
 
             if (techDocsComment) {
               if (diffCount === 0) {
