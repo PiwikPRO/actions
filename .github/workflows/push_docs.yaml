@@ -264,7 +264,7 @@ jobs:
           script: |
             const botName = "piwik-pro-tech-docs-agent[bot]"
             const techDocsCommentId = process.env.TECH_DOCS_COMMENT_ID 
-            const diffCount = process.env.COUNT;
+            const diffCount = parseInt(process.env.COUNT);
             const issue_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -286,7 +286,7 @@ jobs:
             });
             
             if (techDocsCommentId != "") {
-              if (diffCount === "0") {
+              if (diffCount === 0) {
                 await github.rest.issues.deleteComment({
                   owner,
                   repo,
