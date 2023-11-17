@@ -21,19 +21,20 @@ outputs:
 runs:
   using: 'composite'
   steps:
-   
+
     - name: Create config
       shell: bash
       run: |
         echo $CONFIG > /tmp/config.json
       env:
         CONFIG: ${{ inputs.config }}
-        
+
     - name: Dry run
       id: dry-run
       shell: bash
       run: |
         python ${{ github.action_path }}/script/cli.py copy --from ${{ inputs.from }} --to ${{ inputs.to }} --index ${{ inputs.index }} --config /tmp/config.json --dry-run > /tmp/out.log
+        cat /tmp/out.log
         echo "count=$(cat /tmp/out.log | wc -l)" >> $GITHUB_OUTPUT
 
         echo "changes<<EOF" >> $GITHUB_OUTPUT
