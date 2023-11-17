@@ -108,6 +108,7 @@ jobs:
 
       - name: Run Copy Script
         uses: PiwikPRO/actions/techdocs@master
+        id: copy
         if: env.CHANGES != '0'
         with:
           from: .
