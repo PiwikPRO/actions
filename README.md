@@ -523,7 +523,7 @@ Workflow for pushing local documentation of any Piwik PRO repository to central 
 
 ```yaml
 name: Documentation
-on: [push]
+on: [push, pull_request]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -546,6 +546,7 @@ jobs:
             }
           ]
         }
+
 ```
 
 and adjust the config, so it matches the files you'd like to push. Each entry in `documents` has the following keys:

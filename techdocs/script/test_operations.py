@@ -188,8 +188,8 @@ def test_delete():
     assert operations[0].source_abs == "/tmp/Promil/a-file"
     assert operations[0].destination_abs == "/tmp/dst/a-file"
     assert operations[1].type == FilesystemOperation.TYPE_DELETE
-    assert operations[1].source_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
-    assert operations[1].destination_abs is None
+    assert operations[1].destination_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
+    assert operations[1].source_abs is None
     assert index.items == (FileIndexItem("a-file", "Promil"),)
     assert index.removed == (FileIndexItem("a-file-that-does-not-exist-anymore", "Promil"),)
 
@@ -211,8 +211,8 @@ def test_filtering():
                     type=FilesystemOperation.TYPE_COPY,
                 ),
                 FilesystemOperation(
-                    source_abs="/tmp/dst/a-file-that-does-not-exist-anymore",
-                    destination_abs=None,
+                    source_abs=None,
+                    destination_abs="/tmp/dst/a-file-that-does-not-exist-anymore",
                     type=FilesystemOperation.TYPE_DELETE,
                 ),
             ]
@@ -224,5 +224,5 @@ def test_filtering():
 
     assert len(operations) == 1
     assert operations[0].type == FilesystemOperation.TYPE_DELETE
-    assert operations[0].source_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
-    assert operations[0].destination_abs is None
+    assert operations[0].source_abs is None
+    assert operations[0].destination_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
