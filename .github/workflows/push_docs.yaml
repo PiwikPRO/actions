@@ -75,7 +75,7 @@ jobs:
 
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
-        uses: PiwikPRO/actions/techdocs@arch-256-add-comment-with-tech-docs-update
+        uses: PiwikPRO/actions/techdocs@master
         if: ${{ github.ref_name == env.MAIN_BRANCH || env.BRANCH_EXISTS == 'true' }}
         with:
           from: .
@@ -107,7 +107,7 @@ jobs:
           echo "CHANGES=1" >> $GITHUB_ENV
 
       - name: Run Copy Script
-        uses: PiwikPRO/actions/techdocs@arch-256-add-comment-with-tech-docs-update
+        uses: PiwikPRO/actions/techdocs@master
         id: copy
         if: env.CHANGES != '0'
         with:
