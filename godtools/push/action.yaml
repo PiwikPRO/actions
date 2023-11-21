@@ -46,11 +46,11 @@ runs:
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
 
     - name: Download image signing toolkit (cosign)
-      if: startsWith(github.ref, 'refs/tags') && "${{ inputs.skip-signing }}" != "true"
+      if: ${{ startsWith(github.ref, 'refs/tags') && inputs.skip-signing != 'true' }}
       uses: PiwikPRO/actions/cosign/download@85b53606f434c343f5b885839b188a7376d38d12
 
     - name: Sign production docker image
-      if: startsWith(github.ref, 'refs/tags') && "${{ inputs.skip-signing }}" != "true"
+      if: ${{ startsWith(github.ref, 'refs/tags') && inputs.skip-signing != 'true' }}
       shell: bash
       run: |
         godtools docker sign --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ github.ref_name }}
