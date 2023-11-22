@@ -1,15 +1,16 @@
 import os
 import sys
+from pathlib import Path
 
 
 class Copier:
-    def __init__(self, detector, filesystem, executor=None) -> None:
+    def __init__(self, operations, filesystem, executor=None) -> None:
         self.filesystem = filesystem
-        self.detector = detector
+        self.operations = operations
         self.executor = executor or Executor(filesystem)
 
     def execute(self):
-        operations = self.detector.detect(self.filesystem)
+        operations = self.operations
         if len(operations) == 0:
             print("Nothing to do", file=sys.stderr)
             return
@@ -18,40 +19,40 @@ class Copier:
 
 
 class Executor:
-    def __init__(self, filesystem):
+    def __init__(self, filesystem, formatter=None):
+        self.formatter = formatter or SimpleFormatter()
         self.filesystem = filesystem
 
     def execute(self, operation):
-        print(operation)
-        if operation.type == operation.TYPE_COPY:
-            self.filesystem.copy(operation.source_abs, operation.destination_abs)
-        elif operation.type == operation.TYPE_DELETE:
-            self.filesystem.delete(operation.destination_abs)
+        print(operation.mkd(self.formatter))
+        operation.execute(self.filesystem)
 
 
 class PrintingExecutor:
-    def __init__(self, formatter=None) -> None:
+    def __init__(self, formatter=None):
         self.formatter = formatter or SimpleFormatter()
 
     def execute(self, operation):
-        print(self.formatter.format(operation))
+        print(operation.mkd(self.formatter))
 
 
 class SimpleFormatter:
-    def format(self, operation):
-        return str(operation)
+    def format(self, path):
+        return str(path)
 
 
-class RelativeMarkdownListFormatter:
-    def __init__(self, from_root, to_root) -> None:
-        self.from_root = from_root
-        self.to_root = to_root
+def is_subpath(path, potential_subpath):
+    path = Path(path).resolve()
+    potential_subpath = Path(potential_subpath).resolve()
+    return potential_subpath in path.parents
 
-    def format(self, operation):
-        if operation.type == operation.TYPE_DELETE:
-            return f"* [DELETE] {os.path.relpath(operation.destination_abs, self.to_root)}"
-        elif operation.type == operation.TYPE_COPY:
-            return (f"* [COPY] {os.path.relpath(operation.source_abs, self.from_root)} -> "
-                    f"{os.path.relpath(operation.destination_abs, self.to_root)}")
 
-        return ""
+class RelativeFormatter:
+    def __init__(self, *possible_parents):
+        self.parents = possible_parents
+
+    def format(self, path):
+        for parent in self.parents:
+            if is_subpath(path, parent):
+                return str(os.path.relpath(path, parent))
+        return str(path)

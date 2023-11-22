@@ -3,8 +3,8 @@ import json
 import pytest
 from config import ConfigLoader
 from copier import Copier
+from detectors import CopyDetector, OperationDetectorChain
 from filesystem import MockFilesystem
-from operations import CopyDetector
 
 
 @pytest.fixture
@@ -54,13 +54,15 @@ def filesystem():
 
 def test_copier(filesystem):
     copier = Copier(
-        CopyDetector(
-            "/tmp/foo",
-            "/tmp/bar",
-            ConfigLoader.default("/tmp/foo", "/tmp/bar", filesystem).load(
-                "/tmp/techdocs/config.json"
-            ),
-        ),
+        OperationDetectorChain(
+            CopyDetector(
+                "/tmp/foo",
+                "/tmp/bar",
+                ConfigLoader.default("/tmp/foo", "/tmp/bar", filesystem).load(
+                    "/tmp/techdocs/config.json"
+                ),
+            )
+        ).operations(filesystem),
         filesystem,
     )
 
