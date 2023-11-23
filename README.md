@@ -571,7 +571,7 @@ jobs:
 
 If you'd like to push some content that should be generated based on your repository, you can prepare a build 
 artifact before tech docs workflow and pass it as argument to tech docs workflow. 
-This artifact will be available as `source` in `.techdocs-artifact` directory. 
+You can refer to this artifact in `source` through `.techdocs-artifact` directory. 
 
 Example:
 ```yaml 
