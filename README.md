@@ -577,8 +577,10 @@ Example:
 ```yaml 
 jobs:
   prepare-crds:
-    # Some steps to build artifact contents
     steps:
+      # ...
+      # Some steps to build artifact contents
+      # ...
       - name: Prepare artifact
         uses: actions/upload-artifact@v3
         with:
