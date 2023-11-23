@@ -567,5 +567,37 @@ jobs:
     with:
       main_branch: "develop"
       config: ...
+```
 
+If you'd like to push some content that should be generated based on your repository, you can prepare a build 
+artifact before tech docs workflow and pass it as argument to tech docs workflow. 
+This artifact will be available as `source` in `.techdocs-artifact` directory. 
+
+Example:
+```yaml 
+jobs:
+  prepare-crds:
+    # Some steps to build artifact contents
+    steps:
+      - name: Prepare artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: crds
+          path: build/crds
+  push:
+    needs: prepare-crds
+    uses: PiwikPRO/actions/.github/workflows/push_docs.yaml@master
+    secrets: inherit
+    with:
+      artifact: crds
+      config: |
+        {
+          "documents": [
+            {
+              "source": ".techdocs-artifact/*",
+              "destination": "api/crds/",
+              "project": "promil"
+            }
+          ]
+        }
 ```
