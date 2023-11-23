@@ -4,20 +4,17 @@ import sys
 from unittest.mock import Mock
 
 import pytest
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "."))
-
 from config import Config, ConfigDocumentEntry
-from filesystem import MockFilesystem
-from operations import (
+from detectors import (
     CopyDetector,
     DeleteDetector,
-    FileIndex,
-    FileIndexItem,
-    FileIndexLoader,
-    FilesystemOperation,
+    PlantUMLDiagramsDetector,
     UnnecessaryOperationsFilteringDetector,
+    swap_extension,
 )
+from filesystem import MockFilesystem
+from index import FileIndex, FileIndexItem, FileIndexLoader
+from operations import CopyOperation, DeleteOperation
 
 
 def test_copy():
@@ -36,16 +33,16 @@ def test_copy():
         Config([ConfigDocumentEntry("promil", "docs/*", ".", [])]),
     )
 
-    operations = detector.detect(fs)
+    operations = detector.detect(fs, [])
 
     assert len(operations) == 3
-    assert operations[0].type == FilesystemOperation.TYPE_COPY
+    assert operations[0].name() == "copy"
     assert operations[0].source_abs == "/tmp/Promil/docs/README.md"
     assert operations[0].destination_abs == "/tmp/dst/docs/promil/README.md"
-    assert operations[1].type == FilesystemOperation.TYPE_COPY
+    assert operations[1].name() == "copy"
     assert operations[1].source_abs == "/tmp/Promil/docs/inner/setup.md"
     assert operations[1].destination_abs == "/tmp/dst/docs/promil/inner/setup.md"
-    assert operations[2].type == FilesystemOperation.TYPE_COPY
+    assert operations[2].name() == "copy"
     assert operations[2].source_abs == "/tmp/Promil/docs/inner/maintenance.md"
     assert operations[2].destination_abs == "/tmp/dst/docs/promil/inner/maintenance.md"
 
@@ -157,17 +154,6 @@ def test_delete():
             "/tmp/dst/a-file-that-does-not-exist-anymore": "blabla",
         }
     )
-    mock_detector = Mock(
-        detect=Mock(
-            return_value=[
-                FilesystemOperation(
-                    source_abs="/tmp/Promil/a-file",
-                    destination_abs="/tmp/dst/a-file",
-                    type=FilesystemOperation.TYPE_COPY,
-                )
-            ]
-        )
-    )
     index = FileIndex(
         (
             FileIndexItem("a-file", "Promil"),
@@ -179,17 +165,24 @@ def test_delete():
         index,
         "/tmp/Promil",
         "/tmp/dst",
-        mock_detector,
     )
 
-    operations = detector.detect(fs)
+    operations = detector.detect(
+        fs,
+        [
+            CopyOperation(
+                source_abs="/tmp/Promil/a-file",
+                destination_abs="/tmp/dst/a-file",
+            )
+        ],
+    )
 
-    assert operations[0].type == FilesystemOperation.TYPE_COPY
+    assert operations[0].name() == "copy"
     assert operations[0].source_abs == "/tmp/Promil/a-file"
     assert operations[0].destination_abs == "/tmp/dst/a-file"
-    assert operations[1].type == FilesystemOperation.TYPE_DELETE
+    assert operations[1].name() == "delete"
+
     assert operations[1].destination_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
-    assert operations[1].source_abs is None
     assert index.items == (FileIndexItem("a-file", "Promil"),)
     assert index.removed == (FileIndexItem("a-file-that-does-not-exist-anymore", "Promil"),)
 
@@ -202,27 +195,71 @@ def test_filtering():
             "/tmp/dst/a-file-that-does-not-exist-anymore": "blabla",
         }
     )
-    mock_detector = Mock(
-        detect=Mock(
-            return_value=[
-                FilesystemOperation(
-                    source_abs="/tmp/Promil/a-file",
-                    destination_abs="/tmp/dst/a-file",
-                    type=FilesystemOperation.TYPE_COPY,
-                ),
-                FilesystemOperation(
-                    source_abs=None,
-                    destination_abs="/tmp/dst/a-file-that-does-not-exist-anymore",
-                    type=FilesystemOperation.TYPE_DELETE,
-                ),
-            ]
-        )
-    )
-    detector = UnnecessaryOperationsFilteringDetector(mock_detector)
+    detector = UnnecessaryOperationsFilteringDetector()
 
-    operations = detector.detect(fs)
+    operations = detector.detect(
+        fs,
+        [
+            CopyOperation(
+                source_abs="/tmp/Promil/a-file",
+                destination_abs="/tmp/dst/a-file",
+            ),
+            DeleteOperation(
+                destination_abs="/tmp/dst/a-file-that-does-not-exist-anymore",
+            ),
+        ],
+    )
 
     assert len(operations) == 1
-    assert operations[0].type == FilesystemOperation.TYPE_DELETE
-    assert operations[0].source_abs is None
+    assert operations[0].name() == "delete"
     assert operations[0].destination_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
+
+
+def test_plantuml():
+    # given
+    fs = MockFilesystem(
+        {
+            "/tmp/Promil/a-file.puml": "a-file-content",
+            "/tmp/Promil/b-file": "b-file-content",
+        }
+    )
+    detector = PlantUMLDiagramsDetector(
+        generator=Mock(
+            generate=Mock(
+                return_value="<xml><svg foo=bar>diagram</svg></xml>",
+            )
+        )
+    )
+
+    # when
+    operations = detector.detect(
+        fs,
+        [
+            CopyOperation(
+                source_abs="/tmp/Promil/a-file.puml",
+                destination_abs="/tmp/dst/a-file.puml",
+            ),
+            CopyOperation(
+                source_abs="/tmp/Promil/b-file",
+                destination_abs="/tmp/dst/b-file",
+            ),
+        ],
+    )
+
+    # then
+    assert len(operations) == 2
+    assert operations[0].name() == "copy"
+    assert operations[1].name() == "plantuml"
+
+    # when
+    operations[1].execute(fs)
+
+    # then
+    assert fs.files["/tmp/dst/a-file.svg"] == (
+        "<xml><!-- @tech-docs-hash=0d0322fb363ceeb229d8"
+        "ee7a9aec490ad5515bea0bf79743ac5898e48fa1737b --><svg foo=bar>diagram</svg></xml>"
+    )
+
+
+def test_swap_extension():
+    assert swap_extension("foo/bar/baz.md", "svg") == "foo/bar/baz.svg"

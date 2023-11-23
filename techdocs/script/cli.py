@@ -3,14 +3,16 @@ import os
 import sys
 
 from config import ConfigError, ConfigLoader
-from copier import Copier, Executor, PrintingExecutor, RelativeMarkdownListFormatter
-from filesystem import Filesystem
-from operations import (
+from copier import Copier, Executor, PrintingExecutor, RelativeFormatter
+from detectors import (
     CopyDetector,
     DeleteDetector,
-    FileIndexLoader,
+    OperationDetectorChain,
+    PlantUMLDiagramsDetector,
     UnnecessaryOperationsFilteringDetector,
 )
+from filesystem import Filesystem
+from index import FileIndexLoader
 
 INDEX_DIRECTORY = ".index"
 
@@ -32,26 +34,24 @@ if __name__ == "__main__":
             with FileIndexLoader.loaded(
                 os.path.join(args.to_path, INDEX_DIRECTORY), fs, not args.dry_run
             ) as index:
+                config = ConfigLoader.default(args.from_path, args.to_path, fs).load(
+                    args.config_path
+                )
                 Copier(
-                    UnnecessaryOperationsFilteringDetector(
-                        DeleteDetector(
-                            args.index,
-                            index,
+                    OperationDetectorChain(
+                        CopyDetector(
                             args.from_path,
                             args.to_path,
-                            CopyDetector(
-                                args.from_path,
-                                args.to_path,
-                                ConfigLoader.default(args.from_path, args.to_path, fs).load(
-                                    args.config_path
-                                ),
-                            ),
-                        )
-                    ),
+                            config,
+                        ),
+                        PlantUMLDiagramsDetector(),
+                        DeleteDetector(args.index, index, args.from_path, args.to_path),
+                        UnnecessaryOperationsFilteringDetector(),
+                    ).operations(fs),
                     fs,
-                    PrintingExecutor(RelativeMarkdownListFormatter(args.from_path, args.to_path))
+                    PrintingExecutor(formatter=RelativeFormatter(args.to_path, args.from_path))
                     if args.dry_run
-                    else Executor(fs),
+                    else Executor(fs, formatter=RelativeFormatter(args.to_path, args.from_path)),
                 ).execute()
         except ConfigError as e:
             print(f"Config file load error: {e}")
