@@ -181,6 +181,9 @@ steps:
       godtools-key: ${{ secrets.GODTOOLS_KEY }}
 ```
 
+Check [optional inputs](https://github.com/PiwikPRO/actions/blob/master/godtools/push/action.yaml#L13) 
+for additional configuration capabilities.
+
 #### Download artifacts
 
 Allows to download artifacts, like EventKeeper's `events`. It requires [setup](#setup) action.
