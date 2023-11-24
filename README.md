@@ -569,8 +569,8 @@ jobs:
       config: ...
 ```
 
-If you'd like to push some content that should be generated based on your repository, you can prepare a build 
-artifact before tech docs workflow and pass it as argument to tech docs workflow. 
+If you'd like to push some content that's not in repository itself, you can prepare a build 
+`artifact` before `push` action and pass it further on. 
 You can refer to this artifact in `source` through `.techdocs-artifact` directory. 
 
 Example:
