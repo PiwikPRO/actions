@@ -2,6 +2,10 @@ name: 'Tech-docs copier'
 on:
   workflow_call:
     inputs:
+      artifact:
+        required: false
+        type: string
+        default: ""
       config:
         required: true
         type: string
@@ -9,7 +13,6 @@ on:
         default: master
         required: false
         type: string
-
 jobs:
   docs:
     if: github.event_name == 'push'
@@ -24,6 +27,13 @@ jobs:
 
       - name: Check out repository code
         uses: actions/checkout@v3
+
+      - name: Download artifact
+        if: ${{ inputs.artifact != '' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.artifact }}
+          path: .techdocs-artifact
 
       - uses: PiwikPRO/actions/github-app-token-generator@master
         name: Generate token for tech docs pusher
