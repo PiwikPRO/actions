@@ -17,7 +17,7 @@ runs:
     - name: Configure credential helper for docker
       shell: bash
       run: |
-        curl -sL https://github.com/docker/docker-credential-helpers/releases/download/v0.8.0/docker-credential-pass-v0.8.0.linux-amd64 &&
+        curl -sL https://github.com/docker/docker-credential-helpers/releases/download/v0.8.0/docker-credential-pass-v0.8.0.linux-amd64 > docker-credential-pass-v0.8.0.linux-amd64 &&
         chmod +x docker-credential-pass-v0.8.0.linux-amd64 &&
         sudo mv docker-credential-pass-v0.8.0.linux-amd64 /usr/local/bin/docker-credential-pass
     - name: Setup credstore secretservice in docker config
