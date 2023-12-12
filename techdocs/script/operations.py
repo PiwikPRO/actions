@@ -108,7 +108,7 @@ def get_full_puml_content(fs, the_path):
                 lines[i] = get_full_puml_content(
                     fs, os.path.join(os.path.dirname(the_path), line.split(b"!include ")[1].decode())
                 )
-            except FileNotFoundError:
+            except FileNotFoundError: # Let PlantUML handle the error, also we don't need to hack 10 ifs with various import syntaxex here
                 pass
     return b"\n".join(lines)
 
