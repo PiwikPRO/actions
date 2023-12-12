@@ -104,9 +104,12 @@ def get_full_puml_content(fs, the_path):
     lines = content.split(b"\n")
     for i, line in enumerate(lines):
         if line.startswith(b"!include ") and b"http://" not in line and b"https://" not in line:
-            lines[i] = get_full_puml_content(
-                fs, os.path.join(os.path.dirname(the_path), line.split(b"!include ")[1].decode())
-            )
+            try:
+                lines[i] = get_full_puml_content(
+                    fs, os.path.join(os.path.dirname(the_path), line.split(b"!include ")[1].decode())
+                )
+            except FileNotFoundError: # Let PlantUML handle the error, also we don't need to hack 10 ifs with various import syntaxex here
+                pass
     return b"\n".join(lines)
 
 
