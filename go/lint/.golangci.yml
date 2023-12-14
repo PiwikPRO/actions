@@ -11,6 +11,23 @@ linters-settings:
   lll:
     line-length: 120
 
+  depguard:
+    rules:
+      Main:
+        list-mode: lax
+        files:
+        - $all
+        - "!$test"
+        deny:
+          - pkg: reflect
+            desc: Please don't use reflect package
+      Test:
+        list-mode: lax
+        files:
+        - $test
+        deny:
+          - pkg: reflect
+            desc: Please don't use reflect package
 
 linters:
   disable-all: true
@@ -29,6 +46,7 @@ linters:
     - gofmt
     - gocognit
     - dupl
+    - depguard
     - whitespace
     - goconst
     - unconvert
