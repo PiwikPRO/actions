@@ -179,7 +179,11 @@ jobs:
         run: |
           LOCAL_BASE_BRANCH=$(echo "${{ github.base_ref }}" | sed 's/refs\/heads\///')
           LOCAL_HEAD_BRANCH=$(echo "${{ github.head_ref }}" | sed 's/refs\/heads\///')
-          TECH_DOCS_BASE_BRANCH=$(echo '${{ github.repository }}-'$LOCAL_BASE_BRANCH | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+          if [[ "$LOCAL_BASE_BRANCH" == "$MAIN_BRANCH" ]]; then
+            TECH_DOCS_BASE_BRANCH=master
+          else
+            TECH_DOCS_BASE_BRANCH=$(echo '${{ github.repository }}-'$LOCAL_BASE_BRANCH | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+          fi
           TECH_DOCS_HEAD_BRANCH=$(echo '${{ github.repository }}-'$LOCAL_HEAD_BRANCH | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
           echo "TECH_DOCS_BASE_BRANCH=$TECH_DOCS_BASE_BRANCH" >> $GITHUB_ENV
           echo "TECH_DOCS_HEAD_BRANCH=$TECH_DOCS_HEAD_BRANCH" >> $GITHUB_ENV

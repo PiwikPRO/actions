@@ -4,12 +4,12 @@ inputs:
   go-version:
     required: false
     description: Version of go
-    default: "1.20.x"
+    default: "1.21.x"
   
   golangci-lint-version:
     required: false
     description: Version of golangci-lint
-    default: "v1.53.2"
+    default: "v1.55.2"
   golangci-lint-concurrency:
     required: false
     description: Concurrency for golangci-lint
@@ -68,17 +68,17 @@ runs:
 
     - name: Run linters
       if: ${{ inputs.inclint == 'false' }}
-      # golangci-lint-action: 3.2.0 (commit of tag used instead of tag to avoid tag overwrite)
-      uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc
+      # golangci-lint-action: 3.7.0 (commit of tag used instead of tag to avoid tag overwrite)
+      uses: golangci/golangci-lint-action@50372b65180371af8e5c72351e6cdd29a34ea08a
       with:
         version: ${{ inputs.golangci-lint-version }}
         # Extended timeout to ensure all the linters are installed before it hits
-        args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --timeout=${{ inputs.golangci-lint-timeout }}
+        args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
 
     - name: Run linters (with incremental improvements)
       if: ${{ inputs.inclint == 'true' }}
-      # golangci-lint-action: 3.2.0 (commit of tag used instead of tag to avoid tag overwrite)
-      uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc
+      # golangci-lint-action: 3.7.0 (commit of tag used instead of tag to avoid tag overwrite)
+      uses: golangci/golangci-lint-action@50372b65180371af8e5c72351e6cdd29a34ea08a
       with:
         version: ${{ inputs.golangci-lint-version }}
         args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
