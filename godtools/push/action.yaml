@@ -28,7 +28,7 @@ inputs:
     description: Push `image:develop` from branch `develop` to the registry
   skip-signing:
     required: false
-    default: "false"
+    default: "true"
     description: Don't sign pushed images.
 runs:
   using: "composite"
