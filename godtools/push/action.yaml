@@ -28,7 +28,7 @@ inputs:
     description: Push `image:develop` from branch `develop` to the registry
   skip-signing:
     required: false
-    default: "true"
+    default: "true" # TODO: change to "false" to enable signing globally later on
     description: Don't sign pushed images.
 runs:
   using: "composite"
