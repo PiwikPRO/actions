@@ -26,6 +26,10 @@ inputs:
     required: false
     default: "false"
     description: Push `image:develop` from branch `develop` to the registry
+  skip-signing:
+    required: false
+    default: "true" # TODO: change to "false" to enable signing globally later on
+    description: Don't sign pushed images.
 runs:
   using: "composite"
   steps:
@@ -59,3 +63,15 @@ runs:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
 
+    - name: Download image signing toolkit (cosign)
+      if: ${{ startsWith(github.ref, 'refs/tags') && inputs.skip-signing != 'true' }}
+      uses: PiwikPRO/actions/cosign/download@85b53606f434c343f5b885839b188a7376d38d12
+
+    - name: Sign production docker image
+      if: ${{ startsWith(github.ref, 'refs/tags') && inputs.skip-signing != 'true' }}
+      shell: bash
+      run: |
+        godtools docker sign --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ github.ref_name }}
+      env:
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
