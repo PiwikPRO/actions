@@ -147,7 +147,7 @@ jobs:
           cd Tech-docs
           sed -i "s#baseUrl: '\/'#baseUrl: '\/${{ env.TECH_DOCS_BRANCH }}'#" docusaurus.config.js
           mkdir -p build
-          ./local-dev --build-only
+          ./local-dev --build-only ..
 
       - name: Upload the site to artifactory
         if: env.CHANGES != '0' && github.ref_name != env.MAIN_BRANCH
