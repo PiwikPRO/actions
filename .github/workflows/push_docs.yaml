@@ -112,7 +112,7 @@ jobs:
         run: |
           cd Tech-docs
           git fetch
-          git checkout arch-312-tech-docs-insufficient-feedback
+          git checkout master
           git branch -d $TECH_DOCS_BRANCH
           git checkout -b $TECH_DOCS_BRANCH
 
