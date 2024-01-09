@@ -21,13 +21,6 @@ linters-settings:
         deny:
           - pkg: reflect
             desc: Please don't use reflect package
-      Test:
-        list-mode: lax
-        files:
-        - $test
-        deny:
-          - pkg: reflect
-            desc: Please don't use reflect package
 
 linters:
   disable-all: true
