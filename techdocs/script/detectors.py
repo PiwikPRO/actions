@@ -4,9 +4,10 @@ from os import path
 
 import nodes
 from config import Config, ProjectDetailsReader
-from index import FileIndex, FileIndexItem
+from index import FileIndexItem
 from operations import (
-    CopyOperation,
+    GenericFileCopyOperation,
+    YAMLPrefaceEnrichingCopyOperation,
     DeleteOperation,
     DockerPlantUMLGenerator,
     PlantUMLDiagramRenderOperation,
@@ -14,7 +15,7 @@ from operations import (
 
 
 class CopyDetector:
-    def __init__(self, from_path: str, to_path: str, config: Config) -> None:
+    def __init__(self, from_path: str, to_path: str, author: str, branch: str, config: Config) -> None:
         self.copy_rules = [
             Rule(
                 document_rule,
@@ -25,6 +26,8 @@ class CopyDetector:
         ]
         self.from_path = from_path
         self.to_path = to_path
+        self.author = author
+        self.branch = branch
 
     def detect(self, fs, previous_operations):
         return [
@@ -59,7 +62,7 @@ class CopyDetector:
             )
         else:
             return None
-        return CopyOperation(
+        kwargs = dict(
             source_abs=path.abspath(path.join(self.from_path, relative_src)),
             destination_abs=path.abspath(
                 path.join(
@@ -69,6 +72,16 @@ class CopyDetector:
                 ),
             ),
         )
+        if any([relative_src.endswith(suffix) for suffix in [".md", ".MD", ".mdx", ".MDX"]]):
+            return YAMLPrefaceEnrichingCopyOperation(
+                **dict(
+                    **kwargs,
+                    from_abs=self.from_path,
+                    author=self.author,
+                    branch=self.branch
+                )
+            )
+        return GenericFileCopyOperation(**kwargs)
 
 
 class DefaultMatcher:

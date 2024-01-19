@@ -97,6 +97,8 @@ jobs:
           from: .
           to: Tech-docs
           index: ${{ github.repository }}
+          author: ${{ github.event.pusher.name }}
+          branch: ${{ github.ref_name }}
           dry-run: true
           config: ${{ inputs.config }}
 
@@ -131,6 +133,8 @@ jobs:
           from: .
           to: Tech-docs
           index: ${{ github.repository }}
+          author: ${{ github.event.pusher.name }}
+          branch: ${{ github.ref_name }}
           dry-run: false
           config: ${{ inputs.config }}
 

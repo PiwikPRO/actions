@@ -26,6 +26,8 @@ if __name__ == "__main__":
     parser.add_argument("--from", dest="from_path", required=True)
     parser.add_argument("--to", dest="to_path", required=True)
     parser.add_argument("--config", dest="config_path", required=True)
+    parser.add_argument("--branch", dest="branch", default="master")
+    parser.add_argument("--author", dest="author", default="unknown author")
     parser.add_argument("--dry-run", dest="dry_run", action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
@@ -42,6 +44,8 @@ if __name__ == "__main__":
                         CopyDetector(
                             args.from_path,
                             args.to_path,
+                            args.author,
+                            args.branch,
                             config,
                         ),
                         PlantUMLDiagramsDetector(),
