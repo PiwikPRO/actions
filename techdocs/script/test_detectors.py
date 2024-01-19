@@ -1,6 +1,4 @@
 import json
-import os
-import sys
 from unittest.mock import Mock
 
 import pytest
@@ -14,7 +12,7 @@ from detectors import (
 )
 from filesystem import MockFilesystem
 from index import FileIndex, FileIndexItem, FileIndexLoader
-from operations import CopyOperation, DeleteOperation
+from operations import GenericFileCopyOperation, DeleteOperation
 
 
 def test_copy():
@@ -30,6 +28,8 @@ def test_copy():
     detector = CopyDetector(
         "/tmp/Promil",
         "/tmp/dst",
+        "Γιώργος Σεφέρης",
+        "master",
         Config([ConfigDocumentEntry("promil", "docs/*", ".", [])]),
     )
 
@@ -77,7 +77,7 @@ def test_copy():
 def test_copy_create_operation_variants(
     file, rule_source, rule_destination, expected_source, expected_destination
 ):
-    detector = CopyDetector("/home/foobar", "/tmp/Tech-docs", Config([]))
+    detector = CopyDetector("/home/foobar", "/tmp/Tech-docs", "Οδυσσέας Ελύτης", "master", Config([]))
     copy_operation = detector._create_operation(
         MockFilesystem(
             {"/tmp/Tech-docs/projects.json": json.dumps({"promil": {"path": "docs/promil"}})}
@@ -170,7 +170,7 @@ def test_delete():
     operations = detector.detect(
         fs,
         [
-            CopyOperation(
+            GenericFileCopyOperation(
                 source_abs="/tmp/Promil/a-file",
                 destination_abs="/tmp/dst/a-file",
             )
@@ -200,7 +200,7 @@ def test_filtering():
     operations = detector.detect(
         fs,
         [
-            CopyOperation(
+            GenericFileCopyOperation(
                 source_abs="/tmp/Promil/a-file",
                 destination_abs="/tmp/dst/a-file",
             ),
@@ -235,11 +235,11 @@ def test_plantuml():
     operations = detector.detect(
         fs,
         [
-            CopyOperation(
+            GenericFileCopyOperation(
                 source_abs="/tmp/Promil/a-file.puml",
                 destination_abs="/tmp/dst/a-file.puml",
             ),
-            CopyOperation(
+            GenericFileCopyOperation(
                 source_abs="/tmp/Promil/b-file",
                 destination_abs="/tmp/dst/b-file",
             ),

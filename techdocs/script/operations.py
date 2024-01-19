@@ -2,10 +2,18 @@ import os
 import shutil
 import subprocess
 import tempfile
-from hashlib import sha256
+
+from frontmatter import (
+    FrontmatterEnricher,
+    custom_edit_url,
+    get_source_frontmatter_hash,
+    last_update,
+    source_frontmatter_hash,
+)
+from hash import hashb
 
 
-class CopyOperation:
+class GenericFileCopyOperation:
     def __init__(self, source_abs, destination_abs):
         self.source_abs = source_abs
         self.destination_abs = destination_abs
@@ -31,6 +39,76 @@ class CopyOperation:
 
     def mkd(self, path_formatter):
         return f"* [COPY] {path_formatter.format(self.source_abs)} -> {path_formatter.format(self.destination_abs)}"
+
+
+class YAMLPrefaceEnrichingCopyOperation:
+    def __init__(self, source_abs, destination_abs, from_abs, author, branch):
+        self.source_abs = source_abs
+        self.destination_abs = destination_abs
+        self.author = author
+        self.branch = branch
+        self.from_abs = os.path.abspath(from_abs)
+        self.repo = os.path.basename(self.from_abs)
+
+    def name(self):
+        return "copy"
+
+    def execute(self, fs):
+        source_file = fs.read_string(self.source_abs)
+        new_content = FrontmatterEnricher(source_file).enrich(
+            custom_edit_url(
+                self.repo, os.path.relpath(self.source_abs, self.from_abs), self.branch
+            ),
+            last_update(self.author),
+            # save the hash of the source frontmatter, so we can detect changes later
+            source_frontmatter_hash(source_file),
+            lambda *args: "x_tech_docs_enriched: true\n",
+        )
+        fs.write_string(self.destination_abs, new_content)
+
+    def has_changes(self, fs):
+        dest_file = fs.read_string(self.destination_abs) if fs.is_file(self.destination_abs) else ""
+        source_file = fs.read_string(self.source_abs)
+
+        if any(
+            [
+                not fs.is_file(self.destination_abs),
+                file_has_no_frontmatter(fs, dest_file),
+                files_content_ignoring_frontmatter_is_different(fs, source_file, dest_file),
+                source_frontmatter_hash_is_different_than_one_cached_in_destination(
+                    fs, source_file, dest_file
+                ),
+            ]
+        ):
+            return True
+        return False
+
+    def source_files(self):
+        return [self.source_abs]
+
+    def destination_files(self):
+        return [self.destination_abs]
+
+    def mkd(self, path_formatter):
+        return f"* [COPY] {path_formatter.format(self.source_abs)} -> {path_formatter.format(self.destination_abs)}"
+
+
+def file_has_no_frontmatter(fs, file):
+    return "x_tech_docs_enriched: true" not in file
+
+
+def files_content_ignoring_frontmatter_is_different(fs, first_file, second_file):
+    return hashb(FrontmatterEnricher(first_file).strip().encode()) != hashb(
+        FrontmatterEnricher(second_file).strip().encode()
+    )
+
+
+def source_frontmatter_hash_is_different_than_one_cached_in_destination(
+    fs, source_file, destination_file
+):
+    return source_file.startswith("---") and hashb(
+        source_file.split("---\n")[1].encode()
+    ) != get_source_frontmatter_hash(destination_file)
 
 
 class DeleteOperation:
@@ -95,10 +173,6 @@ def header(hash):
     return "<!-- @tech-docs-hash=" + hash + " -->"
 
 
-def hashb(data):
-    return sha256(data).hexdigest()
-
-
 def get_full_puml_content(fs, the_path):
     content = fs.read_bytes(the_path)
     lines = content.split(b"\n")
@@ -106,9 +180,12 @@ def get_full_puml_content(fs, the_path):
         if line.startswith(b"!include ") and b"http://" not in line and b"https://" not in line:
             try:
                 lines[i] = get_full_puml_content(
-                    fs, os.path.join(os.path.dirname(the_path), line.split(b"!include ")[1].decode())
+                    fs,
+                    os.path.join(os.path.dirname(the_path), line.split(b"!include ")[1].decode()),
                 )
-            except FileNotFoundError: # Let PlantUML handle the error, also we don't need to hack 10 ifs with various import syntaxex here
+            except (
+                FileNotFoundError
+            ):  # Let PlantUML handle the error, also we don't need to hack 10 ifs with various import syntaxes here
                 pass
     return b"\n".join(lines)
 

@@ -1,5 +1,11 @@
 name: 'Run Tech-docs copier script. This should not be used directly by end-users, please use the reusable workflow instead.'
 inputs:
+  author:
+    required: false
+    default: unknown
+  branch:
+    required: false
+    default: master
   from:
     required: true
   to:
@@ -33,7 +39,7 @@ runs:
       id: dry-run
       shell: bash
       run: |
-        python ${{ github.action_path }}/script/cli.py copy --from ${{ inputs.from }} --to ${{ inputs.to }} --index ${{ inputs.index }} --config /tmp/config.json --dry-run | tee /tmp/out.log
+        python ${{ github.action_path }}/script/cli.py copy --from ${{ inputs.from }} --to ${{ inputs.to }} --index ${{ inputs.index }} --author ${{ inputs.author }} --branch ${{ inputs.branch }} --config /tmp/config.json --dry-run | tee /tmp/out.log
         
         echo "count=$(cat /tmp/out.log | wc -l)" >> $GITHUB_OUTPUT
 
@@ -46,4 +52,4 @@ runs:
       if: ${{ inputs.dry-run == 'false' }}
       shell: bash
       run: |
-        python ${{ github.action_path }}/script/cli.py copy --from ${{ inputs.from }} --to ${{ inputs.to }} --index ${{ inputs.index }} --config /tmp/config.json
+        python ${{ github.action_path }}/script/cli.py copy --from ${{ inputs.from }} --to ${{ inputs.to }} --index ${{ inputs.index }} --author ${{ inputs.author }} --branch ${{ inputs.branch }} --config /tmp/config.json

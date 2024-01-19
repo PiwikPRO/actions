@@ -1,9 +1,7 @@
 import json
 
 import pytest
-from config import ConfigLoader
-from copier import Copier
-from detectors import CopyDetector, OperationDetectorChain
+
 from filesystem import MockFilesystem
 
 
@@ -51,32 +49,3 @@ def filesystem():
         }
     )
 
-
-def test_copier(filesystem):
-    copier = Copier(
-        OperationDetectorChain(
-            CopyDetector(
-                "/tmp/foo",
-                "/tmp/bar",
-                "Νίκος Καζαντζάκης",
-                "master",
-                ConfigLoader.default("/tmp/foo", "/tmp/bar", filesystem).load(
-                    "/tmp/techdocs/config.json"
-                ),
-            )
-        ).operations(filesystem),
-        filesystem,
-    )
-
-    copier.execute()
-
-    assert filesystem.is_file("/tmp/bar/docs/promil/bla.md")
-    assert filesystem.is_file("/tmp/bar/docs/promil/somedir/one.md")
-    assert filesystem.is_file("/tmp/bar/docs/promil/somedir/two.md")
-    assert filesystem.is_file("/tmp/bar/docs/promil/somedir/inner/other-dir/foo.md")
-    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/first.txt")
-    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/second.txt")
-    assert filesystem.is_file("/tmp/bar/docs/promil/somedir/uno.txt")
-    assert filesystem.is_file("/tmp/bar/docs/promil/somedir/due.txt")
-    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/non-text.md")
-    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/level/due.txt")
