@@ -36,6 +36,7 @@ runs:
       with:
         options: --check --config ${{ github.action_path }}/pyproject.toml
         src: "."
+        version: 23.12.1
     - name: Run flake8 linter
       if: ${{ inputs.use-flake == 'true' }}
       uses: py-actions/flake8@6b71483a8fe60d4cb967d3aa4ee56e5e52711d30
