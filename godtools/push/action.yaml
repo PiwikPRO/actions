@@ -10,6 +10,10 @@ inputs:
   image:
     required: true
     description: Image, that should be pushed to the registry
+  destination-tag:
+    required: false
+    default: ${{ github.ref_name }}
+    description: Image tag, that should be pushed to the registry
   registries:
     required: false
     default: acr
@@ -57,8 +61,8 @@ runs:
       if: startsWith(github.ref, 'refs/tags')
       shell: bash
       run: |
-        [ "${{ inputs.tag-latest }}" = "true" ] && docker tag ${{ inputs.image }} ${{ inputs.image }}:${{ github.ref_name }};
-        godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ github.ref_name }}
+        [ "${{ inputs.tag-latest }}" = "true" ] && docker tag ${{ inputs.image }} ${{ inputs.image }}:${{ inputs.destination-tag }};
+        godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ inputs.destination-tag }}
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
@@ -71,7 +75,7 @@ runs:
       if: ${{ startsWith(github.ref, 'refs/tags') && inputs.skip-signing != 'true' }}
       shell: bash
       run: |
-        godtools docker sign --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ github.ref_name }}
+        godtools docker sign --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ inputs.destination-tag }}
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
