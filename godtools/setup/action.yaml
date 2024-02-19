@@ -22,6 +22,8 @@ runs:
         repo: 'PiwikPRO/godtools'
         file: 'godtools'
         token: ${{ steps.get-token.outputs.token }}
+    - name: Install 1Password CLI
+      uses: 1password/install-cli-action@143a85f84a90555d121cde2ff5872e393a47ab9f
     - name: Setup godtools
       shell: bash
       run: chmod +x godtools && sudo mv -f godtools /usr/bin/godtools && godtools --version
