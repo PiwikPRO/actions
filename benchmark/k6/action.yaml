@@ -1,0 +1,35 @@
+name: "Piwik PRO cosign download"
+description: "Download cosign binary"
+inputs:
+  script:
+    required: true
+    description: "Path to the script, that should be launched"
+  vus:
+    required: false
+    description: "Number of virtual users"
+  duration:
+    required: false
+    description: "Duration of the test, in format like: 10s, 5m, etc"
+runs:
+  using: "composite"
+  steps:
+    - name: Update summary of the script
+      shell: bash
+      run: cat ${{ github.action_path }}/summary.js >> ${{ inputs.script }}
+      
+    - name: Run K6
+      shell: bash
+      run: |
+        command="docker run --network host -u \"$(id -u):$(id -g)\" -v \"${PWD}:/home/k6\" --rm grafana/k6 run"
+        
+        command+=" ${{ inputs.script }}"
+
+        if [ -n "${{ inputs.vus }}" ]; then
+          command+=" --vus ${{ inputs.vus }}"
+        fi
+
+        if [ -n "${{ inputs.duration }}" ]; then
+          command+=" --duration ${{ inputs.duration }}"
+        fi
+
+        eval $command
