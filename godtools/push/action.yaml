@@ -34,10 +34,6 @@ inputs:
     required: false
     default: "true" # TODO: change to "false" to enable signing globally later on
     description: Don't sign pushed images.
-  sign-only-semver:
-    required: false
-    default: "true"
-    description: Sign only semver tags
 runs:
   using: "composite"
   steps:
@@ -83,11 +79,6 @@ runs:
           exit 0
         fi
         
-        if [[ "${{ inputs.sign-only-semver }}" == 'false' ]]; then
-          echo "::set-output name=should_sign::true"
-          exit 0
-        fi 
-
         TAG_NAME=${GITHUB_REF/refs\/tags\//}
         SEMVER_REGEX="^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?(\+([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$"
         if [[ "$TAG_NAME" =~ $SEMVER_REGEX ]]; then
