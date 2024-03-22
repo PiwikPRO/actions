@@ -1,0 +1,20 @@
+name: 'Benchmark summary compiler'
+inputs:
+  path:
+    default: "."
+outputs:
+  report:
+    description: "Compiled report"
+    value: ${{ steps.compile.outputs.report }}
+runs:
+  using: 'composite'
+  steps:
+
+    - name: Prepare the report
+      id: compile
+      shell: bash
+      run: |
+        REPORT=$(python ${{ github.action_path }}/script/cli.py --path ${{ inputs.path }})
+        echo "report<<EOF" >> $GITHUB_OUTPUT
+        echo "${REPORT}" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
