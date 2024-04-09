@@ -14,7 +14,7 @@ on:
         required: false
         type: string
 
-concurrency: 
+concurrency:
   group: "${{ github.ref }}-${{ github.head_ref }}-${{ github.base_ref }}"
   cancel-in-progress: true
 
@@ -144,6 +144,18 @@ jobs:
           CHANGED_FILES=${{ steps.copy.outputs.count }}
           echo "Changed files count: $CHANGED_FILES"
           echo "CHANGES=$CHANGED_FILES" >> $GITHUB_ENV
+
+      - name: Check out actions repo for local-dev
+        uses: actions/checkout@v3
+        with:
+          repository: 'PiwikPRO/actions'
+          token: ${{ steps.get-token.outputs.token }}
+          path: 'actions'
+
+      - name: Move actions repo to /tmp
+        # local-dev script requires actions repo to be in /tmp
+        run: |
+          mv actions /tmp/actions
 
       - name: Build the documentation
         if: env.CHANGES != '0' && github.ref_name != env.MAIN_BRANCH
