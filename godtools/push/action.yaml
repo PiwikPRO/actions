@@ -48,9 +48,7 @@ runs:
         IMAGE_BY_COMMIT=tmp-$(git rev-parse --short HEAD)
         IMAGE_BY_BRANCH=tmp-$(git rev-parse --abbrev-ref HEAD | tr "/" "-" | tr '[:upper:]' '[:lower:]')
         
-        [ "${{ inputs.tag-latest }}" = "true" ] && \
-        docker tag ${{ inputs.image }} ${{ inputs.image }}:$IMAGE_BY_COMMIT && \ 
-        docker tag ${{ inputs.image }} ${{ inputs.image }}:IMAGE_BY_BRANCH;
+        [ "${{ inputs.tag-latest }}" = "true" ] && docker tag ${{ inputs.image }} ${{ inputs.image }}:$IMAGE_BY_COMMIT && docker tag ${{ inputs.image }} ${{ inputs.image }}:IMAGE_BY_BRANCH;
         
         godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:$IMAGE_BY_COMMIT;
         godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:$IMAGE_BY_BRANCH;
