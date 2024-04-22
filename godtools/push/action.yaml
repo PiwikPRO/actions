@@ -29,7 +29,11 @@ inputs:
   push-develop-image:
     required: false
     default: "false"
-    description: Push `image:develop` from branch `develop` to the registry
+    description: Push `image:develop` from branch declared through `push-develop-branch` to the registry
+  push-develop-branch:
+    required: false
+    default: "develop"
+    description: Branch name for `push-develop-image`
   skip-signing:
     required: false
     default: "false"
@@ -48,11 +52,11 @@ runs:
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
 
     - name: Push develop docker image
-      if: ${{ inputs.push-develop-image == 'true' && startsWith(github.ref, 'refs/heads/develop') }}
+      if: ${{ inputs.push-develop-image == 'true' && startsWith(github.ref, format('refs/heads/{0}',inputs.push-develop-branch)) }}
       shell: bash
       run: |
-        [ "${{ inputs.tag-latest }}" = "true" ] && docker tag ${{ inputs.image }} ${{ inputs.image }}:develop;
-        godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:develop
+        [ "${{ inputs.tag-latest }}" = "true" ] && docker tag ${{ inputs.image }} ${{ inputs.image }}:${{ inputs.push-develop-branch }};
+        godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ inputs.push-develop-branch }}
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
