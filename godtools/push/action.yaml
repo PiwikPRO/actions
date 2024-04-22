@@ -52,7 +52,7 @@ runs:
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
 
     - name: Push develop docker image
-      if: ${{ inputs.push-develop-image == 'true' && startsWith(github.ref, 'refs/heads/' + inputs.push-develop-branch) }}
+      if: ${{ inputs.push-develop-image == 'true' && startsWith(github.ref, format('refs/heads/{0}',inputs.push-develop-branch)) }}
       shell: bash
       run: |
         [ "${{ inputs.tag-latest }}" = "true" ] && docker tag ${{ inputs.image }} ${{ inputs.image }}:${{ inputs.push-develop-branch }};
