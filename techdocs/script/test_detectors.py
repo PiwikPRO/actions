@@ -1,4 +1,5 @@
 import json
+from pprint import pprint
 from unittest.mock import Mock
 
 import pytest
@@ -13,6 +14,7 @@ from detectors import (
 from filesystem import MockFilesystem
 from index import FileIndex, FileIndexItem, FileIndexLoader
 from operations import GenericFileCopyOperation, DeleteOperation
+from techdocs.script.detectors import OpenAPIDetector
 
 
 def test_copy():
@@ -50,32 +52,32 @@ def test_copy():
 @pytest.mark.parametrize(
     "file,rule_source,rule_destination,expected_source,expected_destination",
     (
-        (  # if source is a file, destination a directory, copy the file directly into the directory
-            "docs/promil/foo.md",
-            "foo.md",
-            "stacks/Promil-stack-analytics/",
-            "/home/foobar/docs/promil/foo.md",
-            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/foo.md",
-        ),
-        (  # if source is a directory, destination a directory, copy the directory into the directory,
-            # recursively, including the subdirectory structure
-            "docs/promil/bla/huehue/foo.md",
-            "docs/*",
-            "stacks/Promil-stack-analytics/",
-            "/home/foobar/docs/promil/bla/huehue/foo.md",
-            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/promil/bla/huehue/foo.md",
-        ),
-        (  # if source is a file, destination a file, copy the file directly into the file
-            "docs/promil/foo.md",
-            "docs/promil/foo.md",
-            "stacks/Promil-stack-analytics/bar.md",
-            "/home/foobar/docs/promil/foo.md",
-            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/bar.md",
-        ),
+            (  # if source is a file, destination a directory, copy the file directly into the directory
+                    "docs/promil/foo.md",
+                    "foo.md",
+                    "stacks/Promil-stack-analytics/",
+                    "/home/foobar/docs/promil/foo.md",
+                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/foo.md",
+            ),
+            (  # if source is a directory, destination a directory, copy the directory into the directory,
+                    # recursively, including the subdirectory structure
+                    "docs/promil/bla/huehue/foo.md",
+                    "docs/*",
+                    "stacks/Promil-stack-analytics/",
+                    "/home/foobar/docs/promil/bla/huehue/foo.md",
+                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/promil/bla/huehue/foo.md",
+            ),
+            (  # if source is a file, destination a file, copy the file directly into the file
+                    "docs/promil/foo.md",
+                    "docs/promil/foo.md",
+                    "stacks/Promil-stack-analytics/bar.md",
+                    "/home/foobar/docs/promil/foo.md",
+                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/bar.md",
+            ),
     ),
 )
 def test_copy_create_operation_variants(
-    file, rule_source, rule_destination, expected_source, expected_destination
+        file, rule_source, rule_destination, expected_source, expected_destination
 ):
     detector = CopyDetector("/home/foobar", "/tmp/Tech-docs", "Οδυσσέας Ελύτης", "master", Config([]))
     copy_operation = detector._create_operation(
@@ -98,12 +100,13 @@ def test_copy_create_operation_variants(
 def test_index_load():
     fs = MockFilesystem(
         {
-            "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f": json.dumps(
-                {
-                    "file": "heheszek",
-                    "repo": "Promil-platform-foo",
-                }
-            )
+            "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f":
+                json.dumps(
+                    {
+                        "file": "heheszek",
+                        "repo": "Promil-platform-foo",
+                    }
+                )
         }
     )
 
@@ -141,9 +144,9 @@ def test_index_save():
             "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f"
         )
     ) == {
-        "file": "heheszek",
-        "repo": "Promil-platform-foo",
-    }
+               "file": "heheszek",
+               "repo": "Promil-platform-foo",
+           }
 
 
 def test_delete():
@@ -263,3 +266,51 @@ def test_plantuml():
 
 def test_swap_extension():
     assert swap_extension("foo/bar/baz.md", "svg") == "foo/bar/baz.svg"
+
+
+def test_openapi_detector():
+    fs = MockFilesystem(
+        {
+            "/tmp/Promil/api.yaml": """openapi: 3.1.0
+paths: 
+    some-path: path""",
+            "/tmp/Promil/other-file": "a-file-content",
+            "/tmp/Promil/invalid-api.yaml": "openapi: 3.1.0",
+        }
+    )
+    detector = OpenAPIDetector(
+        bundler=Mock(
+            bundle=Mock(
+                return_value="it's me - openapi",
+            )
+        )
+    )
+
+    operations = detector.detect(
+        fs,
+        [
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/api.yaml",
+                destination_abs="/tmp/dst/api.yaml",
+            ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/invalid-api.yaml",
+                destination_abs="/tmp/dst/invalid-api.yaml",
+            ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/other-file",
+                destination_abs="/tmp/dst/other-file",
+            ),
+        ],
+    )
+
+    assert len(operations) == 3
+    assert operations[0].name() == "copy"
+    assert operations[1].name() == "copy"
+    assert operations[2].name() == "openapi"
+
+    # when
+    operations[2].execute(fs)
+
+    # then
+    assert fs.files["/tmp/dst/api.yaml"] == "it's me - openapi"

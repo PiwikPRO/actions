@@ -1,4 +1,6 @@
 import copy
+import io
+import json
 import re
 from os import path
 
@@ -12,6 +14,8 @@ from operations import (
     DockerPlantUMLGenerator,
     PlantUMLDiagramRenderOperation,
 )
+from techdocs.script.filesystem import Filesystem
+from techdocs.script.operations import OpenAPIBundler, OpenAPIOperation
 
 
 class CopyDetector:
@@ -49,7 +53,7 @@ class CopyDetector:
                 path.join(rule.config.destination, path.basename(file)),
             )
         elif nodes.looks_fileish(rule.config.source) and nodes.looks_fileish(
-            rule.config.destination
+                rule.config.destination
         ):
             relative_src, relative_dst = (
                 file,
@@ -58,7 +62,7 @@ class CopyDetector:
         elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
             relative_src, relative_dst = (
                 file,
-                path.join(rule.config.destination, file[len(rule.config.source) - 1 :]),
+                path.join(rule.config.destination, file[len(rule.config.source) - 1:]),
             )
         else:
             return None
@@ -180,3 +184,40 @@ class OperationDetectorChain:
         for detector in self.detectors:
             operations = detector.detect(fs, copy.deepcopy(operations))
         return operations
+
+
+class OpenAPIDetector:
+    def __init__(self, bundler=None):
+        self.bundler = bundler  # FIXME with OpenAPIBundler
+
+    def detect(self, fs: Filesystem, previous_operations):
+        yaml_files = list(
+            filter(
+                lambda op: any([f.endswith(".yaml") or f.endswith(".yml") for f in op.source_files()]),
+                previous_operations,
+            )
+        )
+        openapi_spec_files = []
+        for yaml_file in yaml_files:
+            file = io.StringIO(fs.read_string(yaml_file.source_abs))
+            first_line = file.readline()
+            if first_line.startswith("openapi:"):
+                for line in file:
+                    if line.startswith("paths:"):
+                        openapi_spec_files.append(yaml_file)
+                        break
+
+        # filter out openapi spec files from previous_operations
+        return list(
+            filter(
+                lambda op: op not in openapi_spec_files,
+                previous_operations,
+            )
+        ) + [
+            OpenAPIOperation(
+                openapi_spec.source_abs,
+                openapi_spec.destination_abs,
+                self.bundler,
+            )
+            for openapi_spec in openapi_spec_files
+        ]
