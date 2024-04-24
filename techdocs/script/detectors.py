@@ -232,7 +232,7 @@ class OpenAPIDetector:
     def _prepare_destination(self, source):
         # change destination extension to json
         return path.join(
-            self.to_path, self.api_path, self.repo.lower(), str(path.relpath(source, self.to_path))
+            self.to_path, self.api_path, self.repo.lower().replace("/", "-"), str(path.relpath(source, self.to_path))
         )
 
     def detect(self, fs: Filesystem, previous_operations):

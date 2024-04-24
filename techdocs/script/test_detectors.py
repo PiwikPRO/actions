@@ -281,7 +281,7 @@ paths:
         }
     )
     detector = OpenAPIDetector(
-        "PromilRepo",
+        "PiwikPRO/Repo",
         "/tmp/dst",
         bundler=Mock(
             bundle=Mock(
@@ -332,14 +332,14 @@ paths:
     operations[4].execute(fs)
 
     # then
-    assert fs.files["/tmp/dst/static/api/promilrepo/api.json"] == json.dumps(
+    assert fs.files["/tmp/dst/static/api/piwikpro-repo/api.json"] == json.dumps(
         {
             "itsa me": "openapi",
             "x-api-checksum": "f356dad852f2b8108be36a19c8e148c8b3ed5811c9bd072f2603d46c4aa4a0e6",
         },
         indent=2,
     )
-    assert fs.files["/tmp/dst/static/api/promilrepo/subdir/spec.json"] == json.dumps(
+    assert fs.files["/tmp/dst/static/api/piwikpro-repo/subdir/spec.json"] == json.dumps(
         {
             "itsa me": "openapi",
             "x-api-checksum": "5891d4bf2471e070e3675a5eedc88fe724e572bc2053e7b2bf00fb3862cd4c8a",

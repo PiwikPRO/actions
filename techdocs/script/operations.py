@@ -250,7 +250,7 @@ class OpenAPIOperation:
         return [self.destination_abs]
 
     def mkd(self, path_formatter):
-        return f"* [OPENAPI] {path_formatter.format(self.source_abs)} -> {path_formatter.format(self.destination_abs)})"
+        return f"* [OPENAPI] {path_formatter.format(self.source_abs)} -> {path_formatter.format(self.destination_abs)}"
 
     def valid_checksum(self, fs, source_abs, destination_abs):
         source_checksum = hashb(fs.read_string(source_abs).encode())
