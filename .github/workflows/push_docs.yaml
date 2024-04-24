@@ -55,6 +55,7 @@ jobs:
           repository: 'PiwikPRO/Tech-docs'
           token: ${{ steps.get-token.outputs.token }}
           path: 'Tech-docs'
+          ref: feature/ARCH-374-collect-api-specs-with-copier
 
       - name: Set Tech-docs branch name
         if: github.ref_name != env.MAIN_BRANCH
