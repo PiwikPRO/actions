@@ -207,7 +207,9 @@ class OpenAPIDetector:
             if first_line.startswith("openapi:"):
                 for line in file:
                     if line.startswith("paths:\n"):
-                        yaml_file.destination_abs = self._prepare_destination(yaml_file.destination_abs)
+                        yaml_file.destination_abs = self._prepare_destination(
+                            yaml_file.destination_abs.replace(".yaml", ".json").replace(".yml", ".json")
+                        )
                         openapi_spec_files.append(yaml_file)
                         break
         return openapi_spec_files
@@ -229,6 +231,7 @@ class OpenAPIDetector:
         return openapi_spec_files
 
     def _prepare_destination(self, source):
+        # change destination extension to json
         return path.join(
             self.to_path, self.api_path, self.repo.lower(), str(path.relpath(source, self.to_path))
         )

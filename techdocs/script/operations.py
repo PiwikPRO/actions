@@ -269,7 +269,7 @@ class OpenAPIBundler:
                     "--output",
                     f"/out/{os.path.basename(destination_abs)}",
                     "--ext",
-                    "yaml"  # FIXME change to json for openapi merge
+                    "json"  # we're converting to json to avoid issues with openapi-merge tool later on in Tech Docs
                 ]
             )
             generated_files = fs.scan(dir_path, ".*")

@@ -332,5 +332,5 @@ paths:
     operations[4].execute(fs)
 
     # then
-    assert fs.files["/tmp/dst/static/api/promilrepo/api.yaml"] == "it's me - openapi"
+    assert fs.files["/tmp/dst/static/api/promilrepo/api.json"] == "it's me - openapi"
     assert fs.files["/tmp/dst/static/api/promilrepo/subdir/spec.json"] == "it's me - openapi"
