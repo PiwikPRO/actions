@@ -234,6 +234,11 @@ class OpenAPIOperation:
             self.bundler.bundle(fs, self.source_abs)
         )
 
+    def has_changes(self, fs):
+        if not fs.is_file(self.destination_abs):
+            return True
+        return True  # FIXME - add some hash comparison here
+
     def source_files(self):
         return [self.source_abs]
 
@@ -241,13 +246,14 @@ class OpenAPIOperation:
         return [self.destination_abs]
 
     def mkd(self, path_formatter):
-        return f"* [OPENAPI] TO BE FILLED UP"  # FIXME
+        return f"* [OPENAPI] {path_formatter.format(self.source_abs)} -> {path_formatter.format(self.destination_abs)})"
 
 
 class OpenAPIBundler:
     def bundle(self, fs, source_abs):
         try:
             dir_path = tempfile.mkdtemp()
+
             subprocess.run(
                 [
                     "docker",
@@ -257,11 +263,13 @@ class OpenAPIBundler:
                     "-v",
                     f"{dir_path}:/out",
                     "redocly/cli",
-                    f"/src/{os.path.basename(source_abs)}",
+                    "bundle",
+                    "--dereferenced",
+                    f"/spec/{os.path.basename(source_abs)}",
                     "--output",
                     f"/out/{os.path.basename(source_abs)}",
-                    "--format"
-                    "yaml",  # FIXME change to json later on
+                    "--ext",
+                    "yaml"  # FIXME change to json for openapi merge
                 ]
             )
             generated_files = fs.scan(dir_path, ".*")

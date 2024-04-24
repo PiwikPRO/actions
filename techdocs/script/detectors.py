@@ -14,8 +14,8 @@ from operations import (
     DockerPlantUMLGenerator,
     PlantUMLDiagramRenderOperation,
 )
-from techdocs.script.filesystem import Filesystem
-from techdocs.script.operations import OpenAPIBundler, OpenAPIOperation
+from filesystem import Filesystem
+from operations import OpenAPIBundler, OpenAPIOperation
 
 
 class CopyDetector:
@@ -188,7 +188,7 @@ class OperationDetectorChain:
 
 class OpenAPIDetector:
     def __init__(self, bundler=None):
-        self.bundler = bundler  # FIXME with OpenAPIBundler
+        self.bundler = bundler or OpenAPIBundler()
 
     def detect(self, fs: Filesystem, previous_operations):
         yaml_files = list(
