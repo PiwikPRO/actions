@@ -1,5 +1,4 @@
 import json
-from pprint import pprint
 from unittest.mock import Mock
 
 import pytest
@@ -14,7 +13,7 @@ from detectors import (
 from filesystem import MockFilesystem
 from index import FileIndex, FileIndexItem, FileIndexLoader
 from operations import GenericFileCopyOperation, DeleteOperation
-from techdocs.script.detectors import OpenAPIDetector
+from detectors import OpenAPIDetector
 
 
 def test_copy():
