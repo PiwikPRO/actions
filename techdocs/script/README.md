@@ -15,8 +15,8 @@ Example structure of a config file:
     "project": "promil",
     "documents": [
         {"source": "README.md", "destination": "docs/promil/bla.md"},
-        {"source": "docs/*", "destination": "docs/promil/somedir/", "exclude": ["docs/internal/*"]},
-    ],
+        {"source": "docs/*", "destination": "docs/promil/somedir/", "exclude": ["docs/internal/*"]}
+    ]
 }
 ```
 

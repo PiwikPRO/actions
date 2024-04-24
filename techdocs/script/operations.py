@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -26,7 +27,7 @@ class GenericFileCopyOperation:
 
     def has_changes(self, fs):
         if (not fs.is_file(self.destination_abs)) or hashb(fs.read_bytes(self.source_abs)) != hashb(
-                fs.read_bytes(self.destination_abs)
+            fs.read_bytes(self.destination_abs)
         ):
             return True
         return False
@@ -71,14 +72,14 @@ class YAMLPrefaceEnrichingCopyOperation:
         source_file = fs.read_string(self.source_abs)
 
         if any(
-                [
-                    not fs.is_file(self.destination_abs),
-                    file_has_no_frontmatter(fs, dest_file),
-                    files_content_ignoring_frontmatter_is_different(fs, source_file, dest_file),
-                    source_frontmatter_hash_is_different_than_one_cached_in_destination(
-                        fs, source_file, dest_file
-                    ),
-                ]
+            [
+                not fs.is_file(self.destination_abs),
+                file_has_no_frontmatter(fs, dest_file),
+                files_content_ignoring_frontmatter_is_different(fs, source_file, dest_file),
+                source_frontmatter_hash_is_different_than_one_cached_in_destination(
+                    fs, source_file, dest_file
+                ),
+            ]
         ):
             return True
         return False
@@ -104,7 +105,7 @@ def files_content_ignoring_frontmatter_is_different(fs, first_file, second_file)
 
 
 def source_frontmatter_hash_is_different_than_one_cached_in_destination(
-        fs, source_file, destination_file
+    fs, source_file, destination_file
 ):
     return source_file.startswith("---") and hashb(
         source_file.split("---\n")[1].encode()
@@ -166,8 +167,10 @@ class PlantUMLDiagramRenderOperation:
         return header(hashb(get_full_puml_content(fs, self.source_puml_abs)))
 
     def mkd(self, path_formatter):
-        return (f"* [PLANTUML] {path_formatter.format(self.source_puml_abs)} -> "
-                f"{path_formatter.format(self.destination_svg_abs)}")
+        return (
+            f"* [PLANTUML] {path_formatter.format(self.source_puml_abs)} -> "
+            f"{path_formatter.format(self.destination_svg_abs)}"
+        )
 
 
 def header(hash):
@@ -185,7 +188,7 @@ def get_full_puml_content(fs, the_path):
                     os.path.join(os.path.dirname(the_path), line.split(b"!include ")[1].decode()),
                 )
             except (
-                    FileNotFoundError
+                FileNotFoundError
             ):  # Let PlantUML handle the error, also we don't need to hack 10 ifs with various import syntaxes here
                 pass
     return b"\n".join(lines)
@@ -229,15 +232,16 @@ class OpenAPIOperation:
         return "openapi"
 
     def execute(self, fs):
-        fs.write_string(
-            self.destination_abs,
-            self.bundler.bundle(fs, self.source_abs, self.destination_abs)
-        )
+        checksum = hashb(fs.read_string(self.source_abs).encode())
+        bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.destination_abs))
+        bundled_content["x-api-checksum"] = checksum
+
+        fs.write_string(self.destination_abs, json.dumps(bundled_content, indent=2))
 
     def has_changes(self, fs):
         if not fs.is_file(self.destination_abs):
             return True
-        return True  # FIXME - add some hash comparison here
+        return not self.valid_checksum(fs, self.source_abs, self.destination_abs)
 
     def source_files(self):
         return [self.source_abs]
@@ -248,12 +252,17 @@ class OpenAPIOperation:
     def mkd(self, path_formatter):
         return f"* [OPENAPI] {path_formatter.format(self.source_abs)} -> {path_formatter.format(self.destination_abs)})"
 
+    def valid_checksum(self, fs, source_abs, destination_abs):
+        source_checksum = hashb(fs.read_string(source_abs).encode())
+        with open(destination_abs, "r") as f:
+            destination_checksum = json.loads(f.read())["x-api-checksum"]
+        return source_checksum == destination_checksum
+
 
 class OpenAPIBundler:
     def bundle(self, fs, source_abs, destination_abs):
         try:
             dir_path = tempfile.mkdtemp()
-
             subprocess.run(
                 [
                     "docker",
@@ -269,13 +278,15 @@ class OpenAPIBundler:
                     "--output",
                     f"/out/{os.path.basename(destination_abs)}",
                     "--ext",
-                    "json"  # we're converting to json to avoid issues with openapi-merge tool later on in Tech Docs
+                    "json",
                 ]
             )
             generated_files = fs.scan(dir_path, ".*")
             if len(generated_files) != 1:
                 raise Exception("OpenAPI generation failed")
             with open(os.path.join(dir_path, generated_files[0]), "r") as f:
-                return f.read()
+                content = json.loads(f.read())
+                content["x-api-checksum"] = checksum
+                return json.dumps(content, indent=2)
         finally:
             shutil.rmtree(dir_path)

@@ -78,7 +78,9 @@ def test_copy():
 def test_copy_create_operation_variants(
         file, rule_source, rule_destination, expected_source, expected_destination
 ):
-    detector = CopyDetector("/home/foobar", "/tmp/Tech-docs", "Οδυσσέας Ελύτης", "master", Config([]))
+    detector = CopyDetector(
+        "/home/foobar", "/tmp/Tech-docs", "Οδυσσέας Ελύτης", "master", Config([])
+    )
     copy_operation = detector._create_operation(
         MockFilesystem(
             {"/tmp/Tech-docs/projects.json": json.dumps({"promil": {"path": "docs/promil"}})}
@@ -101,11 +103,11 @@ def test_index_load():
         {
             "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f":
                 json.dumps(
-                    {
-                        "file": "heheszek",
-                        "repo": "Promil-platform-foo",
-                    }
-                )
+                {
+                    "file": "heheszek",
+                    "repo": "Promil-platform-foo",
+                }
+            )
         }
     )
 
@@ -284,7 +286,7 @@ paths:
         "/tmp/dst",
         bundler=Mock(
             bundle=Mock(
-                return_value="it's me - openapi",
+                return_value='{"itsa me":"openapi"}',
             )
         ),
         api_path="static/api/",
@@ -331,5 +333,17 @@ paths:
     operations[4].execute(fs)
 
     # then
-    assert fs.files["/tmp/dst/static/api/promilrepo/api.json"] == "it's me - openapi"
-    assert fs.files["/tmp/dst/static/api/promilrepo/subdir/spec.json"] == "it's me - openapi"
+    assert fs.files["/tmp/dst/static/api/promilrepo/api.json"] == json.dumps(
+        {
+            "itsa me": "openapi",
+            "x-api-checksum": "f356dad852f2b8108be36a19c8e148c8b3ed5811c9bd072f2603d46c4aa4a0e6",
+        },
+        indent=2,
+    )
+    assert fs.files["/tmp/dst/static/api/promilrepo/subdir/spec.json"] == json.dumps(
+        {
+            "itsa me": "openapi",
+            "x-api-checksum": "5891d4bf2471e070e3675a5eedc88fe724e572bc2053e7b2bf00fb3862cd4c8a",
+        },
+        indent=2,
+    )
