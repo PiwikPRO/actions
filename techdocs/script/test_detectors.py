@@ -279,11 +279,14 @@ paths:
         }
     )
     detector = OpenAPIDetector(
+        "Promil",
+        "/tmp/dst",
         bundler=Mock(
             bundle=Mock(
                 return_value="it's me - openapi",
             )
-        )
+        ),
+        api_path="static/api/",
     )
 
     operations = detector.detect(
@@ -313,4 +316,4 @@ paths:
     operations[2].execute(fs)
 
     # then
-    assert fs.files["/tmp/dst/api.yaml"] == "it's me - openapi"
+    assert fs.files["/tmp/dst/static/api/Promil/api.yaml"] == "it's me - openapi"

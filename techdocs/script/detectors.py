@@ -187,8 +187,11 @@ class OperationDetectorChain:
 
 
 class OpenAPIDetector:
-    def __init__(self, bundler=None):
+    def __init__(self, repo, to_path, bundler=None, api_path=None):
+        self.repo = repo
+        self.to_path = to_path
         self.bundler = bundler or OpenAPIBundler()
+        self.api_path = api_path or "static/api/"
 
     def detect(self, fs: Filesystem, previous_operations):
         yaml_files = list(
@@ -204,10 +207,12 @@ class OpenAPIDetector:
             if first_line.startswith("openapi:"):
                 for line in file:
                     if line.startswith("paths:"):
+                        yaml_file.destination_abs = path.join(
+                            self.to_path, self.api_path, self.repo, path.basename(yaml_file.destination_abs)
+                        )
                         openapi_spec_files.append(yaml_file)
                         break
 
-        # filter out openapi spec files from previous_operations
         return list(
             filter(
                 lambda op: op not in openapi_spec_files,
