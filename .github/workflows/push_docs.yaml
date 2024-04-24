@@ -152,6 +152,7 @@ jobs:
           repository: 'PiwikPRO/actions'
           token: ${{ steps.get-token.outputs.token }}
           path: 'actions'
+          ref: feature/ARCH-374-collect-api-specs-with-copier
 
       - name: Move actions repo to /tmp
         # local-dev script requires actions repo to be in /tmp
