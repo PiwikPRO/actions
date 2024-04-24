@@ -51,32 +51,32 @@ def test_copy():
 @pytest.mark.parametrize(
     "file,rule_source,rule_destination,expected_source,expected_destination",
     (
-        (  # if source is a file, destination a directory, copy the file directly into the directory
-            "docs/promil/foo.md",
-            "foo.md",
-            "stacks/Promil-stack-analytics/",
-            "/home/foobar/docs/promil/foo.md",
-            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/foo.md",
-        ),
-        (  # if source is a directory, destination a directory, copy the directory into the directory,
-            # recursively, including the subdirectory structure
-            "docs/promil/bla/huehue/foo.md",
-            "docs/*",
-            "stacks/Promil-stack-analytics/",
-            "/home/foobar/docs/promil/bla/huehue/foo.md",
-            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/promil/bla/huehue/foo.md",
-        ),
-        (  # if source is a file, destination a file, copy the file directly into the file
-            "docs/promil/foo.md",
-            "docs/promil/foo.md",
-            "stacks/Promil-stack-analytics/bar.md",
-            "/home/foobar/docs/promil/foo.md",
-            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/bar.md",
-        ),
+            (  # if source is a file, destination a directory, copy the file directly into the directory
+                    "docs/promil/foo.md",
+                    "foo.md",
+                    "stacks/Promil-stack-analytics/",
+                    "/home/foobar/docs/promil/foo.md",
+                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/foo.md",
+            ),
+            (  # if source is a directory, destination a directory, copy the directory into the directory,
+                    # recursively, including the subdirectory structure
+                    "docs/promil/bla/huehue/foo.md",
+                    "docs/*",
+                    "stacks/Promil-stack-analytics/",
+                    "/home/foobar/docs/promil/bla/huehue/foo.md",
+                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/promil/bla/huehue/foo.md",
+            ),
+            (  # if source is a file, destination a file, copy the file directly into the file
+                    "docs/promil/foo.md",
+                    "docs/promil/foo.md",
+                    "stacks/Promil-stack-analytics/bar.md",
+                    "/home/foobar/docs/promil/foo.md",
+                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/bar.md",
+            ),
     ),
 )
 def test_copy_create_operation_variants(
-    file, rule_source, rule_destination, expected_source, expected_destination
+        file, rule_source, rule_destination, expected_source, expected_destination
 ):
     detector = CopyDetector(
         "/home/foobar", "/tmp/Tech-docs", "Οδυσσέας Ελύτης", "master", Config([])
@@ -101,7 +101,8 @@ def test_copy_create_operation_variants(
 def test_index_load():
     fs = MockFilesystem(
         {
-            "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f": json.dumps(
+            "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f":
+                json.dumps(
                 {
                     "file": "heheszek",
                     "repo": "Promil-platform-foo",
@@ -144,9 +145,9 @@ def test_index_save():
             "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f"
         )
     ) == {
-        "file": "heheszek",
-        "repo": "Promil-platform-foo",
-    }
+               "file": "heheszek",
+               "repo": "Promil-platform-foo",
+           }
 
 
 def test_delete():
@@ -287,8 +288,7 @@ paths:
             bundle=Mock(
                 return_value='{"itsa me":"openapi"}',
             )
-        ),
-        api_path="static/api/",
+        )
     )
 
     operations = detector.detect(
@@ -332,14 +332,14 @@ paths:
     operations[4].execute(fs)
 
     # then
-    assert fs.files["/tmp/dst/static/api/piwikpro-repo/api.json"] == json.dumps(
+    assert fs.files["/tmp/dst/api.json"] == json.dumps(
         {
             "itsa me": "openapi",
             "x-api-checksum": "f356dad852f2b8108be36a19c8e148c8b3ed5811c9bd072f2603d46c4aa4a0e6",
         },
         indent=2,
     )
-    assert fs.files["/tmp/dst/static/api/piwikpro-repo/subdir/spec.json"] == json.dumps(
+    assert fs.files["/tmp/dst/subdir/spec.json"] == json.dumps(
         {
             "itsa me": "openapi",
             "x-api-checksum": "5891d4bf2471e070e3675a5eedc88fe724e572bc2053e7b2bf00fb3862cd4c8a",

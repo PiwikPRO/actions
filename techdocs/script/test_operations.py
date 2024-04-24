@@ -26,16 +26,12 @@ def test_yaml_preface_operation(filesystem):
     "source, destination, expected",
     (
         ("#foo", "#foo", True),  # lacks x_tech_docs_enriched
-        (
-            "#foo\n",
-            """---
+        ("#foo\n", """---
 foo: bar
 x_tech_docs_enriched: true
 ---
 #foo
-""",
-            False,
-        ),  # content is the same and source does not have frontmatter
+""", False),  # content is the same and source does not have frontmatter
         (
             """---
 foo: bar
