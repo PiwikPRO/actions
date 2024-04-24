@@ -51,28 +51,28 @@ def test_copy():
 @pytest.mark.parametrize(
     "file,rule_source,rule_destination,expected_source,expected_destination",
     (
-            (  # if source is a file, destination a directory, copy the file directly into the directory
-                    "docs/promil/foo.md",
-                    "foo.md",
-                    "stacks/Promil-stack-analytics/",
-                    "/home/foobar/docs/promil/foo.md",
-                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/foo.md",
-            ),
-            (  # if source is a directory, destination a directory, copy the directory into the directory,
-                    # recursively, including the subdirectory structure
-                    "docs/promil/bla/huehue/foo.md",
-                    "docs/*",
-                    "stacks/Promil-stack-analytics/",
-                    "/home/foobar/docs/promil/bla/huehue/foo.md",
-                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/promil/bla/huehue/foo.md",
-            ),
-            (  # if source is a file, destination a file, copy the file directly into the file
-                    "docs/promil/foo.md",
-                    "docs/promil/foo.md",
-                    "stacks/Promil-stack-analytics/bar.md",
-                    "/home/foobar/docs/promil/foo.md",
-                    "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/bar.md",
-            ),
+        (  # if source is a file, destination a directory, copy the file directly into the directory
+            "docs/promil/foo.md",
+            "foo.md",
+            "stacks/Promil-stack-analytics/",
+            "/home/foobar/docs/promil/foo.md",
+            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/foo.md",
+        ),
+        (  # if source is a directory, destination a directory, copy the directory into the directory,
+            # recursively, including the subdirectory structure
+            "docs/promil/bla/huehue/foo.md",
+            "docs/*",
+            "stacks/Promil-stack-analytics/",
+            "/home/foobar/docs/promil/bla/huehue/foo.md",
+            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/promil/bla/huehue/foo.md",
+        ),
+        (  # if source is a file, destination a file, copy the file directly into the file
+            "docs/promil/foo.md",
+            "docs/promil/foo.md",
+            "stacks/Promil-stack-analytics/bar.md",
+            "/home/foobar/docs/promil/foo.md",
+            "/tmp/Tech-docs/docs/promil/stacks/Promil-stack-analytics/bar.md",
+        ),
     ),
 )
 def test_copy_create_operation_variants(
