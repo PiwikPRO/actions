@@ -285,8 +285,6 @@ class OpenAPIBundler:
             if len(generated_files) != 1:
                 raise Exception("OpenAPI generation failed")
             with open(os.path.join(dir_path, generated_files[0]), "r") as f:
-                content = json.loads(f.read())
-                content["x-api-checksum"] = checksum
-                return json.dumps(content, indent=2)
+                return f.read()
         finally:
             shutil.rmtree(dir_path)
