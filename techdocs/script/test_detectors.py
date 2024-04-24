@@ -272,10 +272,12 @@ def test_openapi_detector():
     fs = MockFilesystem(
         {
             "/tmp/Promil/api.yaml": """openapi: 3.1.0
-paths: 
+paths:
     some-path: path""",
-            "/tmp/Promil/other-file": "a-file-content",
             "/tmp/Promil/invalid-api.yaml": "openapi: 3.1.0",
+            "/tmp/Promil/other-file": "a-file-content",
+            "/tmp/Promil/spec.json": '{"openapi": "3.1.0","paths": {"some-path": "path"}}',
+            "/tmp/Promil/invalid-spec.json": '{"openapi": "3.1.0"}',
         }
     )
     detector = OpenAPIDetector(
@@ -304,16 +306,31 @@ paths:
                 source_abs="/tmp/Promil/other-file",
                 destination_abs="/tmp/dst/other-file",
             ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/spec.json",
+                destination_abs="/tmp/dst/spec.json",
+            ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/invalid-spec.json",
+                destination_abs="/tmp/dst/invalid-spec.json",
+            ),
         ],
     )
 
-    assert len(operations) == 3
+    for operation in operations:
+        print(operation.name(), operation.source_abs, operation.destination_abs)
+
+    assert len(operations) == 5
     assert operations[0].name() == "copy"
     assert operations[1].name() == "copy"
-    assert operations[2].name() == "openapi"
+    assert operations[2].name() == "copy"
+    assert operations[3].name() == "openapi"
+    assert operations[4].name() == "openapi"
 
     # when
-    operations[2].execute(fs)
+    operations[3].execute(fs)
+    operations[4].execute(fs)
 
     # then
     assert fs.files["/tmp/dst/static/api/Promil/api.yaml"] == "it's me - openapi"
+    assert fs.files["/tmp/dst/static/api/Promil/spec.json"] == "it's me - openapi"

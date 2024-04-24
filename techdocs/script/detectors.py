@@ -188,12 +188,12 @@ class OperationDetectorChain:
 
 class OpenAPIDetector:
     def __init__(self, repo, to_path, bundler=None, api_path=None):
-        self.repo = repo
+        self.repo = repo  # FIXME repo or `destination` from document config? :hmmm:
         self.to_path = to_path
         self.bundler = bundler or OpenAPIBundler()
         self.api_path = api_path or "static/api/"
 
-    def detect(self, fs: Filesystem, previous_operations):
+    def _detect_yaml_files(self, fs, previous_operations):
         yaml_files = list(
             filter(
                 lambda op: any([f.endswith(".yaml") or f.endswith(".yml") for f in op.source_files()]),
@@ -206,12 +206,36 @@ class OpenAPIDetector:
             first_line = file.readline()
             if first_line.startswith("openapi:"):
                 for line in file:
-                    if line.startswith("paths:"):
+                    if line.startswith("paths:\n"):
                         yaml_file.destination_abs = path.join(
                             self.to_path, self.api_path, self.repo, path.basename(yaml_file.destination_abs)
                         )
                         openapi_spec_files.append(yaml_file)
                         break
+        return openapi_spec_files
+
+    def _detect_json_files(self, fs, previous_operations):
+        json_files = list(
+            filter(
+                lambda op: any([f.endswith(".json") for f in op.source_files()]),
+                previous_operations,
+            )
+        )
+        openapi_spec_files = []
+        for json_file in json_files:
+            file = json.loads(fs.read_string(json_file.source_abs))
+            # check if loaded json is an object
+            if isinstance(file, dict) and file.get("openapi") and len(file.get("paths", [])) > 0:
+                json_file.destination_abs = path.join(
+                    self.to_path, self.api_path, self.repo, path.basename(json_file.destination_abs)
+                )
+                openapi_spec_files.append(json_file)
+        return openapi_spec_files
+
+    def detect(self, fs: Filesystem, previous_operations):
+        openapi_spec_files = (
+                self._detect_yaml_files(fs, previous_operations) + self._detect_json_files(fs, previous_operations)
+        )
 
         return list(
             filter(
