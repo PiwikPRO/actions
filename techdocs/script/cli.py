@@ -50,7 +50,7 @@ if __name__ == "__main__":
                             config,
                         ),
                         PlantUMLDiagramsDetector(),
-                        OpenAPIDetector(args.index, args.to_path),
+                        OpenAPIDetector(),
                         DeleteDetector(args.index, index, args.from_path, args.to_path),
                         UnnecessaryOperationsFilteringDetector(),
                     ).operations(fs),

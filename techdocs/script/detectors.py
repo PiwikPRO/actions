@@ -187,9 +187,7 @@ class OperationDetectorChain:
 
 
 class OpenAPIDetector:
-    def __init__(self, repo, to_path, bundler=None):
-        self.repo = repo
-        self.to_path = to_path
+    def __init__(self, bundler=None):
         self.bundler = bundler or OpenAPIBundler()
 
     def _detect_yaml_files(self, fs, previous_operations):

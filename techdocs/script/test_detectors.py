@@ -282,8 +282,6 @@ paths:
         }
     )
     detector = OpenAPIDetector(
-        "PiwikPRO/Repo",
-        "/tmp/dst",
         bundler=Mock(
             bundle=Mock(
                 return_value='{"itsa me":"openapi"}',
