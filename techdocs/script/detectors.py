@@ -188,7 +188,7 @@ class OperationDetectorChain:
 
 class OpenAPIDetector:
     def __init__(self, repo, to_path, bundler=None, api_path=None):
-        self.repo = repo  # FIXME repo or `destination` from document config? :hmmm:
+        self.repo = repo
         self.to_path = to_path
         self.bundler = bundler or OpenAPIBundler()
         self.api_path = api_path or "static/api/"
@@ -224,7 +224,6 @@ class OpenAPIDetector:
         openapi_spec_files = []
         for json_file in json_files:
             file = json.loads(fs.read_string(json_file.source_abs))
-            # check if loaded json is an object
             if isinstance(file, dict) and file.get("openapi") and len(file.get("paths", [])) > 0:
                 json_file.destination_abs = self._prepare_destination(json_file.destination_abs)
                 openapi_spec_files.append(json_file)

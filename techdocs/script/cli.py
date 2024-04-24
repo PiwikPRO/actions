@@ -35,7 +35,7 @@ if __name__ == "__main__":
     if args.command == "copy":
         try:
             with FileIndexLoader.loaded(
-                    os.path.join(args.to_path, INDEX_DIRECTORY), fs, not args.dry_run
+                os.path.join(args.to_path, INDEX_DIRECTORY), fs, not args.dry_run
             ) as index:
                 config = ConfigLoader.default(args.from_path, args.to_path, fs).load(
                     args.config_path
