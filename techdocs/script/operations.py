@@ -231,7 +231,7 @@ class OpenAPIOperation:
     def execute(self, fs):
         fs.write_string(
             self.destination_abs,
-            self.bundler.bundle(fs, self.source_abs)
+            self.bundler.bundle(fs, self.source_abs, self.destination_abs)
         )
 
     def has_changes(self, fs):
@@ -250,7 +250,7 @@ class OpenAPIOperation:
 
 
 class OpenAPIBundler:
-    def bundle(self, fs, source_abs):
+    def bundle(self, fs, source_abs, destination_abs):
         try:
             dir_path = tempfile.mkdtemp()
 
@@ -267,7 +267,7 @@ class OpenAPIBundler:
                     "--dereferenced",
                     f"/spec/{os.path.basename(source_abs)}",
                     "--output",
-                    f"/out/{os.path.basename(source_abs)}",
+                    f"/out/{os.path.basename(destination_abs)}",
                     "--ext",
                     "yaml"  # FIXME change to json for openapi merge
                 ]

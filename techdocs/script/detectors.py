@@ -207,9 +207,7 @@ class OpenAPIDetector:
             if first_line.startswith("openapi:"):
                 for line in file:
                     if line.startswith("paths:\n"):
-                        yaml_file.destination_abs = path.join(
-                            self.to_path, self.api_path, self.repo, path.basename(yaml_file.destination_abs)
-                        )
+                        yaml_file.destination_abs = self._prepare_destination(yaml_file.destination_abs)
                         openapi_spec_files.append(yaml_file)
                         break
         return openapi_spec_files
@@ -226,11 +224,14 @@ class OpenAPIDetector:
             file = json.loads(fs.read_string(json_file.source_abs))
             # check if loaded json is an object
             if isinstance(file, dict) and file.get("openapi") and len(file.get("paths", [])) > 0:
-                json_file.destination_abs = path.join(
-                    self.to_path, self.api_path, self.repo, path.basename(json_file.destination_abs)
-                )
+                json_file.destination_abs = self._prepare_destination(json_file.destination_abs)
                 openapi_spec_files.append(json_file)
         return openapi_spec_files
+
+    def _prepare_destination(self, source):
+        return path.join(
+            self.to_path, self.api_path, self.repo.lower(), str(path.relpath(source, self.to_path))
+        )
 
     def detect(self, fs: Filesystem, previous_operations):
         openapi_spec_files = (

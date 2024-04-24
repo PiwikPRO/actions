@@ -276,12 +276,12 @@ paths:
     some-path: path""",
             "/tmp/Promil/invalid-api.yaml": "openapi: 3.1.0",
             "/tmp/Promil/other-file": "a-file-content",
-            "/tmp/Promil/spec.json": '{"openapi": "3.1.0","paths": {"some-path": "path"}}',
-            "/tmp/Promil/invalid-spec.json": '{"openapi": "3.1.0"}',
+            "/tmp/Promil/subdir/spec.json": '{"openapi": "3.1.0","paths": {"some-path": "path"}}',
+            "/tmp/Promil/subdir/invalid-spec.json": '{"openapi": "3.1.0"}',
         }
     )
     detector = OpenAPIDetector(
-        "Promil",
+        "PromilRepo",
         "/tmp/dst",
         bundler=Mock(
             bundle=Mock(
@@ -307,12 +307,12 @@ paths:
                 destination_abs="/tmp/dst/other-file",
             ),
             GenericFileCopyOperation(
-                source_abs="/tmp/Promil/spec.json",
-                destination_abs="/tmp/dst/spec.json",
+                source_abs="/tmp/Promil/subdir/spec.json",
+                destination_abs="/tmp/dst/subdir/spec.json",
             ),
             GenericFileCopyOperation(
-                source_abs="/tmp/Promil/invalid-spec.json",
-                destination_abs="/tmp/dst/invalid-spec.json",
+                source_abs="/tmp/Promil/subdir/invalid-spec.json",
+                destination_abs="/tmp/dst/subdir/invalid-spec.json",
             ),
         ],
     )
@@ -332,5 +332,5 @@ paths:
     operations[4].execute(fs)
 
     # then
-    assert fs.files["/tmp/dst/static/api/Promil/api.yaml"] == "it's me - openapi"
-    assert fs.files["/tmp/dst/static/api/Promil/spec.json"] == "it's me - openapi"
+    assert fs.files["/tmp/dst/static/api/promilrepo/api.yaml"] == "it's me - openapi"
+    assert fs.files["/tmp/dst/static/api/promilrepo/subdir/spec.json"] == "it's me - openapi"
