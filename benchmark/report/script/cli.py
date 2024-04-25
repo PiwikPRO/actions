@@ -2,7 +2,6 @@ import argparse
 
 import report_processor
 
-INDEX_DIRECTORY = ".index"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
