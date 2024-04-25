@@ -523,8 +523,10 @@ making it as generic as possible.
 This repository allows using continuous benchmarking approach, which you can easily plug into your CI system using few lines of YAML. The benchmarking pipeline works as follows:
 
 * It runs a benchmarking script on every released tag and archives the results in artifactory.
-* It runs the same benchmarking script during the pull request, if it detects a `/benchmark` comment.
+* It runs the same benchmarking script during the pull request, if it detects a `/benchmark` comment. 
   * It compares the results with the average result of the last 5 tag benchmarks (if available).
+
+**Important. The `/benchmark` comment won't work unless the workflow is already on main repo branch**, this is a limitation of GitHub Actions. Alternative approach, for tests would be to change the conditions, so that the rebuild is triggered on every commit to a PR. Try this approach when integrating this workflow into your repository, specific instructions are on the bottom.
 
 In order to be able to run the pipeline, you need a `k6` benchmarking script. Here's how the action is invoked (internal example from one of our repositories):
 
@@ -579,8 +581,13 @@ jobs:
       artifact: summary
 ```
 
-In order to add benchmarking capabilities to yout CI, copy the above YAMl snippet, you also need to customize the following parts:
+In order to add benchmarking capabilities to your CI, copy the above YAMl snippet, you also need to customize the following parts:
 
 1. "Start the devenv" step. After the step, you should have a running web server or whatever you'd like to test, so that the `k6` script can hit it. It may be something like `docker-compose up -d`, or equivalent, depending on what you're using and how your development environment looks like.
 
 2. The location and other parameters of the k6 script. It should be a path relative to the repository root. If you need that, you can set `env` key here and read the vars from the `k6` script.
+
+To change the trigger from `/benchmark` comment to every PR commit, you can:
+
+* Comment ` tags: - '*'` from the `on` section.
+* Comment the `if` condition (`if: ${{ github.ref_type == 'tag' || (gi....`) from the `k6` job.
