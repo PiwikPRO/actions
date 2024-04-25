@@ -6,7 +6,7 @@ INDEX_DIRECTORY = ".index"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        epilog="""A program, that synchronizes files between two directories, using a configuration file."""
+        epilog="""K6 benchmark and reporting automation"""
     )
 
     parser.add_argument("--path", default="./reports")
