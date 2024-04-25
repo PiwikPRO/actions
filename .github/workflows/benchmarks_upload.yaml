@@ -1,0 +1,93 @@
+name: 'Benchmarks summary uploader'
+on:
+  workflow_call:
+    inputs:
+      artifact:
+        required: true
+        type: string
+        default: ""
+
+concurrency: 
+  group: "${{ github.ref }}-${{ github.head_ref }}-${{ github.base_ref }}"
+  cancel-in-progress: true
+
+jobs:
+  upload:
+    # we want to store only reports from tags, only those will be used for comparison
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.artifact }}
+          path: .
+
+      - name: Prepare upload prerequisites
+        run: |
+          mkdir -p artifacts
+          cp summary.json artifacts/summary.json
+          echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+
+      - name: Upload the site to artifactory
+        uses: PiwikPRO/actions/s3/upload@master
+        with:
+          aws-access-key-id: ${{ secrets.ARTIFACTORY_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ARTIFACTORY_S3_SECRET_ACCESS_KEY }}
+          aws-http-proxy: ${{ secrets.FORWARD_PROXY_HTTP }}
+          aws-https-proxy: ${{ secrets.FORWARD_PROXY_HTTPS }}
+          aws-bucket: piwikpro-artifactory
+          aws-region: eu-central-1
+          src-path: artifacts
+          dst-path: "long/benchmarks/${{ github.repository }}/${NOW}"
+
+  compile:
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Copy all the reports from s3
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.ARTIFACTORY_S3_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.ARTIFACTORY_S3_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: eu-central-1
+        HTTP_PROXY: ${{ secrets.FORWARD_PROXY_HTTP }}
+        HTTPS_PROXY: ${{ secrets.FORWARD_PROXY_HTTPS }}
+      run: aws s3 cp --recursive s3://piwikpro-artifactory/long/benchmarks/${{ github.repository }} reports
+
+    - name: Prepare the report
+      id: compile
+      uses: PiwikPRO/actions/benchmark/report@pet-23-k6-action
+      with:
+        path: reports
+
+    - name: Print the report
+      shell: bash
+      run: echo "${{ steps.compile.outputs.report }}"
+
+    - name: Add PR comment
+      uses: actions/github-script@v7
+      if: ${{ github.event.issue.pull_request }}
+      env:
+        REPORT: ${{ steps.compile.outputs.report }}
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const issue_number = context.issue.number;
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+
+          await github.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number,
+            body: process.env.REPORT 
+          });
+          console.log('Created a new comment.');
