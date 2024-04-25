@@ -23,6 +23,7 @@
   - [Inclint (internal)](#inclint-internal)
   - [JavaScript](#javascript)
     - [LTS-lint](#lts-lint)
+  - [Benchmarking](#benchmarking)
 <!--toc:end-->
 
 Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
@@ -516,3 +517,70 @@ making it as generic as possible.
           install-command: npm install
 ```
 
+
+### Benchmarking
+
+This repository allows using continuous benchmarking approach, which you can easily plug into your CI system using few lines of YAML. The benchmarking pipeline works as follows:
+
+* It runs a benchmarking script on every released tag and archives the results in artifactory.
+* It runs the same benchmarking script during the pull request, if it detects a `/benchmark` comment.
+  * It compares the results with the average result of the last 5 tag benchmarks (if available).
+
+In order to be able to run the pipeline, you need a `k6` benchmarking script. Here's how the action is invoked (internal example from one of our repositories):
+
+```yaml .github/workflows/benchmark.yml
+name: Benchmark
+on:
+  push:
+    tags:
+      - '*'
+  issue_comment:
+    types: [created]
+jobs:
+  k6:
+    if: ${{ github.ref_type == 'tag' || (github.event.issue.pull_request && github.event.comment.body == '/benchmark') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+
+    - name: Generate PiwikPRO access token
+      uses: PiwikPRO/github-app-token-generator@v1
+      id: get-token
+      with:
+        private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
+        app-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
+
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        token: ${{ steps.get-token.outputs.token }}
+
+    - name: Start the devenv
+      run: ./dev/start.sh # 1 this need to be customized
+
+    - name: Run k6
+      uses: PiwikPRO/actions/benchmark/k6@master
+      with:
+        script: dev/k6.js # 2 this need to be customized
+        vus: 25
+        duration: 60s
+
+    - name: Archive benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: summary
+        path: summary.json
+
+  publish:
+    needs: k6
+    uses: PiwikPRO/actions/.github/workflows/benchmarks_upload.yaml@master
+    secrets: inherit
+    with:
+      artifact: summary
+```
+
+In order to add benchmarking capabilities to yout CI, copy the above YAMl snippet, you also need to customize the following parts:
+
+1. "Start the devenv" step. After the step, you should have a running web server or whatever you'd like to test, so that the `k6` script can hit it. It may be something like `docker-compose up -d`, or equivalent, depending on what you're using and how your development environment looks like.
+
+2. The location and other parameters of the k6 script. It should be a path relative to the repository root. If you need that, you can set `env` key here and read the vars from the `k6` script.
