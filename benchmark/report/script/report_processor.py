@@ -86,7 +86,7 @@ def compare_logic_from_str(logic_name):
     elif logic_name == "lower_is_better":
         logic = -1
     else:
-        raise Exception("Unhandled coparison logic: " + logic_name)
+        raise Exception("Unhandled comparison logic: " + logic_name)
 
     return logic
 
