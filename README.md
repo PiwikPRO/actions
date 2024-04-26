@@ -23,6 +23,7 @@
   - [Inclint (internal)](#inclint-internal)
   - [JavaScript](#javascript)
     - [LTS-lint](#lts-lint)
+  - [K6](#k6)
   - [Benchmarking](#benchmarking)
 <!--toc:end-->
 
@@ -516,7 +517,22 @@ making it as generic as possible.
         with:
           install-command: npm install
 ```
+### K6
 
+K6 action is a part of benchmarking workflow described below and on its own is not very useful. Here is the reference of parameters that can be passed to the action:
+
+```yaml
+name: Run k6
+uses: PiwikPRO/actions/k6@master
+with:
+  script: dev/k6.js
+  vus: 25
+  duration: 60s
+```
+
+* `script` - path to the k6 script, relative to the repository root
+* `vus` - number of virtual users, a k6 concept
+* `duration` - duration of the test
 
 ### Benchmarking
 
