@@ -55,7 +55,7 @@ jobs:
           repository: 'PiwikPRO/Tech-docs'
           token: ${{ steps.get-token.outputs.token }}
           path: 'Tech-docs'
-          ref: feature/ARCH-374-collect-api-specs-with-copier
+          ref: master
 
       - name: Set Tech-docs branch name
         if: github.ref_name != env.MAIN_BRANCH
@@ -92,7 +92,7 @@ jobs:
 
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
-        uses: PiwikPRO/actions/techdocs@feature/ARCH-374-collect-api-specs-with-copier
+        uses: PiwikPRO/actions/techdocs@master
         if: ${{ github.ref_name == env.MAIN_BRANCH || env.BRANCH_EXISTS == 'true' }}
         with:
           from: .
@@ -127,7 +127,7 @@ jobs:
           echo "CHANGES=1" >> $GITHUB_ENV
 
       - name: Run Copy Script
-        uses: PiwikPRO/actions/techdocs@feature/ARCH-374-collect-api-specs-with-copier
+        uses: PiwikPRO/actions/techdocs@master
         id: copy
         if: env.CHANGES != '0'
         with:
@@ -152,7 +152,7 @@ jobs:
           repository: 'PiwikPRO/actions'
           token: ${{ steps.get-token.outputs.token }}
           path: 'actions'
-          ref: feature/ARCH-374-collect-api-specs-with-copier
+          ref: master
 
       - name: Move actions repo to /tmp
         # local-dev script requires actions repo to be in /tmp
@@ -169,7 +169,7 @@ jobs:
 
       - name: Upload the site to artifactory
         if: env.CHANGES != '0' && github.ref_name != env.MAIN_BRANCH
-        uses: PiwikPRO/actions/s3/upload@feature/ARCH-374-collect-api-specs-with-copier
+        uses: PiwikPRO/actions/s3/upload@master
         with:
           aws-access-key-id: ${{ secrets.ARTIFACTORY_S3_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.ARTIFACTORY_S3_SECRET_ACCESS_KEY }}
@@ -272,7 +272,7 @@ jobs:
 
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
-        uses: PiwikPRO/actions/techdocs@feature/ARCH-374-collect-api-specs-with-copier
+        uses: PiwikPRO/actions/techdocs@master
         with:
           from: .
           to: Tech-docs
