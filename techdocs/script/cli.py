@@ -9,6 +9,7 @@ from detectors import (
     DeleteDetector,
     OperationDetectorChain,
     PlantUMLDiagramsDetector,
+    OpenAPIDetector,
     UnnecessaryOperationsFilteringDetector,
 )
 from filesystem import Filesystem
@@ -49,6 +50,7 @@ if __name__ == "__main__":
                             config,
                         ),
                         PlantUMLDiagramsDetector(),
+                        OpenAPIDetector(),
                         DeleteDetector(args.index, index, args.from_path, args.to_path),
                         UnnecessaryOperationsFilteringDetector(),
                     ).operations(fs),

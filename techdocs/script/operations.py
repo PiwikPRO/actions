@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -166,7 +167,10 @@ class PlantUMLDiagramRenderOperation:
         return header(hashb(get_full_puml_content(fs, self.source_puml_abs)))
 
     def mkd(self, path_formatter):
-        return f"* [PLANTUML] {path_formatter.format(self.source_puml_abs)} -> {path_formatter.format(self.destination_svg_abs)}"
+        return (
+            f"* [PLANTUML] {path_formatter.format(self.source_puml_abs)} -> "
+            f"{path_formatter.format(self.destination_svg_abs)}"
+        )
 
 
 def header(hash):
@@ -216,3 +220,71 @@ class DockerPlantUMLGenerator:
                 return f.read()
         finally:
             shutil.rmtree(dirpath)
+
+
+class OpenAPIOperation:
+    def __init__(self, source_abs, destination_abs, bundler):
+        self.source_abs = source_abs
+        self.destination_abs = destination_abs
+        self.bundler = bundler
+
+    def name(self):
+        return "openapi"
+
+    def execute(self, fs):
+        checksum = hashb(fs.read_string(self.source_abs).encode())
+        bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.destination_abs))
+        bundled_content["x-api-checksum"] = checksum
+
+        fs.write_string(self.destination_abs, json.dumps(bundled_content, indent=2))
+
+    def has_changes(self, fs):
+        if not fs.is_file(self.destination_abs):
+            return True
+        return not self.valid_checksum(fs, self.source_abs, self.destination_abs)
+
+    def source_files(self):
+        return [self.source_abs]
+
+    def destination_files(self):
+        return [self.destination_abs]
+
+    def mkd(self, path_formatter):
+        return f"* [OPENAPI] {path_formatter.format(self.source_abs)} -> {path_formatter.format(self.destination_abs)}"
+
+    def valid_checksum(self, fs, source_abs, destination_abs):
+        source_checksum = hashb(fs.read_string(source_abs).encode())
+        with open(destination_abs, "r") as f:
+            destination_checksum = json.loads(f.read())["x-api-checksum"]
+        return source_checksum == destination_checksum
+
+
+class OpenAPIBundler:
+    def bundle(self, fs, source_abs, destination_abs):
+        try:
+            dir_path = tempfile.mkdtemp()
+            subprocess.run(
+                [
+                    "docker",
+                    "run",
+                    "-v",
+                    f"{os.path.dirname(source_abs)}:/spec",
+                    "-v",
+                    f"{dir_path}:/out",
+                    "redocly/cli",
+                    "bundle",
+                    "--dereferenced",
+                    f"/spec/{os.path.basename(source_abs)}",
+                    "--output",
+                    f"/out/{os.path.basename(destination_abs)}",
+                    "--ext",
+                    "json",
+                ]
+            )
+            generated_files = fs.scan(dir_path, ".*")
+            if len(generated_files) != 1:
+                raise Exception("OpenAPI generation failed")
+            with open(os.path.join(dir_path, generated_files[0]), "r") as f:
+                return f.read()
+        finally:
+            shutil.rmtree(dir_path)

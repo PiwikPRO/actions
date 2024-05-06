@@ -1,4 +1,6 @@
 import copy
+import io
+import json
 import re
 from os import path
 
@@ -12,6 +14,8 @@ from operations import (
     DockerPlantUMLGenerator,
     PlantUMLDiagramRenderOperation,
 )
+from filesystem import Filesystem
+from operations import OpenAPIBundler, OpenAPIOperation
 
 
 class CopyDetector:
@@ -49,7 +53,7 @@ class CopyDetector:
                 path.join(rule.config.destination, path.basename(file)),
             )
         elif nodes.looks_fileish(rule.config.source) and nodes.looks_fileish(
-            rule.config.destination
+                rule.config.destination
         ):
             relative_src, relative_dst = (
                 file,
@@ -58,7 +62,7 @@ class CopyDetector:
         elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
             relative_src, relative_dst = (
                 file,
-                path.join(rule.config.destination, file[len(rule.config.source) - 1 :]),
+                path.join(rule.config.destination, file[len(rule.config.source) - 1:]),
             )
         else:
             return None
@@ -180,3 +184,65 @@ class OperationDetectorChain:
         for detector in self.detectors:
             operations = detector.detect(fs, copy.deepcopy(operations))
         return operations
+
+
+class OpenAPIDetector:
+    def __init__(self, bundler=None):
+        self.bundler = bundler or OpenAPIBundler()
+
+    def _detect_yaml_files(self, fs, previous_operations):
+        yaml_files = list(
+            filter(
+                lambda op: any([f.endswith(".yaml") or f.endswith(".yml") for f in op.source_files()]),
+                previous_operations,
+            )
+        )
+        openapi_spec_files = []
+        for yaml_file in yaml_files:
+            file = io.StringIO(fs.read_string(yaml_file.source_abs))
+            first_line = file.readline()
+            if first_line.startswith("openapi:"):
+                for line in file:
+                    if line.startswith("paths:\n"):
+                        yaml_file.destination_abs = self._prepare_destination(yaml_file.destination_abs)
+                        openapi_spec_files.append(yaml_file)
+                        break
+        return openapi_spec_files
+
+    def _detect_json_files(self, fs, previous_operations):
+        json_files = list(
+            filter(
+                lambda op: any([f.endswith(".json") for f in op.source_files()]),
+                previous_operations,
+            )
+        )
+        openapi_spec_files = []
+        for json_file in json_files:
+            file = json.loads(fs.read_string(json_file.source_abs))
+            if isinstance(file, dict) and file.get("openapi") and len(file.get("paths", [])) > 0:
+                json_file.destination_abs = self._prepare_destination(json_file.destination_abs)
+                openapi_spec_files.append(json_file)
+        return openapi_spec_files
+
+    def _prepare_destination(self, source):
+        source = source.replace(".yaml", ".json").replace(".yml", ".json")
+        return source
+
+    def detect(self, fs: Filesystem, previous_operations):
+        openapi_spec_files = (
+                self._detect_yaml_files(fs, previous_operations) + self._detect_json_files(fs, previous_operations)
+        )
+
+        return list(
+            filter(
+                lambda op: op not in openapi_spec_files,
+                previous_operations,
+            )
+        ) + [
+            OpenAPIOperation(
+                openapi_spec.source_abs,
+                openapi_spec.destination_abs,
+                self.bundler,
+            )
+            for openapi_spec in openapi_spec_files
+        ]

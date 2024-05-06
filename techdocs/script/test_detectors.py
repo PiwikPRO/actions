@@ -13,6 +13,7 @@ from detectors import (
 from filesystem import MockFilesystem
 from index import FileIndex, FileIndexItem, FileIndexLoader
 from operations import GenericFileCopyOperation, DeleteOperation
+from detectors import OpenAPIDetector
 
 
 def test_copy():
@@ -75,9 +76,11 @@ def test_copy():
     ),
 )
 def test_copy_create_operation_variants(
-    file, rule_source, rule_destination, expected_source, expected_destination
+        file, rule_source, rule_destination, expected_source, expected_destination
 ):
-    detector = CopyDetector("/home/foobar", "/tmp/Tech-docs", "Οδυσσέας Ελύτης", "master", Config([]))
+    detector = CopyDetector(
+        "/home/foobar", "/tmp/Tech-docs", "Οδυσσέας Ελύτης", "master", Config([])
+    )
     copy_operation = detector._create_operation(
         MockFilesystem(
             {"/tmp/Tech-docs/projects.json": json.dumps({"promil": {"path": "docs/promil"}})}
@@ -98,7 +101,8 @@ def test_copy_create_operation_variants(
 def test_index_load():
     fs = MockFilesystem(
         {
-            "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f": json.dumps(
+            "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f":
+                json.dumps(
                 {
                     "file": "heheszek",
                     "repo": "Promil-platform-foo",
@@ -141,9 +145,9 @@ def test_index_save():
             "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f"
         )
     ) == {
-        "file": "heheszek",
-        "repo": "Promil-platform-foo",
-    }
+               "file": "heheszek",
+               "repo": "Promil-platform-foo",
+           }
 
 
 def test_delete():
@@ -263,3 +267,80 @@ def test_plantuml():
 
 def test_swap_extension():
     assert swap_extension("foo/bar/baz.md", "svg") == "foo/bar/baz.svg"
+
+
+def test_openapi_detector():
+    fs = MockFilesystem(
+        {
+            "/tmp/Promil/api.yaml": """openapi: 3.1.0
+paths:
+    some-path: path""",
+            "/tmp/Promil/invalid-api.yaml": "openapi: 3.1.0",
+            "/tmp/Promil/other-file": "a-file-content",
+            "/tmp/Promil/subdir/spec.json": '{"openapi": "3.1.0","paths": {"some-path": "path"}}',
+            "/tmp/Promil/subdir/invalid-spec.json": '{"openapi": "3.1.0"}',
+        }
+    )
+    detector = OpenAPIDetector(
+        bundler=Mock(
+            bundle=Mock(
+                return_value='{"itsa me":"openapi"}',
+            )
+        )
+    )
+
+    operations = detector.detect(
+        fs,
+        [
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/api.yaml",
+                destination_abs="/tmp/dst/api.yaml",
+            ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/invalid-api.yaml",
+                destination_abs="/tmp/dst/invalid-api.yaml",
+            ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/other-file",
+                destination_abs="/tmp/dst/other-file",
+            ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/subdir/spec.json",
+                destination_abs="/tmp/dst/subdir/spec.json",
+            ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/subdir/invalid-spec.json",
+                destination_abs="/tmp/dst/subdir/invalid-spec.json",
+            ),
+        ],
+    )
+
+    for operation in operations:
+        print(operation.name(), operation.source_abs, operation.destination_abs)
+
+    assert len(operations) == 5
+    assert operations[0].name() == "copy"
+    assert operations[1].name() == "copy"
+    assert operations[2].name() == "copy"
+    assert operations[3].name() == "openapi"
+    assert operations[4].name() == "openapi"
+
+    # when
+    operations[3].execute(fs)
+    operations[4].execute(fs)
+
+    # then
+    assert fs.files["/tmp/dst/api.json"] == json.dumps(
+        {
+            "itsa me": "openapi",
+            "x-api-checksum": "f356dad852f2b8108be36a19c8e148c8b3ed5811c9bd072f2603d46c4aa4a0e6",
+        },
+        indent=2,
+    )
+    assert fs.files["/tmp/dst/subdir/spec.json"] == json.dumps(
+        {
+            "itsa me": "openapi",
+            "x-api-checksum": "5891d4bf2471e070e3675a5eedc88fe724e572bc2053e7b2bf00fb3862cd4c8a",
+        },
+        indent=2,
+    )

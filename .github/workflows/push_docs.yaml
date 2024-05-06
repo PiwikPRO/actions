@@ -55,6 +55,7 @@ jobs:
           repository: 'PiwikPRO/Tech-docs'
           token: ${{ steps.get-token.outputs.token }}
           path: 'Tech-docs'
+          ref: master
 
       - name: Set Tech-docs branch name
         if: github.ref_name != env.MAIN_BRANCH
@@ -151,6 +152,7 @@ jobs:
           repository: 'PiwikPRO/actions'
           token: ${{ steps.get-token.outputs.token }}
           path: 'actions'
+          ref: master
 
       - name: Move actions repo to /tmp
         # local-dev script requires actions repo to be in /tmp
