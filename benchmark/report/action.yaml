@@ -1,6 +1,9 @@
 name: 'Benchmark summary compiler'
 inputs:
-  path:
+  benchmark_path:
+    default: "."
+inputs:
+  reports_path:
     default: "."
 outputs:
   report:
@@ -14,7 +17,7 @@ runs:
       id: compile
       shell: bash
       run: |
-        REPORT=$(python ${{ github.action_path }}/script/cli.py --path ${{ inputs.path }})
+        REPORT=$(python ${{ github.action_path }}/script/cli.py --reports_path ${{ inputs.reports_path }} --benchmark_path ${{ inputs.benchmark_path }})
         echo "report<<EOF" >> $GITHUB_OUTPUT
         echo "${REPORT}" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
