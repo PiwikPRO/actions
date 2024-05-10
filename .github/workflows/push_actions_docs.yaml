@@ -1,0 +1,24 @@
+name: Documentation
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    uses: PiwikPRO/actions/.github/workflows/push_docs.yaml@master
+    secrets: inherit
+    with:
+      main_branch: master
+      config: |
+        {
+          "documents": [
+            {
+              "source": "README.md", 
+              "destination": "development/github-actions/README.md",
+              "project": "piwik-pro"
+            }
+          ]
+        }
+

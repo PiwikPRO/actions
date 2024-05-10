@@ -1,12 +1,15 @@
-# Shared github actions
+# Shared Github Actions
+
+Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
 
 <!--toc:start-->
 - [Actions](#actions)
   - [Dependabot](#dependabot)
     - [Update changelog](#update-changelog)
   - [Changelog](#changelog)
+  - [Github app token generator](#github-app-token-generator)
   - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
-  - [Dtools](#dtools)
+  - [~~Dtools~~ (deprecated)](#dtools)
   - [Godtools](#godtools)
     - [Login](#login)
     - [Push](#push)
@@ -26,8 +29,6 @@
   - [K6](#k6)
   - [Benchmarking](#benchmarking)
 <!--toc:end-->
-
-Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
 
 ## Actions
 
@@ -64,7 +65,7 @@ Keep a changelog validator:
 - `verify` check kacl structure using [python-kacl](https://github.com/mschmieder/python-kacl)
 
 Example usage:
-```
+```yaml
 name: Check changelog update
 on: pull_request
 jobs:
@@ -87,7 +88,6 @@ jobs:
 
 It is possible to configure the step that using aws-cli binary to make the connection through proxy. To do this, you must set the appropriate [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-proxy.html).
 
-
 Ready URIs are available under organization level secrets:
 
 ```
@@ -97,29 +97,101 @@ FORWARD_PROXY_HTTPS
 
 Example usage:
 ```yaml
-...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
+steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
 
-      # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO
-      - name: Download dtools
-        uses: PiwikPRO/actions/dtools/setup@master
-        with:
-          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
-          reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
-          reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
-          include-registry: acr # acr is default value, could be a list (ecr, acr, docker_hub, internal_acr)
+    - name: Download and setup godtools
+      uses: PiwikPRO/actions/godtools/setup@master
+      with:
+        godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+        godtools-key: ${{ secrets.GODTOOLS_KEY }}
+        reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
+        reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
 
-      - name: Download events
-        uses: PiwikPRO/actions/dtools/s3_download
-        env:
-          HTTP_PROXY: ${{ secrets.FORWARD_PROXY_HTTP }}
-          HTTPS_PROXY: ${{ secrets.FORWARD_PROXY_HTTPS }}
-        with:
-          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
-...
+    - name: Download events
+      uses: PiwikPRO/actions/godtools/download@master
+      env:
+        HTTP_PROXY: ${{ secrets.FORWARD_PROXY_HTTP }}
+        HTTPS_PROXY: ${{ secrets.FORWARD_PROXY_HTTPS }}
+      with:
+        godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+        godtools-key: ${{ secrets.GODTOOLS_KEY }}
+        artifacts: events
+        ref: master
 ```
+
+### Push dir to s3
+
+Pushes provided dir to s3.
+
+Example usage:
+```yaml
+steps:
+    - name: Producing some artifacts
+      shell: bash
+      run: make
+
+    - name: Upload artifacts
+      uses: PiwikPRO/actions/s3/upload@master
+      with:
+        aws-access-key-id: ${{ secrets.S3_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+        aws-bucket: my-sweet-artifacts-bucket
+        aws-region: eu-central-1
+        aws-http-proxy: ${{ secrets.FORWARD_PROXY_HTTP }}
+        aws-https-proxy: ${{ secrets.FORWARD_PROXY_HTTPS }}          
+        src-path: artifacts/
+        dst-path: ${{ github.repository }}/@${{ github.ref_name }}/artifacts/
+        echo-destination-index-html: true
+```
+
+### GitHub app token generator
+
+GitHub Action that can be used to generate an installation access token for a GitHub App. 
+This token can for instance be used to clone repos, given the GitHub App has sufficient permissions to do so.
+
+#### Usage
+
+```yaml
+name: Checkout repos
+on: push
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: PiwikPRO/actions/github-app-token-generator@master
+      id: get-token
+      with:
+        private-key: ${{ secrets.PRIVATE_KEY }}
+        app-id: ${{ secrets.APP_ID }}
+
+    - name: Check out an other repo
+      uses: actions/checkout@v2
+      with:
+        repository: owner/repo
+        token: ${{ steps.get-token.outputs.token }}
+```
+
+#### Requirements
+
+The action needs two input parameters, `private-key` and `app-id`. To get these, simply create a GitHub App. 
+The private key can be generated and downloaded, and should be added to the repos as a secret.
+
+The installation ID that is used during the creation of the access token is created against the repo running the action. 
+If you need to create the installation ID for a different repo you can use the `repo` input:
+
+```yaml
+uses: PiwikPRO/actions/github-app-token-generator@master
+id: get-token
+with:
+  private-key: ${{ secrets.PRIVATE_KEY }}
+  app-id: ${{ secrets.APP_ID }}
+  repo: some/repo
+```
+
 
 ### Dtools
 
@@ -136,7 +208,6 @@ Downloads latest version of the `godtools` binary and makes it available in `PAT
 Example usage:
 
 ```yaml
----
 steps:
   - name: Download and setup godtools
     uses: PiwikPRO/actions/godtools/setup@master
@@ -154,7 +225,6 @@ Allows to authenticate to docker registries. It requires [setup](#setup) action.
 Example usage:
 
 ```yaml
----
 steps:
   - name: Login to docker registries with godtools
     uses: PiwikPRO/actions/godtools/login@master
@@ -171,7 +241,6 @@ Allows to push docker images to authenticated registries. It requires both [setu
 Example usage:
 
 ```yaml
----
 steps:
   - name: Push container image
     uses: PiwikPRO/actions/godtools/push@master
@@ -191,7 +260,6 @@ Allows to download artifacts, like EventKeeper's `events`. It requires [setup](#
 Example usage:
 
 ```yaml
----
 steps:
   - name: Download events
     uses: PiwikPRO/actions/godtools/download@master
@@ -218,27 +286,24 @@ Installs golang and golangci-lint, runs linter tests.
 
 Example usage:
 ```yaml
-...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
+steps:
+  - name: Check out repository code
+    uses: actions/checkout@v2
 
-      # Simple linting, uses .golangci configiration file from the repo that is being linted:
-      - name: Run linters
-        uses: PiwikPRO/actions/go/lint@master
+  # Simple linting, uses .golangci configiration file from the repo that is being linted:
+  - name: Run linters
+    uses: PiwikPRO/actions/go/lint@master
 
-      # More sophisticated linter, using common configuration for all repositories and enforcing incremental improvements with every PR.
-      # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO.
-      - name: Run linters
-        uses: PiwikPRO/actions/go/lint@master
-        with:
-          inclint: "true"
-          inclint-aws-access-key-id: ${{ secrets.COVERAGE_S3_ACCESS_KEY_ID }}
-          inclint-aws-secret-access-key: ${{ secrets.COVERAGE_S3_SECRET_ACCESS_KEY }}
-          inclint-reporeader-application-id: ${{ secrets.COVERAGE_APPLICATION_ID }}
-          inclint-reporeader-private-key: ${{ secrets.COVERAGE_PRIVATE_KEY }}
-
-...
+  # More sophisticated linter, using common configuration for all repositories and enforcing incremental improvements with every PR.
+  # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO.
+  - name: Run linters
+    uses: PiwikPRO/actions/go/lint@master
+    with:
+      inclint: "true"
+      inclint-aws-access-key-id: ${{ secrets.COVERAGE_S3_ACCESS_KEY_ID }}
+      inclint-aws-secret-access-key: ${{ secrets.COVERAGE_S3_SECRET_ACCESS_KEY }}
+      inclint-reporeader-application-id: ${{ secrets.COVERAGE_APPLICATION_ID }}
+      inclint-reporeader-private-key: ${{ secrets.COVERAGE_PRIVATE_KEY }}
 ```
 
 **Configure VSCode to use common linter configuration**
@@ -250,7 +315,7 @@ Then clone this repository and set apropriate settings in preferences:
 `ctrl+shift+p -> Preferences: Open settings (JSON)`
 
 and set:
-```
+```json
 {
     "go.lintTool":"golangci-lint",
     "go.lintFlags": [
@@ -269,62 +334,32 @@ on:
     branches: ["master"]
 ```
 
-#### Push dir to s3
-
-Pushes provided dir to s3.
-
-Example usage:
-```yaml
-...
-  steps:
-      - name: Producing some artifacts
-        shell: bash
-        run: make
-
-      - name: Upload artifacts
-        uses: PiwikPRO/actions/s3/upload@master
-        with:
-          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          aws-bucket: my-sweet-artifacts-bucket
-          aws-region: eu-central-1
-          aws-http-proxy: ${{ secrets.FORWARD_PROXY_HTTP }}
-          aws-https-proxy: ${{ secrets.FORWARD_PROXY_HTTPS }}          
-          src-path: artifacts/
-          dst-path: ${{ github.repository }}/@${{ github.ref_name }}/artifacts/
-          echo-destination-index-html: true
-...
-```
-
 #### Test
 
 Installs golang and runs tests
 
 Example usage: 
 ```yaml
-...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      
-      # Simple tests without code coverage:
-      - name: Run unit tests
-        uses: PiwikPRO/actions/go/test@master
+steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
+    
+    # Simple tests without code coverage:
+    - name: Run unit tests
+      uses: PiwikPRO/actions/go/test@master
 
-      # More sophisticated tests, calculates coverage and enforces small incremental improvements with every PR.
-      # Uses AWS S3 to store per-repository and per-branch information about the coverage.
-      - name: Run unit tests
-        uses: PiwikPRO/actions/go/test@master
-        with:
-          cov: "true"
-          cov-aws-access-key-id: ${{ secrets.COVERAGE_S3_ACCESS_KEY_ID }}
-          cov-aws-secret-access-key: ${{ secrets.COVERAGE_S3_SECRET_ACCESS_KEY }}
-          cov-reporeader-application-id: ${{ secrets.COVERAGE_APPLICATION_ID }}
-          cov-reporeader-private-key: ${{ secrets.COVERAGE_PRIVATE_KEY }}
-          # Optional - boundary value up to which the coverage should be increased
-          cov-threshold: 80
-
-...
+    # More sophisticated tests, calculates coverage and enforces small incremental improvements with every PR.
+    # Uses AWS S3 to store per-repository and per-branch information about the coverage.
+    - name: Run unit tests
+      uses: PiwikPRO/actions/go/test@master
+      with:
+        cov: "true"
+        cov-aws-access-key-id: ${{ secrets.COVERAGE_S3_ACCESS_KEY_ID }}
+        cov-aws-secret-access-key: ${{ secrets.COVERAGE_S3_SECRET_ACCESS_KEY }}
+        cov-reporeader-application-id: ${{ secrets.COVERAGE_APPLICATION_ID }}
+        cov-reporeader-private-key: ${{ secrets.COVERAGE_PRIVATE_KEY }}
+        # Optional - boundary value up to which the coverage should be increased
+        cov-threshold: 80
 ```
 
 **Preferred triggers for workflows using this action**
@@ -341,20 +376,17 @@ As most of our golang projects use pytest for integration tests, this action ins
 
 Example usage: 
 ```yaml
-...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
+steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
 
-      - name: Setup integration tests
-        uses: PiwikPRO/actions/go/setup/integration@master
+    - name: Setup integration tests
+      uses: PiwikPRO/actions/go/setup/integration@master
 
-      - name: Run integration tests
-        env:
-          SOME_IMPORTANT_ENV_VAR: ${{ secrets.SOME_IMPORTANT_ENV_VAR }}
-        run: py.test -v --tb=short
-
-...
+    - name: Run integration tests
+      env:
+        SOME_IMPORTANT_ENV_VAR: ${{ secrets.SOME_IMPORTANT_ENV_VAR }}
+      run: py.test -v --tb=short
 ```
 
 #### Attach binary as github release when tag is built
@@ -371,18 +403,15 @@ If `cmd/version.go` file does not exists, the version is not updated.
 
 Example usage:
 ```yaml
-...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
+steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
 
-      - name: Release the binary
-        uses: PiwikPRO/actions/go/release@master
-        with:
-          binary-name: barman
-          main-file: main.go
-
-...
+    - name: Release the binary
+      uses: PiwikPRO/actions/go/release@master
+      with:
+        binary-name: barman
+        main-file: main.go
 ```
 
 
@@ -398,20 +427,17 @@ Run various python linters:
 
 Example usage:
 ```yaml
-...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
+steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
 
-      # Simple linting, uses predefined configuration file from this repository:
-      - name: Run linters
-        uses: PiwikPRO/actions/python/lint@master
-        with:
-          use-black: true
-          use-flake: true
-          use-isort: true
-
-...
+    # Simple linting, uses predefined configuration file from this repository:
+    - name: Run linters
+      uses: PiwikPRO/actions/python/lint@master
+      with:
+        use-black: true
+        use-flake: true
+        use-isort: true
 ```
 
 **Configure VSCode to use common linter configuration**
@@ -459,17 +485,15 @@ This action should not probably used directly by workflows, rather by other acti
 
 Example usage (in other action)
 ```yaml
-
-    - name: Run coverage action
-      uses: PiwikPRO/actions/coverage@master
-      if: ${{ inputs.cov == 'true' }}
-      with:
-        aws-access-key-id: ${{ inputs.cov-aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.cov-aws-secret-access-key }}
-        head-coverage: ${{ steps.get-coverage.outputs.coverage }}
-        github-token: ${{ steps.get-token.outputs.token }}
-        threshold: ${{ inputs.cov-threshold }}
-
+- name: Run coverage action
+  uses: PiwikPRO/actions/coverage@master
+  if: ${{ inputs.cov == 'true' }}
+  with:
+    aws-access-key-id: ${{ inputs.cov-aws-access-key-id }}
+    aws-secret-access-key: ${{ inputs.cov-aws-secret-access-key }}
+    head-coverage: ${{ steps.get-coverage.outputs.coverage }}
+    github-token: ${{ steps.get-token.outputs.token }}
+    threshold: ${{ inputs.cov-threshold }}
 ```
 
 
@@ -479,17 +503,15 @@ This action should not probably used directly by workflows, rather by other acti
 
 Example usage
 ```yaml
-
-    - name: Run inclint action
-      uses: PiwikPRO/actions/inclint@master
-      if: ${{ inputs.inclint == 'true' }}
-      with:
-        aws-access-key-id: ${{ inputs.inclint-aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.inclint-aws-secret-access-key }}
-        head-linter-errors: ${{ steps.get-linter-errors.outputs.lintererrors }}
-        github-token: ${{ steps.get-token.outputs.token }}
-        threshold: ${{ inputs.inclint-threshold }}
-
+- name: Run inclint action
+  uses: PiwikPRO/actions/inclint@master
+  if: ${{ inputs.inclint == 'true' }}
+  with:
+    aws-access-key-id: ${{ inputs.inclint-aws-access-key-id }}
+    aws-secret-access-key: ${{ inputs.inclint-aws-secret-access-key }}
+    head-linter-errors: ${{ steps.get-linter-errors.outputs.lintererrors }}
+    github-token: ${{ steps.get-token.outputs.token }}
+    threshold: ${{ inputs.inclint-threshold }}
 ```
 
 ### JavaScript
