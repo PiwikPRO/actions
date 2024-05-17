@@ -1,30 +1,32 @@
 # Shared github actions
 
 <!--toc:start-->
-- [Actions](#actions)
-  - [Dependabot](#dependabot)
-    - [Update changelog](#update-changelog)
-  - [Changelog](#changelog)
-  - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
-  - [Dtools](#dtools)
-  - [Godtools](#godtools)
-    - [Login](#login)
-    - [Push](#push)
-    - [Setup](#setup)
-  - [Go](#go)
-    - [Lint](#lint)
-    - [Push dir to s3](#push-dir-to-s3)
-    - [Test](#test)
-    - [Integration tests setup (pytest)](#integration-tests-setup-pytest)
-    - [Attach binary as github release when tag is built](#attach-binary-as-github-release-when-tag-is-built)
-  - [Python](#python)
-    - [Lint](#lint)
-  - [Coverage (internal)](#coverage-internal)
-  - [Inclint (internal)](#inclint-internal)
-  - [JavaScript](#javascript)
-    - [LTS-lint](#lts-lint)
-  - [K6](#k6)
-  - [Benchmarking](#benchmarking)
+- [Shared github actions](#shared-github-actions)
+  - [Actions](#actions)
+    - [Dependabot](#dependabot)
+      - [Update changelog](#update-changelog)
+    - [Changelog](#changelog)
+    - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
+    - [Dtools](#dtools)
+    - [Godtools](#godtools)
+      - [Setup](#setup)
+      - [Login](#login)
+      - [Push](#push)
+      - [Download artifacts](#download-artifacts)
+    - [Go](#go)
+      - [Lint](#lint)
+      - [Push dir to s3](#push-dir-to-s3)
+      - [Test](#test)
+      - [Integration tests setup (pytest)](#integration-tests-setup-pytest)
+      - [Attach binary as github release when tag is built](#attach-binary-as-github-release-when-tag-is-built)
+    - [Python](#python)
+      - [Lint](#lint-1)
+    - [Coverage (internal)](#coverage-internal)
+    - [Inclint (internal)](#inclint-internal)
+    - [JavaScript](#javascript)
+      - [LTS-lint](#lts-lint)
+    - [K6](#k6)
+    - [Benchmarking](#benchmarking)
 <!--toc:end-->
 
 Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
@@ -417,7 +419,7 @@ Example usage:
 **Configure VSCode to use common linter configuration**
 
 You can configure your local environment to use common configuration placed in this repository.
-First, make sure, that `black` and `flake8` are downloaded and available in your PATH.
+First, make sure, that `black formatter` and `flake8` extenstions are downloaded and available.
 Then clone this repository and set apropriate settings in preferences:
 
 `ctrl+shift+p -> Preferences: Open settings (JSON)`
@@ -425,14 +427,12 @@ Then clone this repository and set apropriate settings in preferences:
 and set:
 ```
 {
-    "python.formatting.provider": "black",
-    "python.formatting.blackArgs": [
+    "black-formatter.args": [
         "--config",
         "/home/kosto/Projects/promil/actions/python/lint/pyproject.toml"
     ],
     "editor.formatOnSave": true,
-    "python.linting.flake8Enabled": true,
-    "python.linting.flake8Args": [
+    "flake8.args": [
         "--config",
         "/home/kosto/Projects/promil/actions/python/lint/flake8.ini"
     ],
