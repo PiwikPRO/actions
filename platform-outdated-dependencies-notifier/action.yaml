@@ -1,37 +1,27 @@
 name: Check outdated dependencies in the platform repository
 description: "Comments in PRs with outdated Helm charts versions"
 inputs:
-  token-generator-application-id:
+  github-token-charts:
     required: true
-    description: "Application ID for the GitHub App to checkout helm charts source repository"
-  token-generator-private-key:
+    description: "GitHub token to checkout helm charts source repository"
+  github-token-platform:
     required: true
-    description: "Private key for the GitHub App to checkout helm charts source repository"
-  local-github-token:
-    required: true
-    description: "GitHub token to comment in PRs"
+    description: "GitHub token to platform repository"
 runs:
   using: "composite"
   steps:
-    - name: Generate PiwikPRO access token
-      uses: PiwikPRO/actions/github-app-token-generator@master
-      id: get-token
-      with:
-        app-id: ${{ inputs.token-generator-application-id }}
-        private-key: ${{ inputs.token-generator-private-key }}
-
     - name: Checkout platform repository
       uses: actions/checkout@v2
       with:
         path: platform
-        token: ${{ steps.get-token.outputs.token }}
+        token: ${{ inputs.github-token-platform }}
 
     - name: Checkout chart repository
       uses: actions/checkout@v2
       with:
         repository: PiwikPRO/Promil-helm-chart-repository-source
         path: charts
-        token: ${{ steps.get-token.outputs.token }}
+        token: ${{ inputs.github-token-charts }}
         ref: master
 
     - name: Check versions
@@ -62,7 +52,7 @@ runs:
       if: steps.check.outputs.comment != ''
       uses: actions/github-script@v3
       with:
-        github-token: ${{ inputs.local-github-token }}
+        github-token: ${{ inputs.github-token-platform }}
         script: |
           const comment = `
           ${process.env.COMMENT.split('\\n').join('\n')}

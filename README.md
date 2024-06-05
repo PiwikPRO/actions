@@ -607,3 +607,36 @@ To change the trigger from `/benchmark` comment to every PR commit, you can:
 
 * Comment ` tags: - '*'` from the `on` section.
 * Comment the `if` condition (`if: ${{ github.ref_type == 'tag' || (gi....`) from the `k6` job.
+
+### Platform Outdated Dependencies Notifier
+The Platform Outdated Dependencies Notifier action is a GitHub Action that notifies you when there are outdated dependencies in your project.
+Is compares helm chart versions in the repository where action is executed with the latest versions of those charts in our helm charts source repository.
+If case of any difference in versions, comment to PR with current/desired version is added. 
+
+#### Usage
+```yaml .github/workflows/validate_helm_charts_versions.yaml
+name: Check Outdated Helm Charts
+on:
+  pull_request:
+    branches:
+      - develop
+jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+
+    - name: Generate PiwikPRO access token to charts repo
+      uses: PiwikPRO/github-app-token-generator@v1
+      id: get-token
+      with:
+        private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
+        app-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
+        repository: PiwikPRO/Promil-helm-chart-repository-source
+
+    - name: Compare chart versions
+      uses: PiwikPRO/actions/platform-outdated-dependencies-notifier@master
+      with:
+        github-token-charts: ${{ steps.get-token.outputs.token }}
+        github-token-platform: ${{ secrets.GITHUB_TOKEN }}
+```
