@@ -1,0 +1,77 @@
+name: Check outdated dependencies in the platform repository
+description: "Comments in PRs with outdated Helm charts versions"
+inputs:
+  token-generator-application-id:
+    required: true
+    description: "Application ID for the GitHub App to checkout helm charts source repository"
+  token-generator-private-key:
+    required: true
+    description: "Private key for the GitHub App to checkout helm charts source repository"
+  local-github-token:
+    required: true
+    description: "GitHub token to comment in PRs"
+runs:
+  using: "composite"
+  steps:
+    - name: Generate PiwikPRO access token
+      uses: PiwikPRO/actions/github-app-token-generator@master
+      id: get-token
+      with:
+        app-id: ${{ inputs.token-generator-application-id }}
+        private-key: ${{ inputs.token-generator-private-key }}
+
+    - name: Checkout platform repository
+      uses: actions/checkout@v2
+      with:
+        path: platform
+        token: ${{ steps.get-token.outputs.token }}
+
+    - name: Checkout chart repository
+      uses: actions/checkout@v2
+      with:
+        repository: PiwikPRO/Promil-helm-chart-repository-source
+        path: charts
+        token: ${{ steps.get-token.outputs.token }}
+        ref: master
+
+    - name: Check versions
+      id: check
+      shell: bash
+      run: |
+        comment=""
+        for chart in platform/helm/*; do
+            dependencies=$(yq e -o json '.dependencies' "$chart/Chart.yaml")
+            if [ "$dependencies" != "null" ]; then
+                for row in $(echo "${dependencies}" | jq -r '.[] | @base64'); do
+                    _jq() {
+                      echo ${row} | base64 --decode | jq -r ${1}
+                    }
+                    dep_name=$(_jq '.name')
+                    dep_version=$(_jq '.version')
+                  chart_version=$(yq e '.version' "charts/charts/$dep_name/Chart.yaml" | tr -d '"')
+                  if [ "$dep_version" != "$chart_version" ]; then
+                    echo "Version mismatch for $dep_name: platform $dep_version, chart $chart_version"
+                    comment="$comment\nVersion mismatch for $dep_name: platform $dep_version, chart $chart_version"
+                  fi
+                done
+            fi
+        done
+        echo "::set-output name=comment::$comment"
+
+    - name: Create comment
+      if: steps.check.outputs.comment != ''
+      uses: actions/github-script@v3
+      with:
+        github-token: ${{ inputs.local-github-token }}
+        script: |
+          const comment = `
+          ${process.env.COMMENT.split('\\n').join('\n')}
+          `;
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          })
+      env:
+        COMMENT: ${{ steps.check.outputs.comment }}
