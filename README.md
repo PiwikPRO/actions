@@ -27,6 +27,7 @@
       - [LTS-lint](#lts-lint)
     - [K6](#k6)
     - [Benchmarking](#benchmarking)
+    - [Platform outdated dependencies notifier](#platform-outdated-dependencies-notifier)
 <!--toc:end-->
 
 Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
