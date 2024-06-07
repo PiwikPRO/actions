@@ -28,6 +28,9 @@
     - [K6](#k6)
     - [Benchmarking](#benchmarking)
     - [Platform outdated dependencies notifier](#platform-outdated-dependencies-notifier)
+    - [1Password](#1Password)
+      - [Get item field](#get-item-field)
+      - [Get kubeconfig](#get-kubeconfig)
 <!--toc:end-->
 
 Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
@@ -640,4 +643,75 @@ jobs:
       with:
         github-token-charts: ${{ steps.get-token.outputs.token }}
         github-token-platform: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### 1Password
+#### Get item field
+`1password/get-item-field` action is a Github Action that fetches specified field from 1Password item.
+
+Example usage:
+```yaml
+on:
+  pull_request:
+  push:
+    branches: ["master"]
+name: Test actions
+jobs:
+  test-get-field:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
+
+    - name: Get field
+      id: get-field
+      uses: PiwikPRO/actions/1password/get-item-field@master
+      with:
+        op-sa-token: <token-from-secrets>
+        op-vault: foo
+        op-item: bar
+        op-field: xyz
+
+    - name: Echo get-field
+      shell: bash
+      run: echo ${{ steps.get-field.outputs.field }}
+```
+
+#### Get kubeconfig
+`1password/get-kubeconfig` action is a Github Action that fetches `kubeconfig` field from 1Password item and base64 decodes it.
+
+Example usage:
+```yaml
+on:
+  pull_request:
+  push:
+    branches: ["master"]
+name: Test actions
+jobs:
+  test-get-kubeconfig:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        infra-name:
+          example-infra-1
+          example-infra-2
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
+
+    - name: Get kubeconfig
+      id: get-kubeconfig
+      uses: PiwikPRO/actions/1password/get-kubeconfig@master
+      with:
+        op-sa-token: ${{ secrets.OP_PREPROD_KUBECONFIG_SA_TOKEN}}
+        op-vault: ${{ secrets.OP_PREPROD_KUBECONFIG_VAULT }}
+        op-item: ${{ matrix.infra-name }}
+
+    - name: Echo get-kubeconfig
+      shell: bash
+      run: echo ${{ steps.get-kubeconfig.outputs.kubeconfig }}
 ```
