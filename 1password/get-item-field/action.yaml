@@ -1,0 +1,32 @@
+name: 'Get item field from 1Password'
+description: "Gets a field from specified 1Password vault/item"
+inputs:
+  op-sa-token:
+    required: true
+    description: "1Password Service Account Token"
+  op-vault:
+    required: true
+    description: "1Password Vault"
+  op-item:
+    required: true
+    description: "1Password Item"
+  op-field:
+    required: true
+    description: "1Password Item.Field"
+outputs:
+  field:
+    description: Value from 1Password Item.Field
+    value: ${{ steps.get-item-field.outputs.field }}
+
+runs:
+  using: "composite"
+  steps:
+  - name: Install 1Password CLI
+    uses: 1password/install-cli-action@v1
+  
+  - name: Get item field
+    id: get-item-field
+    shell: bash
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-sa-token }}
+    run: echo "field=$(op item get ${{ inputs.op-item }} --vault=${{ inputs.op-vault }} --fields label=${{ inputs.op-field }})" >> $GITHUB_OUTPUT
