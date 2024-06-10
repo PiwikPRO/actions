@@ -21,7 +21,7 @@ runs:
   steps:
   - name: Get Kubeconfig from 1Password
     id: get-kubeconfig
-    uses: PiwikPRO/actions/1password/get-item-field@DEVOPS-7869
+    uses: PiwikPRO/actions/1password/get-item-field@master
     with:
       op-sa-token: ${{ inputs.op-sa-token }}
       op-vault: ${{ inputs.op-vault }}
