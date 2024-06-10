@@ -1,0 +1,34 @@
+name: 'Get Kubeconfig from 1Password'
+description: "Gets a kubeconfig from specified 1Password vault/item"
+inputs:
+  op-sa-token:
+    required: true
+    description: "1Password Service Account Token"
+  op-vault:
+    required: true
+    description: "1Password Vault"
+    default: "Promil-preprod-gha-kubeconfigs"
+  op-item:
+    required: true
+    description: "1Password Item"
+outputs:
+  kubeconfig:
+    description: Value from 1Password Item.kubeconfig
+    value: ${{ steps.decode-kubeconfig.outputs.kubeconfig }}
+
+runs:
+  using: "composite"
+  steps:
+  - name: Get Kubeconfig from 1Password
+    id: get-kubeconfig
+    uses: PiwikPRO/actions/1password/get-item-field@master
+    with:
+      op-sa-token: ${{ inputs.op-sa-token }}
+      op-vault: ${{ inputs.op-vault }}
+      op-item: ${{ inputs.op-item }}
+      op-field: kubeconfig
+  
+  - name: Decode kubeconfig
+    id: decode-kubeconfig
+    shell: bash
+    run: echo "kubeconfig=$(echo '${{ steps.get-kubeconfig.outputs.field }}' | base64 --decode)" >> $GITHUB_OUTPUT
