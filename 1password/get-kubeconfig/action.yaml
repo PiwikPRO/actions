@@ -31,4 +31,4 @@ runs:
   - name: Decode kubeconfig
     id: decode-kubeconfig
     shell: bash
-    run: echo "kubeconfig=$(echo '${{ steps.get-kubeconfig.outputs.field }}' | base64 --decode)" >> $GITHUB_OUTPUT
+    run: echo "kubeconfig<<EOF"$'\n'"$(echo '${{ steps.get-kubeconfig.outputs.field }}' | tr -d "\"" | base64 --decode)"$'\n'EOF >> "$GITHUB_OUTPUT"

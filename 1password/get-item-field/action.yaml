@@ -29,4 +29,4 @@ runs:
     shell: bash
     env:
       OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-sa-token }}
-    run: echo "field=$(op item get ${{ inputs.op-item }} --vault=${{ inputs.op-vault }} --fields label=${{ inputs.op-field }})" >> $GITHUB_OUTPUT
+    run: echo "field<<EOF"$'\n'"$(op item get ${{ inputs.op-item }} --vault=${{ inputs.op-vault }} --fields label=${{ inputs.op-field }})"$'\n'EOF >> "$GITHUB_OUTPUT"
