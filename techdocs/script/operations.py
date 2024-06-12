@@ -263,7 +263,7 @@ class OpenAPIBundler:
     def bundle(self, fs, source_abs, destination_abs):
         try:
             dir_path = tempfile.mkdtemp()
-            subprocess.run(
+            output = subprocess.run(
                 [
                     "docker",
                     "run",
@@ -279,8 +279,11 @@ class OpenAPIBundler:
                     f"/out/{os.path.basename(destination_abs)}",
                     "--ext",
                     "json",
-                ]
+                ],
+                capture_output=True
             )
+            if output.returncode != 0:
+                raise Exception(f"OpenAPI generation failed: {output.stderr.decode()}")
             generated_files = fs.scan(dir_path, ".*")
             if len(generated_files) != 1:
                 raise Exception("OpenAPI generation failed")
