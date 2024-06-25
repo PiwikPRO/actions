@@ -19,16 +19,20 @@ outputs:
 runs:
   using: "composite"
   steps:
+  - name: Install 1Password CLI
+    uses: 1password/install-cli-action@v1
+
   - name: Get Kubeconfig from 1Password
     id: get-kubeconfig
-    uses: PiwikPRO/actions/1password/get-item-field@master
-    with:
-      op-sa-token: ${{ inputs.op-sa-token }}
-      op-vault: ${{ inputs.op-vault }}
-      op-item: ${{ inputs.op-item }}
-      op-field: kubeconfig
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-sa-token }}
+    shell: bash
+    run: | 
+      encoded=$(op item get ${{ inputs.op-item }} --vault=${{ inputs.op-vault }} --fields label=kubeconfig| tr -d "\n" )
+      echo "::add-mask::$encoded"
+      echo "encoded<<EOF"$'\n'"$encoded"$'\n'EOF >> "$GITHUB_OUTPUT"
   
   - name: Decode kubeconfig
     id: decode-kubeconfig
     shell: bash
-    run: echo "kubeconfig<<EOF"$'\n'"$(echo '${{ steps.get-kubeconfig.outputs.field }}' | tr -d "\"" | base64 --decode)"$'\n'EOF >> "$GITHUB_OUTPUT"
+    run: echo "kubeconfig<<EOF"$'\n'"$(echo '${{ steps.get-kubeconfig.outputs.encoded }}' | tr -d "\"" | base64 --decode)"$'\n'EOF >> "$GITHUB_OUTPUT"

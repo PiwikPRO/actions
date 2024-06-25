@@ -29,7 +29,6 @@
     - [Benchmarking](#benchmarking)
     - [Platform outdated dependencies notifier](#platform-outdated-dependencies-notifier)
     - [1Password](#1Password)
-      - [Get item field](#get-item-field)
       - [Get kubeconfig](#get-kubeconfig)
 <!--toc:end-->
 
@@ -646,38 +645,6 @@ jobs:
 ```
 
 ### 1Password
-#### Get item field
-`1password/get-item-field` action is a Github Action that fetches specified field from 1Password item.
-
-Example usage:
-```yaml
-on:
-  pull_request:
-  push:
-    branches: ["master"]
-name: Test actions
-jobs:
-  test-get-field:
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-    - name: Check out repository code
-      uses: actions/checkout@v3
-
-    - name: Get field
-      id: get-field
-      uses: PiwikPRO/actions/1password/get-item-field@master
-      with:
-        op-sa-token: <token-from-secrets>
-        op-vault: foo
-        op-item: bar
-        op-field: xyz
-
-    - name: Echo get-field
-      shell: bash
-      run: echo ${{ steps.get-field.outputs.field }}
-```
-
 #### Get kubeconfig
 `1password/get-kubeconfig` action is a Github Action that fetches `kubeconfig` field from 1Password item and base64 decodes it.
 
