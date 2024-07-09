@@ -84,7 +84,7 @@ runs:
         args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
 
     - name: Generate PiwikPRO access token for inclint action
-      uses: PiwikPRO/github-app-token-generator@v1
+      uses: PiwikPRO/github-app-token-generator@v1.1.2
       if: ${{ inputs.inclint == 'true' }}
       id: get-token
       with:

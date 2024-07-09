@@ -17,7 +17,7 @@ runs:
   steps:
 
     - name: Generate PiwikPRO access token for private repositories
-      uses: PiwikPRO/github-app-token-generator@v1
+      uses: PiwikPRO/github-app-token-generator@v1.1.2
       if: ${{ inputs.repos != '' }}
       id: get-token
       with:

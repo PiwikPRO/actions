@@ -19,7 +19,7 @@ runs:
   steps:
 
     - name: Generate PiwikPRO access tokens
-      uses: PiwikPRO/github-app-token-generator@v1
+      uses: PiwikPRO/github-app-token-generator@v1.1.2
       id: get-token
       with:
         private-key: ${{ inputs.reporeader-private-key }}
