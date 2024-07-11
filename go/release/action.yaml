@@ -24,6 +24,10 @@ inputs:
     required: false
     description: The name of the target compilation architecture
     default: amd64
+  generate-checksum:
+    required: false
+    description: Generate sha256 checksum for the binary
+    default: "false"
 runs:
   using: "composite"
   steps:
@@ -53,3 +57,15 @@ runs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: ${{ inputs.binary-name }}
+
+    - name: Generate checksum
+      if: ${{ inputs.generate-checksum == 'true' }}
+      shell: bash
+      run: |
+        sha256sum ${{ inputs.binary-name }} | awk '{ printf "%s", $1 }' > ${{ inputs.binary-name }}.checksum
+
+    - name: Release the binary checksum if on tag
+      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+      if: startsWith(github.ref, 'refs/tags/') && ${{ inputs.generate-checksum == 'true' }}
+      with:
+        files: ${{ inputs.binary-name }}.checksum
