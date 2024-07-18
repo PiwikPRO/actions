@@ -30,6 +30,8 @@
     - [Platform outdated dependencies notifier](#platform-outdated-dependencies-notifier)
     - [1Password](#1Password)
       - [Get kubeconfig](#get-kubeconfig)
+    - [Helm]
+      - [Extract PiwikPRO CRDs](#extract-piwikpro-crds)
 <!--toc:end-->
 
 Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
@@ -681,4 +683,46 @@ jobs:
     - name: Echo get-kubeconfig
       shell: bash
       run: echo ${{ steps.get-kubeconfig.outputs.kubeconfig }}
+```
+
+### Helm
+#### Extract PiwikPRO CRDs
+`helm/extract-piwikpro-crds` actions is a Github Action that extracts CRD definitions and prepares artifact with them. 
+It is used in order to upload CRDs onto `techdocs`.
+
+Example usage:
+```yaml
+name: Documentation
+on: [ push, pull_request ]
+jobs:
+  prepare-crds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Prepare CRDs
+        uses: PiwikPRO/actions/helm/extract-piwikpro-crds@DEVOPS-7919
+        with:
+          private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
+          app-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
+          artifact-name: crds
+
+  push:
+    needs: prepare-crds
+    uses: PiwikPRO/actions/.github/workflows/push_docs.yaml@master
+    secrets: inherit
+    with:
+      artifact: crds
+      config: |
+        {
+          "documents": [
+            {
+              "source": ".techdocs-artifact/*",
+              "destination": "development/apis/kubernetes/",
+              "project": "promil"
+            }
+          ]
+        }
 ```
