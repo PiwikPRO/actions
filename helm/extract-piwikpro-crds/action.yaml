@@ -1,0 +1,67 @@
+name: Extract PiwikPRO CRDs from helm charts
+description: Extracts PiwikPRO CRDs from helm charts and copies them to specified directory
+inputs:
+  helm-chart-path:
+    default: helm
+    description: Path to helm charts directory
+  artifact-name:
+    default: crds
+    description: Name of the artifact to be uploaded
+  private-key:
+    required: true
+    description: Private key for token generator application
+  app-id:
+    required: true
+    description: Application ID of token generator application
+
+runs:
+  using: composite
+  steps:
+  - name: Generate PiwikPRO access tokens
+    uses: PiwikPRO/github-app-token-generator@v1
+    id: get-token
+    with:
+      private-key: ${{ inputs.private-key }}
+      app-id: ${{ inputs.app-id }}
+
+  - name: Extract CRDs
+    shell: bash
+    id: extract-crds
+    env:
+      BASE_CHARTS_DIR: ${{ inputs.helm-chart-path }}
+      DEP_CHARTS_DIR: build/charts
+      CRD_DIR: build/crds
+      TOKEN: ${{ steps.get-token.outputs.token }}
+      REPO_NAME: piwikpro
+      REPO_URL: https://raw.githubusercontent.com/PiwikPRO/Promil-helm-chart-repository/master/repository/
+    run: |
+      mkdir -p $DEP_CHARTS_DIR $CRD_DIR
+      
+      echo "Adding helm repository '$REPO_NAME'..."
+      helm repo add $REPO_NAME --username $TOKEN --password $TOKEN $REPO_URL
+
+      echo "Searching through Chart.yaml files in helm directory and pulling chart dependencies..."
+      for chart in $(find $BASE_CHARTS_DIR -name Chart.yaml); do
+        while IFS=, read -r name version repository; do
+            if [[ -d "$DEP_CHARTS_DIR/$name" ]]; then
+              echo "Skipping $name, already pulled"
+              continue
+            fi
+            helm pull "$REPO_NAME/$name" --version "$version" --untar --untardir $DEP_CHARTS_DIR
+        done < <(yq -r '.dependencies[] | .name + "," + .version + "," + .repository' $chart)
+      done
+
+      echo "Filtering PiwikPRO CRDs..."
+      CRDS=$(find $DEP_CHARTS_DIR/**/crds -name "*.yaml" -type f -exec sh -c 'yq eval "select(.kind == \"CustomResourceDefinition\") | select(.metadata.name == \"*piwik.pro\") | filename" "$0" ' {} \;)
+
+      echo "Copy CRDs to artifact directory..."
+      for crd in $CRDS; do
+        echo $crd $CRD_DIR
+        cp $crd $CRD_DIR
+      done
+      
+  - name: Prepare artifact
+    uses: actions/upload-artifact@v3
+    with:
+      name: ${{ inputs.artifact-name }}
+      path: build/crds
