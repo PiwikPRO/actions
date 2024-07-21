@@ -51,6 +51,12 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+        
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ inputs.artifact }}
+        path: ./benchmark/
 
     - name: Copy all the reports from s3
       shell: bash
@@ -64,9 +70,10 @@ jobs:
 
     - name: Prepare the report
       id: compile
-      uses: PiwikPRO/actions/benchmark/report@pet-23-k6-action
+      uses: PiwikPRO/actions/benchmark/report@pet-23-k6-action-fixing-report
       with:
-        path: reports
+        reports_path: ./reports
+        benchmark_path: ./benchmark
 
     - name: Print the report
       shell: bash

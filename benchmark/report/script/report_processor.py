@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 import statistics
@@ -12,28 +13,41 @@ ARROW_UP = "\U00002197"
 ARROW_DOWN = "\U00002198"
 ARROW_EQ = "\U00002194"
 
-
-def process(dir):
+def process(reports_dir, benchmark_dir):
     print("**Automated k6 Benchmark Report**")
     print("--------------------------------")
     report_list = sorted([
-        report for report in os.listdir(dir) if os.path.isfile(get_report_uri(dir, report))
+        report for report in os.listdir(reports_dir) if os.path.isfile(get_report_uri(reports_dir, report))
     ], reverse=True)
 
-    last_report = json.load(open(get_report_uri(dir, report_list.pop(0))))["data"]
+    if len(report_list) == 0:
+        raise Exception("Can't compile the summary - there are no reports to compare with. " +
+                        "Tag you default branch first and wait for the base report to be ready. " +
+                        "Then we will have something to compare your current benchmark with.")
+
+    last_report = json.load(open(benchmark_dir + "/" + REPORT_FILE_NAME))["data"]
 
     compare_with_reports = []
+    report_timestamps = []
     for i in report_list[0:5]:
-        old_report = json.load(open(get_report_uri(dir, i)))
+        old_report = json.load(open(get_report_uri(reports_dir, i)))
         compare_with_reports.append(old_report["data"])
+        report_timestamps.append(old_report["run"]["end_s_since_epoch"])
 
     calculate_avg_metrics(last_report, compare_with_reports)
 
-    print_results(last_report, len(compare_with_reports))
+    print_results(last_report, len(compare_with_reports), min(report_timestamps), max(report_timestamps))
 
+def print_results(last_report, previous_runs, first_ts, last_ts):
+    first_ts = str(datetime.fromtimestamp(first_ts))
+    last_ts = str(datetime.fromtimestamp(last_ts))
+    previous_runs = str(previous_runs)
 
-def print_results(last_report, previous_runs):
-    print("Compared to average of " + str(previous_runs) + " latest runs")
+    if previous_runs == 1:
+        print(f"Compared (left value) to the last run, recorded on {first_ts}")
+    else:
+        print(f"Compared (left value) to the average calculated from the {previous_runs} latest runs. " +
+              f"First was recorded on {first_ts} and the last was recorded on {last_ts}.")
 
     for i in last_report:
         avg = round(last_report[i]["avg"], ROUND_PRECISION)
@@ -44,10 +58,8 @@ def print_results(last_report, previous_runs):
 
         print(f"{result['dot']} {description}: {avg} {result['arrow']} {val}")
 
-
 def get_report_uri(base_dir, report_dir):
     return base_dir + "/" + report_dir + "/" + REPORT_FILE_NAME
-
 
 def calculate_avg_metrics(last_report, compare_with_reports):
     for i in last_report:
@@ -57,7 +69,6 @@ def calculate_avg_metrics(last_report, compare_with_reports):
             )
         except statistics.StatisticsError:
             last_report[i]["avg"] = last_report[i]["value"]
-
 
 def compare(x, y, logic):
 
@@ -79,7 +90,6 @@ def compare(x, y, logic):
 
     return {"dot": dot, "arrow": arrow}
 
-
 def compare_logic_from_str(logic_name):
     if logic_name == "higher_is_better":
         logic = 1
@@ -89,7 +99,6 @@ def compare_logic_from_str(logic_name):
         raise Exception("Unhandled comparison logic: " + logic_name)
 
     return logic
-
 
 def cmp(x, y):
     return (x > y) - (x < y)
