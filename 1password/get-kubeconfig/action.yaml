@@ -21,6 +21,8 @@ runs:
   steps:
   - name: Install 1Password CLI
     uses: 1password/install-cli-action@v1
+    with:
+      version: 2.30.0
 
   - name: Get Kubeconfig from 1Password
     id: get-kubeconfig
@@ -28,7 +30,7 @@ runs:
       OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-sa-token }}
     shell: bash
     run: | 
-      encoded=$(op item get ${{ inputs.op-item }} --vault=${{ inputs.op-vault }} --fields label=kubeconfig| tr -d "\n" )
+      encoded=$(op item get ${{ inputs.op-item }} --vault=${{ inputs.op-vault }} --fields label=kubeconfig --reveal | tr -d "\n" )
       echo "::add-mask::$encoded"
       echo "encoded<<EOF"$'\n'"$encoded"$'\n'EOF >> "$GITHUB_OUTPUT"
   
