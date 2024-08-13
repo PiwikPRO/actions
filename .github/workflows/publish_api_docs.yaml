@@ -1,0 +1,111 @@
+name: Publish public OpenAPI documentation
+on:
+  workflow_call:
+    inputs:
+      repository_tag:
+        default: 'Repository tag to process'
+        required: true
+        type: string
+
+jobs:
+  update_api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          ref: ${{ inputs.repository_tag }}
+          path: source-repo
+
+      - name: Prepare repository name
+        id: repo-name
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]' | tr '/' '-')
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+
+      - name: Generate access token for DevelopersPortal repo
+        uses: PiwikPRO/actions/github-app-token-generator@master
+        id: get-token
+        with:
+          private-key: ${{ secrets.DEVELOPER_PORTAL_AGGREGATOR_PRIVATE_KEY }}
+          app-id: ${{ secrets.DEVELOPER_PORTAL_AGGREGATOR_APPLICATION_ID }}
+
+      - name: Check for existing Pull Request
+        id: check-pr
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          matching_pr=$(gh pr list -R PiwikPRO/DevelopersPortal \
+            --base master \
+            --json url,headRefName \
+            --jq ".[] | select(.headRefName | startswith(\"api/$REPO_NAME\")) | {url: .url}")
+          
+          if [ -n "$matching_pr" ]; then
+            pr_url=$(echo $matching_pr | jq -r .url)
+            echo "::error::There is already an open pull request for this repository: $pr_url"
+            echo "::error::Close it or merge before running this workflow again"
+            exit 1
+          else
+            echo "No matching PR found. Proceeding with creation."
+          fi         
+
+      - name: Checkout DevelopersPortal repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          repository: 'PiwikPRO/DevelopersPortal'
+          path: developers-portal
+          token: ${{ steps.get-token.outputs.token }}
+
+      - name: Use https instead of ssh for publish script
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+      - name: Run publish_api.sh script
+        working-directory: ./developers-portal
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          ./publish_api.sh ../source-repo
+
+      - name: Check for changes
+        working-directory: ./developers-portal
+        id: git-check
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected"
+          else
+            echo "No changes detected"
+          fi
+
+      - name: Create new branch and push changes
+        if: steps.git-check.outputs.changes == 'true'
+        working-directory: ./developers-portal
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          BRANCH_NAME="api/$REPO_NAME-${{ inputs.repository_tag }}-$(date +%s)"
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git checkout -b $BRANCH_NAME
+          git add .
+          git commit -m "API update from ${{ github.repository }} (${{ inputs.repository_tag }})"
+          git push origin $BRANCH_NAME
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Create Pull Request
+        if: steps.git-check.outputs.changes == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+        run: |
+          gh pr create --title "API Update: ${{ github.event.repository.name }}:${{ inputs.repository_tag }}" \
+            --body "This PR contains public OpenAPI spec from \
+              [${{ github.repository }}:${{ inputs.repository_tag }}](https://github.com/${{ github.repository }}/releases/tag/${{ inputs.repository_tag }}).
+              Triggered by: @${{ github.actor }}" \
+            --head ${{ env.BRANCH_NAME }} \
+            --base master \
+            --repo PiwikPRO/DevelopersPortal \
+            --assignee ${{ github.actor }} \
+            --label "openapi-update" | tee pr_url.txt
+          echo "::notice::Pull request created: $(cat pr_url.txt)"
