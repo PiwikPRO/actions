@@ -7,9 +7,9 @@ from copier import Copier, Executor, PrintingExecutor, RelativeFormatter
 from detectors import (
     CopyDetector,
     DeleteDetector,
+    OpenAPIDetector,
     OperationDetectorChain,
     PlantUMLDiagramsDetector,
-    OpenAPIDetector,
     UnnecessaryOperationsFilteringDetector,
 )
 from filesystem import Filesystem
@@ -30,6 +30,11 @@ if __name__ == "__main__":
     parser.add_argument("--branch", dest="branch", default="master")
     parser.add_argument("--author", dest="author", default="unknown author")
     parser.add_argument("--dry-run", dest="dry_run", action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "--skip-invalid-documents",
+        dest="skip_invalid_documents",
+        action=argparse.BooleanOptionalAction,
+    )
     args = parser.parse_args()
 
     if args.command == "copy":
@@ -38,7 +43,7 @@ if __name__ == "__main__":
                 os.path.join(args.to_path, INDEX_DIRECTORY), fs, not args.dry_run
             ) as index:
                 config = ConfigLoader.default(args.from_path, args.to_path, fs).load(
-                    args.config_path
+                    args.config_path, args.skip_invalid_documents
                 )
                 Copier(
                     OperationDetectorChain(
