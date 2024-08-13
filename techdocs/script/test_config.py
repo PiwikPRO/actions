@@ -1,6 +1,7 @@
 import json
 
 import pytest
+
 from config import ConfigError, ConfigLoader
 from filesystem import MockFilesystem
 
@@ -138,3 +139,35 @@ def test_config_violations(config, is_valid):
     else:
         with pytest.raises(ConfigError):
             ConfigLoader.default("/tmp/foo", "/tmp/bar", fs).load("/tmp/techdocs/config.json")
+
+
+def test_skip_invalid_documents():
+    fs = MockFilesystem(
+        {
+            "/tmp/techdocs/config.json": json.dumps(
+                {
+                    "documents": [
+                        {
+                            "project": "not-existing-project",
+                            "source": "README.md",
+                            "destination": "docs/promil/bla.md",
+                        },
+                        {
+                            "project": "promil",
+                            "source": "docs/*",
+                            "destination": "docs/promil/somedir/",
+                            "exclude": ["docs/internal/*"],
+                        },
+                    ],
+                }
+            ),
+            "/tmp/foo/README.md": "blabla",
+            "/tmp/foo/docs/inner/other-dir/foo.md": "blabla",
+            "/tmp/bar/projects.json": json.dumps({"promil": {"path": "docs/promil"}}),
+        }
+    )
+
+    config = ConfigLoader.default("/tmp/foo", "/tmp/bar", fs).load(
+        "/tmp/techdocs/config.json", skip_invalid_documents=True
+    )
+    assert len(config.documents) == 1

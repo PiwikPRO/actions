@@ -11,6 +11,10 @@ class ConfigError(Exception):
     pass
 
 
+class DocumentError(Exception):
+    pass
+
+
 @dataclass
 class ConfigDocumentEntry:
     project: str
@@ -21,7 +25,7 @@ class ConfigDocumentEntry:
 
 @dataclass
 class Config:
-    documents: ConfigDocumentEntry
+    documents: List[ConfigDocumentEntry]
 
 
 # Validators applied to the whole config
@@ -62,7 +66,7 @@ class ConfigLoader:
         self.config_validators = config_validators
         self.document_validators = document_validators
 
-    def load(self, config_path: str) -> Config:
+    def load(self, config_path: str, skip_invalid_documents=False) -> Config:
         try:
             config_json = self.filesystem.read_string(config_path)
         except FileNotFoundError:
@@ -75,16 +79,21 @@ class ConfigLoader:
             validator.validate(raw_policy)
         rules = []
         for document_rule in raw_policy["documents"]:
-            for validator in self.document_validators:
-                validator.validate(document_rule)
-            rules.append(
-                ConfigDocumentEntry(
-                    document_rule["project"],
-                    document_rule["source"],
-                    document_rule["destination"],
-                    document_rule["exclude"] if "exclude" in document_rule else [],
+            try:
+                for validator in self.document_validators:
+                    validator.validate(document_rule)
+                rules.append(
+                    ConfigDocumentEntry(
+                        document_rule["project"],
+                        document_rule["source"],
+                        document_rule["destination"],
+                        document_rule["exclude"] if "exclude" in document_rule else [],
+                    )
                 )
-            )
+            except DocumentError as e:
+                if not skip_invalid_documents:
+                    raise ConfigError(e)
+                print(f"Warning: {e}")
         return Config(rules)
 
 
@@ -161,10 +170,10 @@ class ProjectMustExist(ConfigValidator):
 
     def validate(self, config: dict) -> dict:
         try:
-            doc_path = self.reader.doc_path(config["project"])
+            self.reader.doc_path(config["project"])
         except ProjectDoesNotExist:
-            raise ConfigError(
-                f"Project `{config['project']}` does not exist. Offending config: {config}"
+            raise DocumentError(
+                f"Project `{config['project']}` is not declared in target's projects.json. Offending config: {config}"
             )
 
 
@@ -210,7 +219,9 @@ class ProjectDetailsReader:
 
     def doc_path(self, project):
         if project not in self.projects:
-            raise ProjectDoesNotExist(f"Project {project} does not exist")
+            raise ProjectDoesNotExist(
+                f"Project {project} does not exist"
+            )  # FIXME - don't throw an error, just log it
         return self.projects[project]["path"]
 
     @property
