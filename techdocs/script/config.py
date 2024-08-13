@@ -219,9 +219,7 @@ class ProjectDetailsReader:
 
     def doc_path(self, project):
         if project not in self.projects:
-            raise ProjectDoesNotExist(
-                f"Project {project} does not exist"
-            )  # FIXME - don't throw an error, just log it
+            raise ProjectDoesNotExist(f"Project {project} does not exist")
         return self.projects[project]["path"]
 
     @property
