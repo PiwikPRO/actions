@@ -5,6 +5,7 @@
   - [Actions](#actions)
     - [Dependabot](#dependabot)
       - [Update changelog](#update-changelog)
+    - [Developers Portal](#developers-portal)
     - [Changelog](#changelog)
     - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
     - [Dtools](#dtools)
@@ -63,6 +64,40 @@ jobs:
 ```
 
 Info: You should copy not only step, but also another parts above (run only on labeled pull requests with label `dependencies`) to work it correctly.
+
+### Developers Portal
+
+This action adds a manually triggered workflow to publish part of OpenAPI stored in the repository. 
+
+Add it as `publish_api_docs.yaml` to your repository `.github/workflows` directory:
+
+```yaml
+name: Publish public OpenAPI documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository_tag:
+        description: 'Repository tag to process'
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  push-public-api-docs:
+    uses: PiwikPRO/actions/.github/workflows/publish_api_docs.yaml@master
+    secrets: inherit
+    with:
+      repository_tag: ${{ github.event.inputs.repository_tag }}
+```
+
+Then, you can trigger it manually from the Actions tab in your repository. As input you need to provide the tag 
+of the repository you want to process.
+
+For more details about its implementation head to [PiwikPRO/DevelopersPortal](https://github.com/PiwikPRO/DevelopersPortal#api-documentation)
 
 ### Changelog
 
