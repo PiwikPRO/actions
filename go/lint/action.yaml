@@ -4,16 +4,16 @@ inputs:
   go-version:
     required: false
     description: Version of go
-    default: "1.21.x"
+    default: "1.23.x"
   
   golangci-lint-version:
     required: false
     description: Version of golangci-lint
-    default: "v1.55.2"
+    default: "v1.60.2"
   golangci-lint-concurrency:
     required: false
     description: Concurrency for golangci-lint
-    default: 8
+    default: "4"
   golangci-lint-timeout:
     required: false
     description: Timeout for golangci-lint
@@ -37,7 +37,7 @@ inputs:
     description: Application ID of token generator application
   inclint-threshold:
     required: false
-    default: 1
+    default: "1"
     description: How many linter errors should be fixed with every PR
 
   goprivate-repos:
@@ -54,7 +54,7 @@ runs:
   using: "composite"
   steps:
     - name: Install Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ inputs.go-version }}
 
@@ -68,8 +68,8 @@ runs:
 
     - name: Run linters
       if: ${{ inputs.inclint == 'false' }}
-      # golangci-lint-action: 3.7.0 (commit of tag used instead of tag to avoid tag overwrite)
-      uses: golangci/golangci-lint-action@50372b65180371af8e5c72351e6cdd29a34ea08a
+      # golangci-lint-action: v6.1.0 (commit of tag used instead of tag to avoid tag overwrite)
+      uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86
       with:
         version: ${{ inputs.golangci-lint-version }}
         # Extended timeout to ensure all the linters are installed before it hits
@@ -77,8 +77,8 @@ runs:
 
     - name: Run linters (with incremental improvements)
       if: ${{ inputs.inclint == 'true' }}
-      # golangci-lint-action: 3.7.0 (commit of tag used instead of tag to avoid tag overwrite)
-      uses: golangci/golangci-lint-action@50372b65180371af8e5c72351e6cdd29a34ea08a
+      # golangci-lint-action: v6.1.0 (commit of tag used instead of tag to avoid tag overwrite)
+      uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86
       with:
         version: ${{ inputs.golangci-lint-version }}
         args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
