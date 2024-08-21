@@ -26,12 +26,11 @@ linters:
   disable-all: true
   enable:
     - revive
-    - ifshort
     - staticcheck
+    - gosimple
     - gosec
     - dogsled
     - godox
-    - megacheck
     - govet
     - gocyclo
     - lll
@@ -43,6 +42,7 @@ linters:
     - whitespace
     - goconst
     - unconvert
+    - unused
 
 issues:
   max-issues-per-linter: 0
