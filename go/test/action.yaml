@@ -4,7 +4,7 @@ description: 'Sets up go and runs go tests'
 inputs:
   go-version:
     required: false
-    default: 1.21.x
+    default: 1.23.x
     description: Go version
   go-packages:
     required: false
