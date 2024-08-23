@@ -32,7 +32,7 @@ jobs:
     steps:
 
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download artifact
         if: ${{ inputs.artifact != '' }}
@@ -50,7 +50,7 @@ jobs:
           repo: PiwikPRO/Tech-docs
 
       - name: Check out Tech-docs
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 'PiwikPRO/Tech-docs'
           token: ${{ steps.get-token.outputs.token }}
@@ -147,7 +147,7 @@ jobs:
           echo "CHANGES=$CHANGED_FILES" >> $GITHUB_ENV
 
       - name: Check out actions repo for local-dev
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 'PiwikPRO/actions'
           token: ${{ steps.get-token.outputs.token }}
@@ -208,7 +208,7 @@ jobs:
     steps:
 
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download artifact
         if: ${{ inputs.artifact != '' }}
@@ -244,7 +244,7 @@ jobs:
       - name: Check out Tech-docs (base branch)
         id: checkout-base
         continue-on-error: true
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 'PiwikPRO/Tech-docs'
           token: ${{ steps.get-token.outputs.token }}

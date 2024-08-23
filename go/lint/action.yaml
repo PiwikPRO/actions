@@ -117,7 +117,7 @@ runs:
           echo "$LINTER_OUTPUT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-    - uses: mshick/add-pr-comment@5cd99bf9c186219af43341076f1fe9c09e5a9934
+    - uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc
       if: ${{ inputs.inclint == 'true' }}
       with:
         message: |

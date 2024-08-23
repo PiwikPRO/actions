@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
       - name: Verify CHANGELOG.md kacl-cl structure
@@ -142,7 +142,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO
       - name: Download dtools
@@ -263,7 +263,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Simple linting, uses .golangci configiration file from the repo that is being linted:
       - name: Run linters
@@ -347,7 +347,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       
       # Simple tests without code coverage:
       - name: Run unit tests
@@ -386,7 +386,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup integration tests
         uses: PiwikPRO/actions/go/setup/integration@master
@@ -416,7 +416,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Release the binary
         uses: PiwikPRO/actions/go/release@master
@@ -443,7 +443,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Simple linting, uses predefined configuration file from this repository:
       - name: Run linters
@@ -546,12 +546,12 @@ making it as generic as possible.
 
 ```yaml
 # Basic usage
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Run linters
         uses: PiwikPRO/actions/javascript/lts-lint@master
 
 # If eslint and prettier are defined in the package.json
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Run linters
         uses: PiwikPRO/actions/javascript/lts-lint@master
         with:
@@ -608,7 +608,7 @@ jobs:
         private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
         app-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: true
         token: ${{ steps.get-token.outputs.token }}
@@ -705,7 +705,7 @@ jobs:
           example-infra-2
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Get kubeconfig
       id: get-kubeconfig
@@ -735,7 +735,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Prepare CRDs
         uses: PiwikPRO/actions/helm/extract-piwikpro-crds@DEVOPS-7919
