@@ -11,7 +11,7 @@ jobs:
   checkout:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - uses: PiwikPRO/actions/github-app-token-generator@master
       id: get-token
@@ -20,7 +20,7 @@ jobs:
         app-id: ${{ secrets.APP_ID }}
 
     - name: Check out an other repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: owner/repo
         token: ${{ steps.get-token.outputs.token }}

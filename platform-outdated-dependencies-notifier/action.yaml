@@ -11,13 +11,13 @@ runs:
   using: "composite"
   steps:
     - name: Checkout platform repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: platform
         token: ${{ inputs.github-token-platform }}
 
     - name: Checkout chart repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: PiwikPRO/Promil-helm-chart-repository-source
         path: charts
