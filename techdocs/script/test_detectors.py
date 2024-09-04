@@ -76,7 +76,7 @@ def test_copy():
     ),
 )
 def test_copy_create_operation_variants(
-        file, rule_source, rule_destination, expected_source, expected_destination
+    file, rule_source, rule_destination, expected_source, expected_destination
 ):
     detector = CopyDetector(
         "/home/foobar", "/tmp/Tech-docs", "Οδυσσέας Ελύτης", "master", Config([])
@@ -101,8 +101,7 @@ def test_copy_create_operation_variants(
 def test_index_load():
     fs = MockFilesystem(
         {
-            "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f":
-                json.dumps(
+            "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f": json.dumps(
                 {
                     "file": "heheszek",
                     "repo": "Promil-platform-foo",
@@ -145,9 +144,9 @@ def test_index_save():
             "/foo/index/Promil-platform-foo/42af564a885e1f38be3f411de2584efc3462bba68e9b5ea6dc39364b061d0a8f"
         )
     ) == {
-               "file": "heheszek",
-               "repo": "Promil-platform-foo",
-           }
+        "file": "heheszek",
+        "repo": "Promil-platform-foo",
+    }
 
 
 def test_delete():

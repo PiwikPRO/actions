@@ -6,20 +6,22 @@ from os import path
 
 import nodes
 from config import Config, ProjectDetailsReader
+from filesystem import Filesystem
 from index import FileIndexItem
 from operations import (
-    GenericFileCopyOperation,
-    YAMLPrefaceEnrichingCopyOperation,
     DeleteOperation,
     DockerPlantUMLGenerator,
+    GenericFileCopyOperation,
     PlantUMLDiagramRenderOperation,
+    YAMLPrefaceEnrichingCopyOperation,
 )
-from filesystem import Filesystem
 from operations import OpenAPIBundler, OpenAPIOperation
 
 
 class CopyDetector:
-    def __init__(self, from_path: str, to_path: str, author: str, branch: str, config: Config) -> None:
+    def __init__(
+        self, from_path: str, to_path: str, author: str, branch: str, config: Config
+    ) -> None:
         self.copy_rules = [
             Rule(
                 document_rule,
@@ -48,12 +50,17 @@ class CopyDetector:
 
     def _create_operation(self, fs, file, rule):
         if nodes.looks_fileish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
+            destination_file = path.basename(file)
+            if nodes.looks_globish(rule.config.source):
+                source_base = rule.config.source.split("**/*")[0]
+                destination_file = file.removeprefix(source_base)
+
             relative_src, relative_dst = (
                 file,
-                path.join(rule.config.destination, path.basename(file)),
+                path.join(rule.config.destination, destination_file),
             )
         elif nodes.looks_fileish(rule.config.source) and nodes.looks_fileish(
-                rule.config.destination
+            rule.config.destination
         ):
             relative_src, relative_dst = (
                 file,
@@ -62,7 +69,7 @@ class CopyDetector:
         elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
             relative_src, relative_dst = (
                 file,
-                path.join(rule.config.destination, file[len(rule.config.source) - 1:]),
+                path.join(rule.config.destination, file[len(rule.config.source) - 1 :]),
             )
         else:
             return None
@@ -78,20 +85,16 @@ class CopyDetector:
         )
         if any([relative_src.endswith(suffix) for suffix in [".md", ".MD", ".mdx", ".MDX"]]):
             return YAMLPrefaceEnrichingCopyOperation(
-                **dict(
-                    **kwargs,
-                    from_abs=self.from_path,
-                    author=self.author,
-                    branch=self.branch
-                )
+                **dict(**kwargs, from_abs=self.from_path, author=self.author, branch=self.branch)
             )
         return GenericFileCopyOperation(**kwargs)
 
 
 class DefaultMatcher:
     def __init__(self, str_to_match):
-        # Escape the string and replace the wildcard with a regex wildcard
-        self.regex = re.escape(str_to_match).replace("\\*", "[^/]*")
+        print(str_to_match)
+        # How to handle glob like **/* in the source
+        self.regex = (re.escape(str_to_match).replace("\\*\\*/\\*", ".*")).replace("\\*", "[^/]*")
 
     def match(self, path):
         print(f"Path: {path}  Regex:{self.regex}")
@@ -195,7 +198,9 @@ class OpenAPIDetector:
     def _detect_yaml_files(self, fs, previous_operations):
         yaml_files = list(
             filter(
-                lambda op: any([f.endswith(".yaml") or f.endswith(".yml") for f in op.source_files()]),
+                lambda op: any(
+                    [f.endswith(".yaml") or f.endswith(".yml") for f in op.source_files()]
+                ),
                 previous_operations,
             )
         )
@@ -206,7 +211,9 @@ class OpenAPIDetector:
             if first_line.startswith("openapi:"):
                 for line in file:
                     if line.startswith("paths:\n"):
-                        yaml_file.destination_abs = self._prepare_destination(yaml_file.destination_abs)
+                        yaml_file.destination_abs = self._prepare_destination(
+                            yaml_file.destination_abs
+                        )
                         openapi_spec_files.append(yaml_file)
                         break
         return openapi_spec_files
@@ -231,9 +238,9 @@ class OpenAPIDetector:
         return source
 
     def detect(self, fs: Filesystem, previous_operations):
-        openapi_spec_files = (
-                self._detect_yaml_files(fs, previous_operations) + self._detect_json_files(fs, previous_operations)
-        )
+        openapi_spec_files = self._detect_yaml_files(
+            fs, previous_operations
+        ) + self._detect_json_files(fs, previous_operations)
 
         return list(
             filter(

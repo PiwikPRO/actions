@@ -48,4 +48,3 @@ def filesystem():
             "/tmp/bar/projects.json": json.dumps({"promil": {"path": "docs/promil"}}),
         }
     )
-

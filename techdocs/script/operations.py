@@ -23,6 +23,7 @@ class GenericFileCopyOperation:
         return "copy"
 
     def execute(self, fs):
+        print(self.source_abs, self.destination_abs)
         fs.copy(self.source_abs, self.destination_abs)
 
     def has_changes(self, fs):
@@ -280,7 +281,7 @@ class OpenAPIBundler:
                     "--ext",
                     "json",
                 ],
-                capture_output=True
+                capture_output=True,
             )
             if output.returncode != 0:
                 raise Exception(f"OpenAPI generation failed: {output.stderr.decode()}")
