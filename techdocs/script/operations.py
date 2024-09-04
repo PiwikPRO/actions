@@ -23,7 +23,6 @@ class GenericFileCopyOperation:
         return "copy"
 
     def execute(self, fs):
-        print(self.source_abs, self.destination_abs)
         fs.copy(self.source_abs, self.destination_abs)
 
     def has_changes(self, fs):

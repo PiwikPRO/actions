@@ -92,12 +92,10 @@ class CopyDetector:
 
 class DefaultMatcher:
     def __init__(self, str_to_match):
-        print(str_to_match)
         # How to handle glob like **/* in the source
         self.regex = (re.escape(str_to_match).replace("\\*\\*/\\*", ".*")).replace("\\*", "[^/]*")
 
     def match(self, path):
-        print(f"Path: {path}  Regex:{self.regex}")
         return re.match(self.regex, path) is not None
 
 
