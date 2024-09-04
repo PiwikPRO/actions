@@ -90,9 +90,11 @@ class CopyDetector:
 
 class DefaultMatcher:
     def __init__(self, str_to_match):
-        self.regex = re.escape(str_to_match).replace("\\*", ".*")
+        # Escape the string and replace the wildcard with a regex wildcard
+        self.regex = re.escape(str_to_match).replace("\\*", "[^/]*")
 
     def match(self, path):
+        print(f"Path: {path}  Regex:{self.regex}")
         return re.match(self.regex, path) is not None
 
 

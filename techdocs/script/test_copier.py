@@ -46,7 +46,7 @@ def filesystem():
             "/tmp/foo/other/uno.txt": "blabla",
             "/tmp/foo/other/due.txt": "blabla",
             "/tmp/foo/other/non-text.md": "blabla",
-            "/tmp/foo/other/level/due.txt": "blabla",
+            "/tmp/foo/other/level/due.txt": "blabla-overwritten",
             "/tmp/bar/projects.json": json.dumps({"promil": {"path": "docs/promil"}}),
         }
     )
@@ -80,3 +80,6 @@ def test_copier(filesystem):
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/due.txt")
     assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/non-text.md")
     assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/level/due.txt")
+
+    # currently file from desired directory is overwritten by the same filename from sub directory
+    assert filesystem.read_string("/tmp/bar/docs/promil/somedir/due.txt") == "blabla"
