@@ -55,6 +55,7 @@ def filesystem():
             "/tmp/foo/recursive/due.txt": "blabla",
             "/tmp/foo/recursive/one/due.txt": "blabla",
             "/tmp/foo/recursive/one/two/due.txt": "blabla",
+            "/tmp/foo/recursive/one/two/due.doc": "blabla",
             "/tmp/bar/projects.json": json.dumps({"promil": {"path": "docs/promil"}}),
         }
     )
@@ -92,3 +93,4 @@ def test_copier(filesystem):
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/recursive/due.txt")
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/recursive/one/due.txt")
     assert filesystem.is_file("/tmp/bar/docs/promil/somedir/recursive/one/two/due.txt")
+    assert not filesystem.is_file("/tmp/bar/docs/promil/somedir/recursive/one/two/due.doc")
