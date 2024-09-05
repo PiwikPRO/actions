@@ -54,14 +54,19 @@ def last_update(author):
 def source_frontmatter_hash(source_file):
     def inner(current_content):
         return (
-            "x_source_frontmatter_hash: " + hashb(
-                source_file.split("---\n")[1].encode("utf-8")
-            ) + "\n"
-        ) if source_file.startswith("---") else ""
+            (
+                "x_source_frontmatter_hash: "
+                + hashb(source_file.split("---\n")[1].encode("utf-8"))
+                + "\n"
+            )
+            if source_file.startswith("---")
+            else ""
+        )
+
     return inner
 
 
-PATTERN = re.compile(r'.*x_source_frontmatter_hash:\s([a-z0-9]+)\n.*', re.DOTALL)
+PATTERN = re.compile(r".*x_source_frontmatter_hash:\s([a-z0-9]+)\n.*", re.DOTALL)
 
 
 def get_source_frontmatter_hash(dest_frontmatter):

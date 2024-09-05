@@ -280,7 +280,7 @@ class OpenAPIBundler:
                     "--ext",
                     "json",
                 ],
-                capture_output=True
+                capture_output=True,
             )
             if output.returncode != 0:
                 raise Exception(f"OpenAPI generation failed: {output.stderr.decode()}")
