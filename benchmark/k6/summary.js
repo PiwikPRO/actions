@@ -42,6 +42,6 @@ export function handleSummary(data) {
       console.log("Did not collect extra metrics: " + e)
     }
     return {
-      'summary.json': JSON.stringify(summaryObj, null, 2), 
+      [SUMMARY_FILE]: JSON.stringify(summaryObj, null, 2)
     };
   }

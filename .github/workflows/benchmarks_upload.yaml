@@ -6,6 +6,10 @@ on:
         required: true
         type: string
         default: ""
+      summary_file:
+        required: true
+        type: string
+        default: "summary.json"
 
 concurrency: 
   group: "${{ github.ref }}-${{ github.head_ref }}-${{ github.base_ref }}"
@@ -30,7 +34,7 @@ jobs:
       - name: Prepare upload prerequisites
         run: |
           mkdir -p artifacts
-          cp summary.json artifacts/summary.json
+          cp ${{ inputs.summary_file }} artifacts/${{ inputs.summary_file }}
           echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
 
       - name: Upload the site to artifactory
@@ -70,10 +74,11 @@ jobs:
 
     - name: Prepare the report
       id: compile
-      uses: PiwikPRO/actions/benchmark/report@pet-23-k6-action-fixing-report
+      uses: PiwikPRO/actions/benchmark/report@PPTT-4747-benchmarks-configurable-summary-file
       with:
         reports_path: ./reports
         benchmark_path: ./benchmark
+        summary_file: ${{ inputs.summary_file }}
 
     - name: Print the report
       shell: bash
