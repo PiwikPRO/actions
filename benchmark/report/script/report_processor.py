@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import os
 import statistics
+import sys
 
 ROUND_PRECISION = 3
 
@@ -19,9 +20,11 @@ def process(reports_dir, benchmark_dir, summary_file):
     ], reverse=True)
 
     if len(report_list) == 0:
-        raise Exception("Can't compile the summary - there are no reports to compare with. " +
+        # Print error messages to stdout so it can be captured and displayed in PR comment if needed
+        print("Can't compile the summary - there are no reports to compare with. " +
                         "Tag you default branch first and wait for the base report to be ready. " +
                         "Then we will have something to compare your current benchmark with.")
+        sys.exit(1)
 
     last_report = json.load(open(benchmark_dir + "/" + summary_file))["data"]
 
