@@ -18,7 +18,7 @@ runs:
       id: compile
       shell: bash
       run: |
-        REPORT=$(python ${{ github.action_path }}/script/cli.py --reports_path ${{ inputs.reports_path }} --benchmark_path ${{ inputs.benchmark_path }} --summary_file ${{ inputs.summary_file }}
+        REPORT=$(python ${{ github.action_path }}/script/cli.py --reports_path ${{ inputs.reports_path }} --benchmark_path ${{ inputs.benchmark_path }} --summary_file ${{ inputs.summary_file }})
         echo "report<<EOF" >> $GITHUB_OUTPUT
         echo "${REPORT}" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
