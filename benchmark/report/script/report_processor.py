@@ -24,7 +24,7 @@ def process(reports_dir, benchmark_dir, summary_file):
         print("Can't compile the summary - there are no reports to compare with. " +
                         "Tag you default branch first and wait for the base report to be ready. " +
                         "Then we will have something to compare your current benchmark with.")
-        sys.exit(1)
+        sys.exit(0)
 
     last_report = json.load(open(benchmark_dir + "/" + summary_file))["data"]
 
