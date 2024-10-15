@@ -27,7 +27,7 @@ class GenericFileCopyOperation:
 
     def has_changes(self, fs):
         if (not fs.is_file(self.destination_abs)) or hashb(fs.read_bytes(self.source_abs)) != hashb(
-            fs.read_bytes(self.destination_abs)
+                fs.read_bytes(self.destination_abs)
         ):
             return True
         return False
@@ -72,14 +72,14 @@ class YAMLPrefaceEnrichingCopyOperation:
         source_file = fs.read_string(self.source_abs)
 
         if any(
-            [
-                not fs.is_file(self.destination_abs),
-                file_has_no_frontmatter(fs, dest_file),
-                files_content_ignoring_frontmatter_is_different(fs, source_file, dest_file),
-                source_frontmatter_hash_is_different_than_one_cached_in_destination(
-                    fs, source_file, dest_file
-                ),
-            ]
+                [
+                    not fs.is_file(self.destination_abs),
+                    file_has_no_frontmatter(fs, dest_file),
+                    files_content_ignoring_frontmatter_is_different(fs, source_file, dest_file),
+                    source_frontmatter_hash_is_different_than_one_cached_in_destination(
+                        fs, source_file, dest_file
+                    ),
+                ]
         ):
             return True
         return False
@@ -105,7 +105,7 @@ def files_content_ignoring_frontmatter_is_different(fs, first_file, second_file)
 
 
 def source_frontmatter_hash_is_different_than_one_cached_in_destination(
-    fs, source_file, destination_file
+        fs, source_file, destination_file
 ):
     return source_file.startswith("---") and hashb(
         source_file.split("---\n")[1].encode()
@@ -188,7 +188,7 @@ def get_full_puml_content(fs, the_path):
                     os.path.join(os.path.dirname(the_path), line.split(b"!include ")[1].decode()),
                 )
             except (
-                FileNotFoundError
+                    FileNotFoundError
             ):  # Let PlantUML handle the error, also we don't need to hack 10 ifs with various import syntaxes here
                 pass
     return b"\n".join(lines)
@@ -223,15 +223,18 @@ class DockerPlantUMLGenerator:
 
 
 class OpenAPIOperation:
-    def __init__(self, source_abs, destination_abs, bundler):
+    def __init__(self, source_abs, destination_abs, bundler, validator):
         self.source_abs = source_abs
         self.destination_abs = destination_abs
         self.bundler = bundler
+        self.validator = validator
 
     def name(self):
         return "openapi"
 
     def execute(self, fs):
+        self.validator.validate(self.source_abs)
+
         checksum = hashb(fs.read_string(self.source_abs).encode())
         bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.destination_abs))
         bundled_content["x-api-checksum"] = checksum
@@ -291,3 +294,21 @@ class OpenAPIBundler:
                 return f.read()
         finally:
             shutil.rmtree(dir_path)
+
+
+class OpenAPIValidator:
+    def validate(self, source_abs):
+        output = subprocess.run(
+            [
+                "docker",
+                "run",
+                "-v",
+                f"{os.path.dirname(source_abs)}:/spec",
+                "ghcr.io/readmeio/rdme:8.6.2",
+                "openapi:validate",
+                f"/spec/{os.path.basename(source_abs)}",
+            ],
+            capture_output=True,
+        )
+        if output.returncode != 0:
+            raise Exception(f"OpenAPI validation failed: {output.stderr.decode()}")
