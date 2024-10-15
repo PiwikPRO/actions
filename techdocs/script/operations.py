@@ -234,7 +234,6 @@ class OpenAPIOperation:
 
     def execute(self, fs):
         self.validator.validate(self.source_abs)
-
         checksum = hashb(fs.read_string(self.source_abs).encode())
         bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.destination_abs))
         bundled_content["x-api-checksum"] = checksum
@@ -297,6 +296,8 @@ class OpenAPIBundler:
 
 
 class OpenAPIValidator:
+    RDME_VERSION = "8.6.2"
+
     def validate(self, source_abs):
         output = subprocess.run(
             [
@@ -304,11 +305,15 @@ class OpenAPIValidator:
                 "run",
                 "-v",
                 f"{os.path.dirname(source_abs)}:/spec",
-                "ghcr.io/readmeio/rdme:8.6.2",
+                "-w",
+                "/spec",
+                f"ghcr.io/readmeio/rdme:{self.RDME_VERSION}",
                 "openapi:validate",
                 f"/spec/{os.path.basename(source_abs)}",
             ],
             capture_output=True,
         )
         if output.returncode != 0:
-            raise Exception(f"OpenAPI validation failed: {output.stderr.decode()}")
+            raise Exception(f"{output.stderr.decode()}"
+                            f"\nOpenAPI validation failed for '{source_abs}'"
+                            f"\nRun `rdme openapi:validate` locally to verify the issue.")

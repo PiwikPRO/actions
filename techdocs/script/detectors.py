@@ -251,6 +251,7 @@ class OpenAPIDetector:
                 openapi_spec.source_abs,
                 openapi_spec.destination_abs,
                 self.bundler,
+                self.validator,
             )
             for openapi_spec in openapi_spec_files
         ]
