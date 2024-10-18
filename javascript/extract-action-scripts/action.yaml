@@ -1,0 +1,76 @@
+name: Extract Action Scripts descriptions from js files
+description: Extract Action Scripts descriptions from js files and combine it in a single file
+inputs:
+  artifact-name:
+    default: action-scripts
+    description: Name of the artifact to be uploaded
+  private-key: 
+    required: true
+    description: Private key for token generator application
+  app-id:
+    required: true
+    description: Application ID of token generator application
+
+runs:
+  using: composite
+  steps:
+  - name: Generate PiwikPRO access tokens
+    uses: PiwikPRO/github-app-token-generator@v1
+    id: get-token
+    with:
+      private-key: ${{ inputs.private-key }}
+      app-id: ${{ inputs.app-id }}
+
+  - name: Extract Action Scripts descriptions from js files
+    shell: bash
+    id: extract-action-scripts
+    env:
+      ACTION_SCRIPTS_DIR: scripts/actions
+      PROJECT_NAME: ${{ github.repository }}
+    run: |
+      LAST_PART="${PROJECT_NAME##*-}"
+
+      mkdir -p build/action-scripts
+
+      echo "Extracting Action Scripts descriptions from js files..."
+
+      # Create the initial YAML file with metadata
+      cat <<EOT > build/action-scripts/$LAST_PART.yaml
+      apiVersion: v1
+      kind: ActionScriptsJSAPI
+      metadata:
+        name: $LAST_PART
+      spec:
+        project: $PROJECT_NAME
+        scripts:
+      EOT
+
+      # Loop through all .js files and extract descriptions
+      for js_file in $(find $ACTION_SCRIPTS_DIR -name "*.js" | sort); do
+          # Extract the first line that starts with "//", but ignore grep's exit code
+          description=$(head -n 1 "$js_file" | grep "^//" || true)
+
+          cleaned_description="TBA"
+          if [ -n "$description" ]; then
+              echo "Extracting description from $js_file..."
+              # If a description is found, clean it and add it to the YAML file
+              cleaned_description=$(echo "$description" | sed 's|^// ||')
+          else
+              # No valid description found, log the file being skipped
+              echo "No description found in $js_file, writing 'TBA'..."
+          fi
+
+          # Write the script information to the YAML file
+          file_name=$(basename "$js_file")
+          echo -e "    $file_name:" >> build/action-scripts/$LAST_PART.yaml
+          echo -e "      description: $cleaned_description" >> build/action-scripts/$LAST_PART.yaml
+      done
+
+      echo "Combining descriptions in a single file..."
+      echo "Done!"
+
+  - name: Prepare artifact
+    uses: actions/upload-artifact@v3
+    with:
+      name: action-scripts
+      path: build/action-scripts
