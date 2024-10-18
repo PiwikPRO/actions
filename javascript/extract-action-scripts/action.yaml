@@ -26,7 +26,7 @@ runs:
     id: extract-action-scripts
     env:
       ACTION_SCRIPTS_DIR: scripts/actions
-      PROJECT_NAME: ${{ github.repository }}
+      PROJECT_NAME: ${{ github.event.repository.name }}
     run: |
       LAST_PART="${PROJECT_NAME##*-}"
 
