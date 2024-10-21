@@ -70,7 +70,7 @@ runs:
       echo "Done!"
 
   - name: Prepare artifact
-    uses: actions/upload-artifact@v3
+    uses: actions/upload-artifact@v4
     with:
-      name: action-scripts
+      name: ${{ inputs.artifact-name }}
       path: build/action-scripts
