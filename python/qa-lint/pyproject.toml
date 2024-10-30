@@ -1,0 +1,27 @@
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.4.4"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # General PEP8 compliance
+    "F",   # Pyflakes for finding common issues
+    "B",   # Bugbear for catching potential bugs and performance issues
+    "UP",  # PyUpgrade for keeping up with Python 3.12 features,
+    "C",   # Complexity checks
+    "D101", # D101 Missing docstring in public class
+]
+extend-select = [
+    "I",  # Import order
+    "ANN", # Type annotations
+]
+ignore = [
+    "F811", # F811 `Redefinition of unused name` - fixtures that does not return value
+    "ANN101", # ANN101 Missing type annotation for self in method
+    "ANN204", # ANN204 Missing return type annotation for special method `__init__`
+]
+
+per-file-ignores = { "tests/*" = ["ANN201", "D101", "ANN001"] }  # Ignore missing return type annotation, missing docstring in public class, missing type annotation for function argument
