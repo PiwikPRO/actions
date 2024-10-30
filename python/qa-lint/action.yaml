@@ -19,8 +19,8 @@ runs:
 
     - name: Run ruff linter
       shell: bash
-      run: poetry run ruff check . --config ./pyproject.toml
+      run: poetry run ruff check . --config ${{ github.action_path }}/pyproject.toml
 
     - name: Run ruff formatter
       shell: bash
-      run: poetry run ruff format --check . --config ./pyproject.toml
+      run: poetry run ruff format --check . --config ${{ github.action_path }}/pyproject.toml
