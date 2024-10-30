@@ -1,29 +1,22 @@
 name: Static analysis
-on: pull_request
 
-jobs:
-  static_analysis:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
+runs:
+  using: "composite"
+  steps:
+    - name: Install poetry 1.8.2
+      run: curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.2 python3 -
 
-      - name: Install poetry 1.8.2
-        run: curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.2 python3 -
+    - name: Setup python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12.2'
+        cache: 'poetry'
 
-      - name: Setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12.2'
-          cache: 'poetry'
+    - name: Install python packages
+      run: poetry install --only=dev
 
-      - name: Install python packages
-        run: poetry install --only=dev
+    - name: Run ruff linter
+      run: poetry run ruff check . --config ./pyproject.toml
 
-      - name: Run ruff linter
-        run: poetry run ruff check . --config ./pyproject.toml
-
-      - name: Run ruff formatter
-        run: poetry run ruff format --check . --config ./pyproject.toml
+    - name: Run ruff formatter
+      run: poetry run ruff format --check . --config ./pyproject.toml
