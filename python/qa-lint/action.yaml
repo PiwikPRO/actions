@@ -13,10 +13,13 @@ runs:
         cache: 'poetry'
 
     - name: Install python packages
+      shell: bash
       run: poetry install --only=dev
 
     - name: Run ruff linter
+      shell: bash
       run: poetry run ruff check . --config ./pyproject.toml
 
     - name: Run ruff formatter
+      shell: bash
       run: poetry run ruff format --check . --config ./pyproject.toml
