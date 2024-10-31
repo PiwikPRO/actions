@@ -24,4 +24,8 @@ ignore = [
     "ANN204", # ANN204 Missing return type annotation for special method `__init__`
 ]
 
-per-file-ignores = { "tests/*" = ["ANN201", "D101", "ANN001"] }  # Ignore missing return type annotation, missing docstring in public class, missing type annotation for function argument
+# Ignore missing return type annotation,
+# missing docstring in public class,
+# missing type annotation for function argument
+# Module imported but unused` - ignored because all __init__.py were marked with F401 because it does not contain __all__ variable
+per-file-ignores = { "tests/*" = ["ANN201", "D101", "ANN001"], "__init__.py" = ["F401"] }
