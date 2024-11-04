@@ -1,0 +1,26 @@
+name: Static analysis
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install poetry 1.8.2
+      shell: bash
+      run: curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.2 python3 -
+
+    - name: Setup python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12.2'
+        cache: 'poetry'
+
+    - name: Install python packages
+      shell: bash
+      run: poetry install --only=dev
+
+    - name: Run ruff linter
+      shell: bash
+      run: poetry run ruff check . --config ${{ github.action_path }}/pyproject.toml
+
+    - name: Run ruff formatter
+      shell: bash
+      run: poetry run ruff format --check . --config ${{ github.action_path }}/pyproject.toml

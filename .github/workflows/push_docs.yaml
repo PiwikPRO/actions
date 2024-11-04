@@ -6,6 +6,10 @@ on:
         required: false
         type: string
         default: ""
+      artifact-pattern:
+        required: false
+        type: string
+        default: ""
       config:
         required: true
         type: string
@@ -36,11 +40,18 @@ jobs:
 
       - name: Download artifact
         if: ${{ inputs.artifact != '' }}
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.artifact }}
           path: .techdocs-artifact
 
+      - name: Download artifact by pattern
+        if: ${{ inputs.artifact-pattern != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ inputs.artifact-pattern }}
+          path: .techdocs-artifact
+      
       - uses: PiwikPRO/actions/github-app-token-generator@master
         name: Generate token for tech docs pusher
         id: get-token
@@ -212,9 +223,16 @@ jobs:
 
       - name: Download artifact
         if: ${{ inputs.artifact != '' }}
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.artifact }}
+          path: .techdocs-artifact
+
+      - name: Download artifact by pattern
+        if: ${{ inputs.artifact-pattern != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ inputs.artifact-pattern }}
           path: .techdocs-artifact
 
       - uses: PiwikPRO/actions/github-app-token-generator@master
