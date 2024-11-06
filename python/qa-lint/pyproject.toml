@@ -21,6 +21,7 @@ extend-select = [
 ignore = [
     "F811", # F811 `Redefinition of unused name` - fixtures that does not return value
     "ANN101", # ANN101 Missing type annotation for self in method
+    "ANN102", # ANN102 Missing type annotation for cls in class method
     "ANN204", # ANN204 Missing return type annotation for special method `__init__`
 ]
 
@@ -28,4 +29,4 @@ ignore = [
 # missing docstring in public class,
 # missing type annotation for function argument
 # Module imported but unused` - ignored because all __init__.py were marked with F401 because it does not contain __all__ variable
-per-file-ignores = { "tests/*" = ["ANN201", "D101", "ANN001"], "__init__.py" = ["F401"] }
+per-file-ignores = { "tests/*" = ["ANN201", "D101", "ANN001"], "conftest.py" = ["F401"], "__init__.py" = ["F401"] }
