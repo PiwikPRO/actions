@@ -26,7 +26,7 @@ runs:
         python-version: ${{ inputs.python-version }}
     - name: Run isort linter
       if: ${{ inputs.use-isort == 'true' }}
-      uses: jamescurtin/isort-action@f555d1d11ca0529654eb6d1f017f9e4a269ffa7f
+      uses: isort/isort-action@f555d1d11ca0529654eb6d1f017f9e4a269ffa7f
       with:
         configuration: --check-only --diff --settings-path ${{ github.action_path }}/.isort.cfg
         requirementsFiles: ${{ inputs.requirements_files }} 
