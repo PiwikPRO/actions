@@ -296,7 +296,7 @@ class OpenAPIBundler:
 
 
 class OpenAPIValidator:
-    RDME_VERSION = "8.6.2"
+    RDME_VERSION = "latest"
 
     def validate(self, source_abs):
         output = subprocess.run(
