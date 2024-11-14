@@ -315,5 +315,4 @@ class OpenAPIValidator:
         )
         if output.returncode != 0:
             raise Exception(f"{output.stderr.decode()}"
-                            f"\nOpenAPI validation failed for '{source_abs}'"
-                            f"\nRun `rdme openapi:validate` locally to verify the issue.")
+                            f"\nOpenAPI validation failed for '{source_abs}'")
