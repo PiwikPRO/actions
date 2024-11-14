@@ -12,7 +12,7 @@ from operations import (
     DeleteOperation,
     DockerPlantUMLGenerator,
     GenericFileCopyOperation,
-    PlantUMLDiagramRenderOperation,
+    OpenAPIValidator, PlantUMLDiagramRenderOperation,
     YAMLPrefaceEnrichingCopyOperation,
 )
 from operations import OpenAPIBundler, OpenAPIOperation
@@ -20,7 +20,7 @@ from operations import OpenAPIBundler, OpenAPIOperation
 
 class CopyDetector:
     def __init__(
-        self, from_path: str, to_path: str, author: str, branch: str, config: Config
+            self, from_path: str, to_path: str, author: str, branch: str, config: Config
     ) -> None:
         self.copy_rules = [
             Rule(
@@ -60,7 +60,7 @@ class CopyDetector:
                 path.join(rule.config.destination, destination_file),
             )
         elif nodes.looks_fileish(rule.config.source) and nodes.looks_fileish(
-            rule.config.destination
+                rule.config.destination
         ):
             relative_src, relative_dst = (
                 file,
@@ -69,7 +69,7 @@ class CopyDetector:
         elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
             relative_src, relative_dst = (
                 file,
-                path.join(rule.config.destination, file[len(rule.config.source) - 1 :]),
+                path.join(rule.config.destination, file[len(rule.config.source) - 1:]),
             )
         else:
             return None
@@ -190,8 +190,9 @@ class OperationDetectorChain:
 
 
 class OpenAPIDetector:
-    def __init__(self, bundler=None):
+    def __init__(self, bundler=None, validator=None):
         self.bundler = bundler or OpenAPIBundler()
+        self.validator = validator or OpenAPIValidator()
 
     def _detect_yaml_files(self, fs, previous_operations):
         yaml_files = list(
@@ -250,6 +251,7 @@ class OpenAPIDetector:
                 openapi_spec.source_abs,
                 openapi_spec.destination_abs,
                 self.bundler,
+                self.validator,
             )
             for openapi_spec in openapi_spec_files
         ]
