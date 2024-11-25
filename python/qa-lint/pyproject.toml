@@ -3,7 +3,7 @@ ruff = "^0.4.4"
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "${TARGET_VERSION:-py312}"
 
 [tool.ruff.lint]
 select = [
@@ -12,7 +12,6 @@ select = [
     "B",   # Bugbear for catching potential bugs and performance issues
     "UP",  # PyUpgrade for keeping up with Python 3.12 features,
     "C",   # Complexity checks
-    "D101", # D101 Missing docstring in public class
 ]
 extend-select = [
     "I",  # Import order
@@ -28,5 +27,6 @@ ignore = [
 # Ignore missing return type annotation,
 # missing docstring in public class,
 # missing type annotation for function argument
+# missing-return-type-private-function
 # Module imported but unused` - ignored because all __init__.py were marked with F401 because it does not contain __all__ variable
-per-file-ignores = { "tests/*" = ["ANN201", "D101", "ANN001"], "conftest.py" = ["F401"], "__init__.py" = ["F401"] }
+per-file-ignores = { "tests/*" = ["ANN201", "ANN202", "ANN001"], "conftest.py" = ["F401"], "__init__.py" = ["F401"] }

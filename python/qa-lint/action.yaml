@@ -3,12 +3,15 @@ inputs:
   python-version:
     required: false
     description: Version of python
-    default: "3.12.x"
-
+    default: "3.12.2"
   poetry-version:
     required: false
     description: Version of python
     default: "1.8.2"
+  target-version:
+    required: false
+    description: Target version
+    default: "py312"
 
 runs:
   using: "composite"
@@ -26,6 +29,10 @@ runs:
     - name: Install python packages
       shell: bash
       run: poetry install --only=dev
+
+    - name: Set target version
+      shell: bash
+      run: echo "TARGET_VERSION=${{ inputs.target-version }}" >> $GITHUB_ENV
 
     - name: Run ruff linter
       shell: bash
