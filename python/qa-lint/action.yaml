@@ -33,7 +33,7 @@ runs:
     - name: Set target-version in pyproject.toml
       shell: bash
       run: |
-        sed -i 's/target-version = ".*"/target-version = ${{ inputs.target-version }}/' ${{ github.action_path }}/pyproject.toml
+        sed -i 's/target-version = ".*"/target-version = "${{ inputs.target-version }}"/' ${{ github.action_path }}/pyproject.toml
         grep 'target-version' ${{ github.action_path }}/pyproject.toml
 
     - name: Run ruff linter
