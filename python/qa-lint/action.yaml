@@ -30,9 +30,11 @@ runs:
       shell: bash
       run: poetry install --only=dev
 
-    - name: Set target version
+    - name: Set target-version in pyproject.toml
       shell: bash
-      run: echo "TARGET_VERSION=${{ inputs.target-version }}" >> $GITHUB_ENV
+      run: |
+        sed -i 's/target-version = ".*"/target-version = ${{ inputs.target-version }}/' pyproject.toml
+        grep 'target-version' pyproject.toml
 
     - name: Run ruff linter
       shell: bash
