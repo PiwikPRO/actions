@@ -34,7 +34,7 @@ runs:
       shell: bash
       run: |
         sed -i 's/target-version = ".*"/target-version = ${{ inputs.target-version }}/' ${{ github.action_path }}/pyproject.toml
-        grep 'target-version' ${{ github.action_path }}/pyproject.toml/pyproject.toml
+        grep 'target-version' ${{ github.action_path }}/pyproject.toml
 
     - name: Run ruff linter
       shell: bash
