@@ -12,23 +12,22 @@ inputs:
     required: false
     description: Target version
     default: "py312"
+  ruff-version:
+    required: false
+    description: Version of ruff
+    default: "0.8.*"
 
 runs:
   using: "composite"
   steps:
-    - name: Install poetry ${{ inputs.poetry-version }}
-      shell: bash
-      run: curl -sSL https://install.python-poetry.org | POETRY_VERSION=${{ inputs.poetry-version }} python3 -
-
     - name: Setup python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
-        cache: 'poetry'
 
-    - name: Install python packages
+    - name: Install ruff
       shell: bash
-      run: poetry install --only=dev
+      run: sudo pip install ruff==${{ inputs.ruff-version }}
 
     - name: Set target-version in pyproject.toml
       shell: bash
@@ -38,8 +37,8 @@ runs:
 
     - name: Run ruff linter
       shell: bash
-      run: poetry run ruff check . --config ${{ github.action_path }}/pyproject.toml
+      run: ruff check . --config ${{ github.action_path }}/pyproject.toml
 
     - name: Run ruff formatter
       shell: bash
-      run: poetry run ruff format --check . --config ${{ github.action_path }}/pyproject.toml
+      run: ruff format --check . --config ${{ github.action_path }}/pyproject.toml
