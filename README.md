@@ -22,6 +22,7 @@
       - [Attach binary as github release when tag is built](#attach-binary-as-github-release-when-tag-is-built)
     - [Python](#python)
       - [Lint](#lint-1)
+      - [QA-Lint](#QA-lint)
     - [Coverage (internal)](#coverage-internal)
     - [Inclint (internal)](#inclint-internal)
     - [JavaScript](#javascript)
@@ -491,6 +492,20 @@ and set:
 ```
 Replace `/home/kkaragiorgis/Projects/promil` to wherever you cloned `actions` repository.
 
+#### QA-Lint
+
+Example usage:
+```yaml
+...
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Run Linter
+        uses: PiwikPRO/actions/python/qa-lint@master
+...
+```
 
 
 ### Coverage (internal)

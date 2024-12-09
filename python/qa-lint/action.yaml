@@ -1,26 +1,40 @@
 name: Static analysis
+inputs:
+  python-version:
+    required: false
+    description: Version of python
+    default: "3.13.*"
+  target-version:
+    required: false
+    description: Target version
+    default: "py313"
+  ruff-version:
+    required: false
+    description: Version of ruff
+    default: "0.8.*"
 
 runs:
   using: "composite"
   steps:
-    - name: Install poetry 1.8.2
-      shell: bash
-      run: curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.2 python3 -
-
     - name: Setup python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12.2'
-        cache: 'poetry'
+        python-version: ${{ inputs.python-version }}
 
-    - name: Install python packages
+    - name: Install ruff
       shell: bash
-      run: poetry install --only=dev
+      run: sudo pip install ruff==${{ inputs.ruff-version }}
+
+    - name: Set target-version in pyproject.toml
+      shell: bash
+      run: |
+        sed -i 's/target-version = ".*"/target-version = "${{ inputs.target-version }}"/' ${{ github.action_path }}/pyproject.toml
+        grep 'target-version' ${{ github.action_path }}/pyproject.toml
 
     - name: Run ruff linter
       shell: bash
-      run: poetry run ruff check . --config ${{ github.action_path }}/pyproject.toml
+      run: ruff check . --config ${{ github.action_path }}/pyproject.toml
 
     - name: Run ruff formatter
       shell: bash
-      run: poetry run ruff format --check . --config ${{ github.action_path }}/pyproject.toml
+      run: ruff format --check . --config ${{ github.action_path }}/pyproject.toml
