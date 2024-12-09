@@ -504,10 +504,6 @@ Example usage:
 
       - name: Run Linter
         uses: PiwikPRO/actions/python/qa-lint@master
-        with:
-            python-version: "3.13.*"
-            poetry-version: "1.8.2"
-            ruff-version: "0.8.*"
 ...
 ```
 

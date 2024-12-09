@@ -3,15 +3,15 @@ inputs:
   python-version:
     required: false
     description: Version of python
-    default: "3.12.2"
+    default: "3.13.*"
   poetry-version:
     required: false
     description: Version of poetry
-    default: "1.8.2"
+    default: "1.8.4"
   target-version:
     required: false
     description: Target version
-    default: "py312"
+    default: "py313"
   ruff-version:
     required: false
     description: Version of ruff
