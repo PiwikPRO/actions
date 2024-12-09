@@ -4,10 +4,6 @@ inputs:
     required: false
     description: Version of python
     default: "3.13.*"
-  poetry-version:
-    required: false
-    description: Version of poetry
-    default: "1.8.4"
   target-version:
     required: false
     description: Target version
