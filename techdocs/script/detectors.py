@@ -3,6 +3,7 @@ import io
 import json
 import re
 from os import path
+from time import struct_time
 
 import nodes
 from config import Config, ProjectDetailsReader
@@ -225,9 +226,6 @@ class OpenAPIDetector:
 
     @staticmethod
     def _detect_referenced_files_yaml(openapi_file):
-        # read yaml file and look for $ref in it
-        # if ref contains file path, add it to the list
-        # return the list
         openapi_file = openapi_file.source_abs
         with open(openapi_file) as f:
             lines = f.readlines()
@@ -238,9 +236,35 @@ class OpenAPIDetector:
                     ref_file = ref_file_pattern.search(line)
                     if ref_file:
                         ref_files.append(ref_file.group(1))
-        # for found ref_files make absolute path against the openapi_file source_abs
         ref_files = [path.abspath(path.join(path.dirname(openapi_file), ref_file)) for ref_file in ref_files]
-        # print(ref_files)
+        return ref_files
+
+    @staticmethod
+    def _detect_referenced_files_json(openapi_file):
+        openapi_file = openapi_file.source_abs
+        with open(openapi_file) as f:
+            data = json.load(f)
+
+        ref_files = []
+
+        def look_for_refs(obj):
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    if key == "$ref":
+                        ref_file_pattern = re.compile(r"([.a-z_\-/]+)")
+                        ref_file = ref_file_pattern.search(value)
+                        if ref_file:
+                            ref_files.append(ref_file.group(1))
+                    else:
+                        look_for_refs(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    look_for_refs(item)
+
+        look_for_refs(data)
+
+        # Return absolute paths for referenced files
+        ref_files = [path.abspath(path.join(path.dirname(openapi_file), ref_file)) for ref_file in ref_files]
         return ref_files
 
     def _detect_json_files(self, fs, previous_operations):
@@ -254,8 +278,8 @@ class OpenAPIDetector:
         for json_file in json_files:
             file = json.loads(fs.read_string(json_file.source_abs))
             if isinstance(file, dict) and file.get("openapi") and len(file.get("paths", [])) > 0:
-                json_file.destination_abs = self._prepare_destination(json_file.destination_abs)
-                openapi_spec_files.append(json_file)
+                openapi_spec_files.append(OpenAPIFile(json_file.source_abs, json_file.destination_abs,
+                                                      self._detect_referenced_files_json(json_file)))
         return openapi_spec_files
 
     def _prepare_destination(self, source):

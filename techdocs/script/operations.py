@@ -244,12 +244,7 @@ class OpenAPIOperation:
 
     def has_changes(self, fs):
         for ref_file in self.ref_files:
-            # print("REF_FILE")
-            # print(ref_file)
-            #
-            # print("PREVIOUS_OPERATIONS")
             for operation in self.previous_operations:
-                # print(operation.source_files())
                 if ref_file in operation.source_files():
                     if operation.has_changes(fs):
                         return True
