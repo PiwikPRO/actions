@@ -239,7 +239,8 @@ class OpenAPIDetector:
                     if ref_file:
                         ref_files.append(ref_file.group(1))
         # for found ref_files make absolute path against the openapi_file source_abs
-        ref_files = [path.join(path.dirname(openapi_file), ref_file) for ref_file in ref_files]
+        ref_files = [path.abspath(path.join(path.dirname(openapi_file), ref_file)) for ref_file in ref_files]
+        # print(ref_files)
         return ref_files
 
     def _detect_json_files(self, fs, previous_operations):
@@ -253,6 +254,7 @@ class OpenAPIDetector:
         for json_file in json_files:
             file = json.loads(fs.read_string(json_file.source_abs))
             if isinstance(file, dict) and file.get("openapi") and len(file.get("paths", [])) > 0:
+                json_file.destination_abs = self._prepare_destination(json_file.destination_abs)
                 openapi_spec_files.append(json_file)
         return openapi_spec_files
 
@@ -267,15 +269,17 @@ class OpenAPIDetector:
 
         return list(
             filter(
-                lambda op: op not in openapi_spec_files,
+                lambda op: op.source_abs not in [openapi_spec.source_abs for openapi_spec in openapi_spec_files],
                 previous_operations,
             )
         ) + [
             OpenAPIOperation(
                 openapi_spec.source_abs,
                 openapi_spec.destination_abs,
+                openapi_spec.ref_files,
                 self.bundler,
                 self.validator,
+                previous_operations,
             )
             for openapi_spec in openapi_spec_files
         ]
