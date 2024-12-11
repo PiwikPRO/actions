@@ -189,6 +189,13 @@ class OperationDetectorChain:
         return operations
 
 
+class OpenAPIFile:
+    def __init__(self, source_abs, destination_abs, ref_files):
+        self.source_abs = source_abs
+        self.destination_abs = destination_abs
+        self.ref_files = ref_files
+
+
 class OpenAPIDetector:
     def __init__(self, bundler=None, validator=None):
         self.bundler = bundler or OpenAPIBundler()
@@ -210,12 +217,30 @@ class OpenAPIDetector:
             if first_line.startswith("openapi:"):
                 for line in file:
                     if line.startswith("paths:\n"):
-                        yaml_file.destination_abs = self._prepare_destination(
-                            yaml_file.destination_abs
-                        )
-                        openapi_spec_files.append(yaml_file)
+                        yaml_file.destination_abs = self._prepare_destination(yaml_file.destination_abs)
+                        openapi_spec_files.append(OpenAPIFile(yaml_file.source_abs, yaml_file.destination_abs,
+                                                              self._detect_referenced_files_yaml(yaml_file)))
                         break
         return openapi_spec_files
+
+    @staticmethod
+    def _detect_referenced_files_yaml(openapi_file):
+        # read yaml file and look for $ref in it
+        # if ref contains file path, add it to the list
+        # return the list
+        openapi_file = openapi_file.source_abs
+        with open(openapi_file) as f:
+            lines = f.readlines()
+            ref_files = []
+            for line in lines:
+                if "$ref" in line:
+                    ref_file_pattern = re.compile(r"\$ref:\s+[\'\"]?([.a-z_\-/]+)")
+                    ref_file = ref_file_pattern.search(line)
+                    if ref_file:
+                        ref_files.append(ref_file.group(1))
+        # for found ref_files make absolute path against the openapi_file source_abs
+        ref_files = [path.join(path.dirname(openapi_file), ref_file) for ref_file in ref_files]
+        return ref_files
 
     def _detect_json_files(self, fs, previous_operations):
         json_files = list(
@@ -228,7 +253,6 @@ class OpenAPIDetector:
         for json_file in json_files:
             file = json.loads(fs.read_string(json_file.source_abs))
             if isinstance(file, dict) and file.get("openapi") and len(file.get("paths", [])) > 0:
-                json_file.destination_abs = self._prepare_destination(json_file.destination_abs)
                 openapi_spec_files.append(json_file)
         return openapi_spec_files
 
