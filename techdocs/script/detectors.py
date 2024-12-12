@@ -235,19 +235,18 @@ class OpenAPIDetector:
                         OpenAPIFile(
                             yaml_file.source_abs,
                             yaml_file.destination_abs,
-                            self._detect_referenced_files_yaml(yaml_file),
+                            self._detect_referenced_files_yaml(fs, yaml_file),
                         )
                     )
         return openapi_spec_files
 
     @staticmethod
-    def _detect_referenced_files_yaml(openapi_file):
-        with open(openapi_file.source_abs) as f:
-            ref_files = [
-                re.search(r"\$ref:\s+[\'\"]?([.a-z_\-/]+)", line).group(1)
-                for line in f
-                if "$ref" in line
-            ]
+    def _detect_referenced_files_yaml(fs, openapi_file):
+        ref_files = [
+            re.search(r"\$ref:\s+[\'\"]?([.a-z_\-/]+)", line).group(1)
+            for line in fs.read_string(openapi_file.source_abs).split("\n")
+            if "$ref" in line
+        ]
         return [
             path.abspath(path.join(path.dirname(openapi_file.source_abs), ref_file))
             for ref_file in ref_files
@@ -267,16 +266,15 @@ class OpenAPIDetector:
                     OpenAPIFile(
                         json_file.source_abs,
                         json_file.destination_abs,
-                        self._detect_referenced_files_json(json_file),
+                        self._detect_referenced_files_json(fs, json_file),
                     )
                 )
         return openapi_spec_files
 
     @staticmethod
-    def _detect_referenced_files_json(openapi_file):
-        with open(openapi_file.source_abs) as f:
-            data = json.load(f)
+    def _detect_referenced_files_json(fs, openapi_file):
         ref_files = []
+        data = json.loads(fs.read_string(openapi_file.source_abs))
 
         def look_for_files_in_refs(obj):
             if isinstance(obj, dict):
