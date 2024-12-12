@@ -1,5 +1,5 @@
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from config import Config, ConfigDocumentEntry
@@ -267,8 +267,7 @@ def test_plantuml():
 def test_swap_extension():
     assert swap_extension("foo/bar/baz.md", "svg") == "foo/bar/baz.svg"
 
-@patch('detectors.OpenAPIValidator') # validator can't read from mocked filesystem
-def test_openapi_detector(openapi_validator):
+def test_openapi_detector():
     fs = MockFilesystem(
         {
             "/tmp/Promil/api.yaml": """openapi: 3.1.0
@@ -278,6 +277,8 @@ paths:
             "/tmp/Promil/other-file": "a-file-content",
             "/tmp/Promil/subdir/spec.json": '{"openapi": "3.1.0","paths": {"some-path": "path"}}',
             "/tmp/Promil/subdir/invalid-spec.json": '{"openapi": "3.1.0"}',
+            "/tmp/Promil/components.json": '{"openapi": "3.1.0"}',
+            "/tmp/Promil/subdir/spec-with-ref.json": '{"openapi": "3.1.0","paths": {"$ref": "../components.json#/some-component"}}',
         }
     )
     detector = OpenAPIDetector(
@@ -285,7 +286,8 @@ paths:
             bundle=Mock(
                 return_value='{"itsa me":"openapi"}',
             )
-        )
+        ),
+        validator=Mock(return_value=True),
     )
 
     operations = detector.detect(
@@ -311,22 +313,36 @@ paths:
                 source_abs="/tmp/Promil/subdir/invalid-spec.json",
                 destination_abs="/tmp/dst/subdir/invalid-spec.json",
             ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/components.json",
+                destination_abs="/tmp/dst/components.json",
+            ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/subdir/spec-with-ref.json",
+                destination_abs="/tmp/dst/subdir/spec-with-ref.json",
+            ),
         ],
     )
 
     for operation in operations:
         print(operation.name(), operation.source_abs, operation.destination_abs)
 
-    assert len(operations) == 5
+    assert len(operations) == 7
     assert operations[0].name() == "copy"
     assert operations[1].name() == "copy"
     assert operations[2].name() == "copy"
-    assert operations[3].name() == "openapi"
+    assert operations[3].name() == "copy"
     assert operations[4].name() == "openapi"
+    assert operations[4].ref_files == []
+    assert operations[5].name() == "openapi"
+    assert operations[5].ref_files == []
+    assert operations[6].name() == "openapi"
+    assert operations[6].ref_files == ["/tmp/Promil/components.json"]
 
     # when
-    operations[3].execute(fs)
     operations[4].execute(fs)
+    operations[5].execute(fs)
+    operations[6].execute(fs)
 
     # then
     assert fs.files["/tmp/dst/api.json"] == json.dumps(
@@ -340,6 +356,13 @@ paths:
         {
             "itsa me": "openapi",
             "x-api-checksum": "5891d4bf2471e070e3675a5eedc88fe724e572bc2053e7b2bf00fb3862cd4c8a",
+        },
+        indent=2,
+    )
+    assert fs.files["/tmp/dst/subdir/spec-with-ref.json"] == json.dumps(
+        {
+            "itsa me": "openapi",
+            "x-api-checksum": "ab740669e63a90c75c3192818aa5c6a820ce71a8f53aa84354dad77183e27730",
         },
         indent=2,
     )
