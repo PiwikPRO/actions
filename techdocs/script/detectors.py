@@ -21,7 +21,7 @@ from operations import OpenAPIBundler, OpenAPIOperation
 
 class CopyDetector:
     def __init__(
-            self, from_path: str, to_path: str, author: str, branch: str, config: Config
+        self, from_path: str, to_path: str, author: str, branch: str, config: Config
     ) -> None:
         self.copy_rules = [
             Rule(
@@ -51,7 +51,7 @@ class CopyDetector:
 
     def _create_operation(self, fs, file, rule):
         if nodes.looks_fileish(rule.config.source) and nodes.looks_dirish(
-                rule.config.destination
+            rule.config.destination
         ):
             destination_file = path.basename(file)
             if nodes.looks_globish(rule.config.source):
@@ -63,18 +63,18 @@ class CopyDetector:
                 path.join(rule.config.destination, destination_file),
             )
         elif nodes.looks_fileish(rule.config.source) and nodes.looks_fileish(
-                rule.config.destination
+            rule.config.destination
         ):
             relative_src, relative_dst = (
                 file,
                 rule.config.destination,
             )
         elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(
-                rule.config.destination
+            rule.config.destination
         ):
             relative_src, relative_dst = (
                 file,
-                path.join(rule.config.destination, file[len(rule.config.source) - 1:]),
+                path.join(rule.config.destination, file[len(rule.config.source) - 1 :]),
             )
         else:
             return None
@@ -91,7 +91,7 @@ class CopyDetector:
             ),
         )
         if any(
-                [relative_src.endswith(suffix) for suffix in [".md", ".MD", ".mdx", ".MDX"]]
+            [relative_src.endswith(suffix) for suffix in [".md", ".MD", ".mdx", ".MDX"]]
         ):
             return YAMLPrefaceEnrichingCopyOperation(
                 **dict(
@@ -292,9 +292,6 @@ class OpenAPIDetector:
             path.abspath(path.join(path.dirname(openapi_file.source_abs), ref_file))
             for ref_file in ref_files
         ]
-
-    def _prepare_destination(self, source):
-        return
 
     def detect(self, fs: Filesystem, previous_operations):
         openapi_spec_files = self._detect_yaml_files(
