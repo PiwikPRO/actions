@@ -1,5 +1,5 @@
 import json
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from config import Config, ConfigDocumentEntry
@@ -267,8 +267,8 @@ def test_plantuml():
 def test_swap_extension():
     assert swap_extension("foo/bar/baz.md", "svg") == "foo/bar/baz.svg"
 
-
-def test_openapi_detector():
+@patch('detectors.OpenAPIValidator') # validator can't read from mocked filesystem
+def test_openapi_detector(openapi_validator):
     fs = MockFilesystem(
         {
             "/tmp/Promil/api.yaml": """openapi: 3.1.0
