@@ -12,8 +12,7 @@ from operations import (
     DeleteOperation,
     DockerPlantUMLGenerator,
     GenericFileCopyOperation,
-    OpenAPIValidator,
-    PlantUMLDiagramRenderOperation,
+    OpenAPIValidator, PlantUMLDiagramRenderOperation,
     YAMLPrefaceEnrichingCopyOperation,
 )
 from operations import OpenAPIBundler, OpenAPIOperation
@@ -21,7 +20,7 @@ from operations import OpenAPIBundler, OpenAPIOperation
 
 class CopyDetector:
     def __init__(
-        self, from_path: str, to_path: str, author: str, branch: str, config: Config
+            self, from_path: str, to_path: str, author: str, branch: str, config: Config
     ) -> None:
         self.copy_rules = [
             Rule(
@@ -50,9 +49,7 @@ class CopyDetector:
         return None
 
     def _create_operation(self, fs, file, rule):
-        if nodes.looks_fileish(rule.config.source) and nodes.looks_dirish(
-            rule.config.destination
-        ):
+        if nodes.looks_fileish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
             destination_file = path.basename(file)
             if nodes.looks_globish(rule.config.source):
                 source_base = rule.config.source.split("**/*")[0]
@@ -63,18 +60,16 @@ class CopyDetector:
                 path.join(rule.config.destination, destination_file),
             )
         elif nodes.looks_fileish(rule.config.source) and nodes.looks_fileish(
-            rule.config.destination
+                rule.config.destination
         ):
             relative_src, relative_dst = (
                 file,
                 rule.config.destination,
             )
-        elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(
-            rule.config.destination
-        ):
+        elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
             relative_src, relative_dst = (
                 file,
-                path.join(rule.config.destination, file[len(rule.config.source) - 1 :]),
+                path.join(rule.config.destination, file[len(rule.config.source) - 1:]),
             )
         else:
             return None
@@ -83,23 +78,14 @@ class CopyDetector:
             destination_abs=path.abspath(
                 path.join(
                     self.to_path,
-                    ProjectDetailsReader(self.to_path, fs).doc_path(
-                        rule.config.project
-                    ),
+                    ProjectDetailsReader(self.to_path, fs).doc_path(rule.config.project),
                     relative_dst,
                 ),
             ),
         )
-        if any(
-            [relative_src.endswith(suffix) for suffix in [".md", ".MD", ".mdx", ".MDX"]]
-        ):
+        if any([relative_src.endswith(suffix) for suffix in [".md", ".MD", ".mdx", ".MDX"]]):
             return YAMLPrefaceEnrichingCopyOperation(
-                **dict(
-                    **kwargs,
-                    from_abs=self.from_path,
-                    author=self.author,
-                    branch=self.branch,
-                )
+                **dict(**kwargs, from_abs=self.from_path, author=self.author, branch=self.branch)
             )
         return GenericFileCopyOperation(**kwargs)
 
@@ -107,9 +93,7 @@ class CopyDetector:
 class DefaultMatcher:
     def __init__(self, str_to_match):
         # How to handle glob like **/* in the source
-        self.regex = (re.escape(str_to_match).replace("\\*\\*/\\*", ".*")).replace(
-            "\\*", "[^/]*"
-        )
+        self.regex = (re.escape(str_to_match).replace("\\*\\*/\\*", ".*")).replace("\\*", "[^/]*")
 
     def match(self, path):
         return re.match(self.regex, path) is not None
