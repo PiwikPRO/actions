@@ -279,6 +279,10 @@ paths:
             "/tmp/Promil/subdir/invalid-spec.json": '{"openapi": "3.1.0"}',
             "/tmp/Promil/components.json": '{"openapi": "3.1.0"}',
             "/tmp/Promil/subdir/spec-with-ref.json": '{"openapi": "3.1.0","paths": {"$ref": "../components.json#/some-component"}}',
+            "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
+paths:
+    some-path:
+        $ref: ../components.json#/some-component""",
         }
     )
     detector = OpenAPIDetector(
@@ -321,13 +325,17 @@ paths:
                 source_abs="/tmp/Promil/subdir/spec-with-ref.json",
                 destination_abs="/tmp/dst/subdir/spec-with-ref.json",
             ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/subdir/api-with-ref.yaml",
+                destination_abs="/tmp/dst/subdir/api-with-ref.yaml",
+            ),
         ],
     )
 
     for operation in operations:
         print(operation.name(), operation.source_abs, operation.destination_abs)
 
-    assert len(operations) == 7
+    assert len(operations) == 8
     assert operations[0].name() == "copy"
     assert operations[1].name() == "copy"
     assert operations[2].name() == "copy"
@@ -335,14 +343,17 @@ paths:
     assert operations[4].name() == "openapi"
     assert operations[4].ref_files == []
     assert operations[5].name() == "openapi"
-    assert operations[5].ref_files == []
+    assert operations[5].ref_files == ["/tmp/Promil/components.json"]
     assert operations[6].name() == "openapi"
-    assert operations[6].ref_files == ["/tmp/Promil/components.json"]
+    assert operations[6].ref_files == []
+    assert operations[7].name() == "openapi"
+    assert operations[7].ref_files == ["/tmp/Promil/components.json"]
 
     # when
     operations[4].execute(fs)
     operations[5].execute(fs)
     operations[6].execute(fs)
+    operations[7].execute(fs)
 
     # then
     assert fs.files["/tmp/dst/api.json"] == json.dumps(
@@ -363,6 +374,13 @@ paths:
         {
             "itsa me": "openapi",
             "x-api-checksum": "ab740669e63a90c75c3192818aa5c6a820ce71a8f53aa84354dad77183e27730",
+        },
+        indent=2,
+    )
+    assert fs.files["/tmp/dst/subdir/api-with-ref.json"] == json.dumps(
+        {
+            "itsa me": "openapi",
+            "x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2",
         },
         indent=2,
     )
