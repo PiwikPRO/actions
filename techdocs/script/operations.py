@@ -246,8 +246,7 @@ class OpenAPIOperation:
         for ref_file in self.ref_files:
             for operation in self.previous_operations:
                 if ref_file in operation.source_files():
-                    if operation.has_changes(fs):
-                        return True
+                    return operation.has_changes(fs)
         if not fs.is_file(self.destination_abs):
             return True
         return not self.valid_checksum(fs, self.source_abs, self.destination_abs)
