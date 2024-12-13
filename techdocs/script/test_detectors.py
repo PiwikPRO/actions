@@ -284,6 +284,10 @@ paths:
 paths:
     some-path:
         $ref: ../components.json#/some-component""",
+            "/tmp/Promil/subdir/api-with-local-ref.yaml": """openapi: 3.1.0
+paths:
+    some-path:
+        $ref: #/some-component""",
         }
     )
     detector = OpenAPIDetector(
@@ -330,13 +334,17 @@ paths:
                 source_abs="/tmp/Promil/subdir/api-with-ref.yaml",
                 destination_abs="/tmp/dst/subdir/api-with-ref.yaml",
             ),
+            GenericFileCopyOperation(
+                source_abs="/tmp/Promil/subdir/api-with-local-ref.yaml",
+                destination_abs="/tmp/dst/subdir/api-with-local-ref.yaml",
+            ),
         ],
     )
 
     for operation in operations:
         print(operation.name(), operation.source_abs, operation.destination_abs)
 
-    assert len(operations) == 8
+    assert len(operations) == 9
     assert operations[0].name() == "copy"
     assert operations[1].name() == "copy"
     assert operations[2].name() == "copy"
@@ -348,13 +356,16 @@ paths:
     assert operations[6].name() == "openapi"
     assert operations[6].ref_files == []
     assert operations[7].name() == "openapi"
-    assert operations[7].ref_files == ["/tmp/Promil/components.json"]
+    assert operations[7].ref_files == []
+    assert operations[8].name() == "openapi"
+    assert operations[8].ref_files == ["/tmp/Promil/components.json"]
 
     # when
     operations[4].execute(fs)
     operations[5].execute(fs)
     operations[6].execute(fs)
     operations[7].execute(fs)
+    operations[8].execute(fs)
 
     # then
     assert fs.files["/tmp/dst/api.json"] == json.dumps(
@@ -382,6 +393,13 @@ paths:
         {
             "itsa me": "openapi",
             "x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2",
+        },
+        indent=2,
+    )
+    assert fs.files["/tmp/dst/subdir/api-with-local-ref.json"] == json.dumps(
+        {
+            "itsa me": "openapi",
+            "x-api-checksum": "9d02b4bf2b95c5617f7cb10ef16cc881793b2cf08486b04163aa948f10002822",
         },
         indent=2,
     )

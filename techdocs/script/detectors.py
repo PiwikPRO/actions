@@ -227,9 +227,9 @@ class OpenAPIDetector:
     @staticmethod
     def _detect_referenced_files_yaml(fs, openapi_file):
         ref_files = [
-            re.search(r"\$ref:\s+[\'\"]?([.a-z_\-/]+)", line).group(1)
+            match.group(1)
             for line in fs.read_string(openapi_file.source_abs).split("\n")
-            if "$ref" in line
+            if '$ref' in line and (match := re.search(r"\$ref:\s+[\'\"]?([\.a-z_\-/]+)", line))
         ]
         return [
             path.abspath(path.join(path.dirname(openapi_file.source_abs), ref_file))
@@ -264,7 +264,9 @@ class OpenAPIDetector:
             if isinstance(obj, dict):
                 for key, value in obj.items():
                     if key == "$ref":
-                        ref_files.append(re.search(r"([.a-z_\-/]+)", value).group(1))
+                        match = re.search(r"([.a-z_\-/]+)", value)
+                        if match:
+                            ref_files.append(match.group(1))
                     else:
                         look_for_files_in_refs(value)
             elif isinstance(obj, list):
