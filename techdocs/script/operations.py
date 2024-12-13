@@ -223,13 +223,11 @@ class DockerPlantUMLGenerator:
 
 
 class OpenAPIOperation:
-    def __init__(self, source_abs, destination_abs, ref_files, bundler, validator, previous_operations):
+    def __init__(self, source_abs, destination_abs, bundler, validator):
         self.source_abs = source_abs
         self.destination_abs = destination_abs
-        self.ref_files = ref_files
         self.bundler = bundler
         self.validator = validator
-        self.previous_operations = previous_operations
 
     def name(self):
         return "openapi"
@@ -243,10 +241,6 @@ class OpenAPIOperation:
         fs.write_string(self.destination_abs, json.dumps(bundled_content, indent=2))
 
     def has_changes(self, fs):
-        for ref_file in self.ref_files:
-            for operation in self.previous_operations:
-                if ref_file in operation.source_files():
-                    return operation.has_changes(fs)
         if not fs.is_file(self.destination_abs):
             return True
         return not self.valid_checksum(fs, self.source_abs, self.destination_abs)
