@@ -286,7 +286,7 @@ class OpenAPIDetector:
         return [
             op
             for op in previous_operations
-            if op.source_abs not in [spec.source_abs for spec in openapi_spec_files]
+            if not any(spec in [spec.source_abs for spec in openapi_spec_files] for spec in op.source_files())
         ] + [
             OpenAPIOperation(
                 spec.source_abs,
