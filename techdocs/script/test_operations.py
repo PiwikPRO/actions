@@ -116,118 +116,87 @@ def test_yaml_preface_has_changes(source, destination, expected):
     assert op.has_changes(filesystem) == expected
 
 
-def test_openapi_operation_has_changes_no_changes():
-    fs = MockFilesystem(
-        {
-            "/tmp/Promil/components.yaml": "openapi: 3.1.0",
-            "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
+@pytest.mark.parametrize(
+    "testcase, fs_structure, ref_files, previous_operations, expected",
+    [
+        (
+            "no_changes",
+            {
+                "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
 paths:
     some-path:
         $ref: ../components.json#/some-component""",
-            "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2"}',
-        }
-    )
-    operation = OpenAPIOperation(
-        "/tmp/Promil/subdir/api-with-ref.yaml",
-        "/tmp/dst/subdir/api-with-ref.json",
-        ["/tmp/Promil/components.yaml"],
-        bundler=Mock(
-            bundle=Mock(
-                return_value='{"itsa me":"openapi"}',
-            )
+                "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2"}',
+            },
+            ["/tmp/Promil/components.yaml"],
+            [],
+            False,
         ),
-        validator=Mock(return_value=True),
-        previous_operations=[],
-    )
-
-    assert not operation.has_changes(fs)
-
-
-def test_openapi_operation_has_changes_different_checksum():
-    fs = MockFilesystem(
-        {
-            "/tmp/Promil/components.yaml": "openapi: 3.1.0",
-            "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
+        (
+            "different_checksum",
+            {
+                "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
 paths:
     some-path:
         $ref: ../components.json#/some-component""",
-            "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "checksum-mismatch"}',
-        }
-    )
-    operation = OpenAPIOperation(
-        "/tmp/Promil/subdir/api-with-ref.yaml",
-        "/tmp/dst/subdir/api-with-ref.json",
-        ["/tmp/Promil/components.yaml"],
-        bundler=Mock(
-            bundle=Mock(
-                return_value='{"itsa me":"openapi"}',
-            )
+                "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "checksum-mismatch"}',
+            },
+            ["/tmp/Promil/components.yaml"],
+            [],
+            True,
         ),
-        validator=Mock(return_value=True),
-        previous_operations=[],
-    )
-
-    assert operation.has_changes(fs)
-
-
-def test_openapi_operation_has_changes_ref_file_copy_operation():
-    fs = MockFilesystem(
-        {
-            "/tmp/Promil/components.yaml": "openapi: 3.1.0",
-            "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
+        (
+            "ref_file_copy_operation",
+            {
+                "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
 paths:
     some-path:
         $ref: ../components.json#/some-component""",
-            "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2"}',
-        }
-    )
-    operation = OpenAPIOperation(
-        "/tmp/Promil/subdir/api-with-ref.yaml",
-        "/tmp/dst/subdir/api-with-ref.json",
-        ["/tmp/Promil/components.yaml"],
-        bundler=Mock(
-            bundle=Mock(
-                return_value='{"itsa me":"openapi"}',
-            )
+                "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2"}',
+            },
+            ["/tmp/Promil/components.yaml"],
+            [
+                GenericFileCopyOperation(
+                    "/tmp/Promil/components.yaml",
+                    "/tmp/dst/components.yaml",
+                )
+            ],
+            True,
         ),
-        validator=Mock(return_value=True),
-        previous_operations=[
-            GenericFileCopyOperation(
-                "/tmp/Promil/components.yaml",
-                "/tmp/dst/components.yaml",
-            )
-        ],
-    )
-
-    assert operation.has_changes(fs)
-
-
-def test_openapi_operation_has_changes_ref_file_other_operation():
-    fs = MockFilesystem(
-        {
-            "/tmp/Promil/components.yaml": "openapi: 3.1.0",
-            "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
+        (
+            "ref_file_other_operation",
+            {
+                "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
 paths:
     some-path:
         $ref: ../components.json#/some-component""",
-            "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2"}',
-        }
-    )
+                "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2"}',
+            },
+            ["/tmp/Promil/components.yaml"],
+            [
+                PlantUMLDiagramRenderOperation(
+                    "/tmp/Promil/components.yaml", "/tmp/dst/components.yaml", None
+                )
+            ],
+            False,
+        ),
+    ],
+)
+def test_openapi_operation_has_changes(
+    testcase,
+    fs_structure,
+    ref_files,
+    previous_operations,
+    expected,
+):
+    fs = MockFilesystem(fs_structure)
     operation = OpenAPIOperation(
         "/tmp/Promil/subdir/api-with-ref.yaml",
         "/tmp/dst/subdir/api-with-ref.json",
-        ["/tmp/Promil/components.yaml"],
-        bundler=Mock(
-            bundle=Mock(
-                return_value='{"itsa me":"openapi"}',
-            )
-        ),
+        ref_files,
+        bundler=Mock(bundle=Mock(return_value='{"itsa me":"openapi"}')),
         validator=Mock(return_value=True),
-        previous_operations=[
-            PlantUMLDiagramRenderOperation(
-                "/tmp/Promil/components.yaml", "/tmp/dst/components.yaml", None
-            )
-        ],
+        previous_operations=previous_operations,
     )
 
-    assert not operation.has_changes(fs)
+    assert operation.has_changes(fs) == expected
