@@ -189,69 +189,112 @@ class OperationDetectorChain:
         return operations
 
 
+class OpenAPIFile:
+    def __init__(self, source_abs, destination_abs, ref_files):
+        self.source_abs = source_abs
+        self.destination_abs = destination_abs
+        self.ref_files = ref_files
+
+
 class OpenAPIDetector:
     def __init__(self, bundler=None, validator=None):
         self.bundler = bundler or OpenAPIBundler()
         self.validator = validator or OpenAPIValidator()
 
     def _detect_yaml_files(self, fs, previous_operations):
-        yaml_files = list(
-            filter(
-                lambda op: any(
-                    [f.endswith(".yaml") or f.endswith(".yml") for f in op.source_files()]
-                ),
-                previous_operations,
-            )
-        )
+        yaml_files = [
+            op
+            for op in previous_operations
+            if any(f.endswith((".yaml", ".yml")) for f in op.source_files())
+        ]
         openapi_spec_files = []
         for yaml_file in yaml_files:
             file = io.StringIO(fs.read_string(yaml_file.source_abs))
-            first_line = file.readline()
-            if first_line.startswith("openapi:"):
-                for line in file:
-                    if line.startswith("paths:\n"):
-                        yaml_file.destination_abs = self._prepare_destination(
-                            yaml_file.destination_abs
+            if file.readline().startswith("openapi:"):
+                if any(line.startswith("paths:\n") for line in file):
+                    yaml_file.destination_abs = yaml_file.destination_abs.replace(
+                        ".yaml", ".json"
+                    ).replace(".yml", ".json")
+                    openapi_spec_files.append(
+                        OpenAPIFile(
+                            yaml_file.source_abs,
+                            yaml_file.destination_abs,
+                            self._detect_referenced_files_yaml(fs, yaml_file),
                         )
-                        openapi_spec_files.append(yaml_file)
-                        break
+                    )
         return openapi_spec_files
 
+    @staticmethod
+    def _detect_referenced_files_yaml(fs, openapi_file):
+        ref_files = [
+            match.group(1)
+            for line in fs.read_string(openapi_file.source_abs).split("\n")
+            if '$ref' in line and (match := re.search(r"\$ref:\s+[\'\"]?([\.a-z_\-/]+)", line))
+        ]
+        return [
+            path.abspath(path.join(path.dirname(openapi_file.source_abs), ref_file))
+            for ref_file in ref_files
+        ]
+
     def _detect_json_files(self, fs, previous_operations):
-        json_files = list(
-            filter(
-                lambda op: any([f.endswith(".json") for f in op.source_files()]),
-                previous_operations,
-            )
-        )
+        json_files = [
+            op
+            for op in previous_operations
+            if any(f.endswith(".json") for f in op.source_files())
+        ]
         openapi_spec_files = []
         for json_file in json_files:
             file = json.loads(fs.read_string(json_file.source_abs))
-            if isinstance(file, dict) and file.get("openapi") and len(file.get("paths", [])) > 0:
-                json_file.destination_abs = self._prepare_destination(json_file.destination_abs)
-                openapi_spec_files.append(json_file)
+            if isinstance(file, dict) and file.get("openapi") and file.get("paths"):
+                openapi_spec_files.append(
+                    OpenAPIFile(
+                        json_file.source_abs,
+                        json_file.destination_abs,
+                        self._detect_referenced_files_json(fs, json_file),
+                    )
+                )
         return openapi_spec_files
 
-    def _prepare_destination(self, source):
-        source = source.replace(".yaml", ".json").replace(".yml", ".json")
-        return source
+    @staticmethod
+    def _detect_referenced_files_json(fs, openapi_file):
+        ref_files = []
+        data = json.loads(fs.read_string(openapi_file.source_abs))
+
+        def look_for_files_in_refs(obj):
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    if key == "$ref":
+                        match = re.search(r"([.a-z_\-/]+)", value)
+                        if match:
+                            ref_files.append(match.group(1))
+                    else:
+                        look_for_files_in_refs(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    look_for_files_in_refs(item)
+
+        look_for_files_in_refs(data)
+        return [
+            path.abspath(path.join(path.dirname(openapi_file.source_abs), ref_file))
+            for ref_file in ref_files
+        ]
 
     def detect(self, fs: Filesystem, previous_operations):
         openapi_spec_files = self._detect_yaml_files(
             fs, previous_operations
         ) + self._detect_json_files(fs, previous_operations)
-
-        return list(
-            filter(
-                lambda op: op not in openapi_spec_files,
-                previous_operations,
-            )
-        ) + [
+        return [
+            op
+            for op in previous_operations
+            if not any(spec in [spec.source_abs for spec in openapi_spec_files] for spec in op.source_files())
+        ] + [
             OpenAPIOperation(
-                openapi_spec.source_abs,
-                openapi_spec.destination_abs,
+                spec.source_abs,
+                spec.destination_abs,
+                spec.ref_files,
                 self.bundler,
                 self.validator,
+                previous_operations,
             )
-            for openapi_spec in openapi_spec_files
+            for spec in openapi_spec_files
         ]
