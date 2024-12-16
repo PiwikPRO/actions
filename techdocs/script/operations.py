@@ -245,6 +245,8 @@ class OpenAPIOperation:
     def has_changes(self, fs):
         for ref_file in self.ref_files:
             for operation in self.previous_operations:
+                if not isinstance(operation, GenericFileCopyOperation):
+                    continue
                 if ref_file in operation.source_files():
                     return operation.has_changes(fs)
         if not fs.is_file(self.destination_abs):
@@ -262,8 +264,7 @@ class OpenAPIOperation:
 
     def valid_checksum(self, fs, source_abs, destination_abs):
         source_checksum = hashb(fs.read_string(source_abs).encode())
-        with open(destination_abs, "r") as f:
-            destination_checksum = json.loads(f.read())["x-api-checksum"]
+        destination_checksum = json.loads(fs.read_string(destination_abs))["x-api-checksum"]
         return source_checksum == destination_checksum
 
 

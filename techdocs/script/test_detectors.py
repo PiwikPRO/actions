@@ -318,9 +318,6 @@ def test_openapi_detector_json():
         ],
     )
 
-    for operation in operations:
-        print(operation.name(), operation.source_abs, operation.destination_abs)
-
     assert len(operations) == 6
     assert operations[0].name() == "copy"
     assert operations[1].name() == "copy"
@@ -418,9 +415,6 @@ paths:
             ),
         ],
     )
-
-    for operation in operations:
-        print(operation.name(), operation.source_abs, operation.destination_abs)
 
     assert len(operations) == 6
     assert operations[0].name() == "copy"
