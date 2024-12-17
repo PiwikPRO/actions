@@ -274,7 +274,8 @@ def test_openapi_detector_json():
             "/tmp/Promil/other-file": "a-file-content",
             "/tmp/Promil/subdir/spec.json": '{"openapi": "3.1.0","paths": {"some-path": "path"}}',
             "/tmp/Promil/subdir/other.json": '{"some": "attribute"}',
-            "/tmp/Promil/components.json": '{"openapi": "3.1.0"}',
+            "/tmp/Promil/nested-components.json": '{"openapi": "3.1.0", "some-component": "nested-component"}',
+            "/tmp/Promil/components.json": '{"openapi": "3.1.0", "components": {"$ref": "nested-components.json#/some-component"}}',
             "/tmp/Promil/subdir/spec-with-ref.json": '{"openapi": "3.1.0","paths": {"$ref": "../components.json#/some-component"}}',
             "/tmp/Promil/subdir/spec-with-local-ref.json": '{"openapi": "3.1.0","paths": {"$ref": "../components.json#/some-component"}}',
         }
@@ -308,6 +309,10 @@ def test_openapi_detector_json():
                 destination_abs="/tmp/dst/components.json",
             ),
             GenericFileCopyOperation(
+                source_abs="/tmp/Promil/nested-components.json",
+                destination_abs="/tmp/dst/nested-components.json",
+            ),
+            GenericFileCopyOperation(
                 source_abs="/tmp/Promil/subdir/spec-with-ref.json",
                 destination_abs="/tmp/dst/subdir/spec-with-ref.json",
             ),
@@ -318,22 +323,29 @@ def test_openapi_detector_json():
         ],
     )
 
-    assert len(operations) == 6
+    assert len(operations) == 7
     assert operations[0].name() == "copy"
     assert operations[1].name() == "copy"
     assert operations[2].name() == "copy"
+    assert operations[3].name() == "copy"
 
-    assert operations[3].name() == "openapi"
-    assert operations[3].ref_files == []
     assert operations[4].name() == "openapi"
-    assert operations[4].ref_files == ["/tmp/Promil/components.json"]
+    assert operations[4].ref_files == []
     assert operations[5].name() == "openapi"
-    assert operations[5].ref_files == ["/tmp/Promil/components.json"]
+    assert sorted(operations[5].ref_files) == [
+        "/tmp/Promil/components.json",
+        "/tmp/Promil/nested-components.json",
+    ]
+    assert operations[6].name() == "openapi"
+    assert sorted(operations[6].ref_files) == [
+        "/tmp/Promil/components.json",
+        "/tmp/Promil/nested-components.json",
+    ]
 
     # when
-    operations[3].execute(fs)
     operations[4].execute(fs)
     operations[5].execute(fs)
+    operations[6].execute(fs)
 
     # then
     assert fs.files["/tmp/dst/subdir/spec.json"] == json.dumps(
@@ -358,6 +370,7 @@ def test_openapi_detector_json():
         indent=2,
     )
 
+
 def test_openapi_detector_yaml():
     fs = MockFilesystem(
         {
@@ -370,7 +383,7 @@ paths:
             "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
 paths:
     some-path:
-        $ref: ../components.json#/some-component""",
+        $ref: ../components.yaml#/some-component""",
             "/tmp/Promil/subdir/api-with-local-ref.yaml": """openapi: 3.1.0
 paths:
     some-path:
@@ -423,7 +436,7 @@ paths:
     assert operations[3].name() == "openapi"
     assert operations[3].ref_files == []
     assert operations[4].name() == "openapi"
-    assert operations[4].ref_files == ["/tmp/Promil/components.json"]
+    assert operations[4].ref_files == ["/tmp/Promil/components.yaml"]
     assert operations[5].name() == "openapi"
     assert operations[5].ref_files == []
 
@@ -443,7 +456,7 @@ paths:
     assert fs.files["/tmp/dst/subdir/api-with-ref.json"] == json.dumps(
         {
             "itsa me": "openapi",
-            "x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2",
+            "x-api-checksum": "d1ff36ee679797e54a3c6e7858e70cfabcb642641fa14f614b173d439f9d3642",
         },
         indent=2,
     )

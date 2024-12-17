@@ -4,8 +4,8 @@ from unittest.mock import Mock
 import pytest
 
 from filesystem import MockFilesystem
-from operations import PlantUMLDiagramRenderOperation, YAMLPrefaceEnrichingCopyOperation
-from techdocs.script.operations import GenericFileCopyOperation, OpenAPIOperation
+from operations import GenericFileCopyOperation, OpenAPIOperation, PlantUMLDiagramRenderOperation, \
+    YAMLPrefaceEnrichingCopyOperation
 
 
 def test_yaml_preface_operation(filesystem):
@@ -148,18 +148,24 @@ paths:
         (
             "ref_file_copy_operation",
             {
+                "/tmp/Promil/other-components.yaml": "openapi: 3.1.0",
+                "/tmp/dst/other-components.yaml": "openapi: 3.1.0",
                 "/tmp/Promil/subdir/api-with-ref.yaml": """openapi: 3.1.0
 paths:
     some-path:
         $ref: ../components.json#/some-component""",
                 "/tmp/dst/subdir/api-with-ref.json": '{"x-api-checksum": "efb49e76308ecfad18ff3dcaadad6eade83b07de82e56be4322897038ebb44e2"}',
             },
-            ["/tmp/Promil/components.yaml"],
+            ["/tmp/Promil/other-components.yaml", "/tmp/Promil/components.yaml"],
             [
+                GenericFileCopyOperation(
+                    "/tmp/Promil/other-components.yaml",
+                    "/tmp/dst/other-components.yaml",
+                ),
                 GenericFileCopyOperation(
                     "/tmp/Promil/components.yaml",
                     "/tmp/dst/components.yaml",
-                )
+                ),
             ],
             True,
         ),

@@ -12,7 +12,8 @@ from operations import (
     DeleteOperation,
     DockerPlantUMLGenerator,
     GenericFileCopyOperation,
-    OpenAPIValidator, PlantUMLDiagramRenderOperation,
+    OpenAPIValidator,
+    PlantUMLDiagramRenderOperation,
     YAMLPrefaceEnrichingCopyOperation,
 )
 from operations import OpenAPIBundler, OpenAPIOperation
@@ -201,100 +202,145 @@ class OpenAPIDetector:
         self.bundler = bundler or OpenAPIBundler()
         self.validator = validator or OpenAPIValidator()
 
-    def _detect_yaml_files(self, fs, previous_operations):
-        yaml_files = [
-            op
-            for op in previous_operations
-            if any(f.endswith((".yaml", ".yml")) for f in op.source_files())
-        ]
-        openapi_spec_files = []
-        for yaml_file in yaml_files:
-            file = io.StringIO(fs.read_string(yaml_file.source_abs))
-            if file.readline().startswith("openapi:"):
-                if any(line.startswith("paths:\n") for line in file):
-                    yaml_file.destination_abs = yaml_file.destination_abs.replace(
-                        ".yaml", ".json"
-                    ).replace(".yml", ".json")
-                    openapi_spec_files.append(
-                        OpenAPIFile(
-                            yaml_file.source_abs,
-                            yaml_file.destination_abs,
-                            self._detect_referenced_files_yaml(fs, yaml_file),
-                        )
-                    )
-        return openapi_spec_files
-
-    @staticmethod
-    def _detect_referenced_files_yaml(fs, openapi_file):
-        ref_files = [
-            match.group(1)
-            for line in fs.read_string(openapi_file.source_abs).split("\n")
-            if '$ref' in line and (match := re.search(r"\$ref:\s+[\'\"]?([\.a-z_\-/]+)", line))
-        ]
-        return [
-            path.abspath(path.join(path.dirname(openapi_file.source_abs), ref_file))
-            for ref_file in ref_files
-        ]
-
-    def _detect_json_files(self, fs, previous_operations):
-        json_files = [
-            op
-            for op in previous_operations
-            if any(f.endswith(".json") for f in op.source_files())
-        ]
-        openapi_spec_files = []
-        for json_file in json_files:
-            file = json.loads(fs.read_string(json_file.source_abs))
-            if isinstance(file, dict) and file.get("openapi") and file.get("paths"):
-                openapi_spec_files.append(
-                    OpenAPIFile(
-                        json_file.source_abs,
-                        json_file.destination_abs,
-                        self._detect_referenced_files_json(fs, json_file),
-                    )
-                )
-        return openapi_spec_files
-
-    @staticmethod
-    def _detect_referenced_files_json(fs, openapi_file):
-        ref_files = []
-        data = json.loads(fs.read_string(openapi_file.source_abs))
-
-        def look_for_files_in_refs(obj):
-            if isinstance(obj, dict):
-                for key, value in obj.items():
-                    if key == "$ref":
-                        match = re.search(r"([.a-z_\-/]+)", value)
-                        if match:
-                            ref_files.append(match.group(1))
-                    else:
-                        look_for_files_in_refs(value)
-            elif isinstance(obj, list):
-                for item in obj:
-                    look_for_files_in_refs(item)
-
-        look_for_files_in_refs(data)
-        return [
-            path.abspath(path.join(path.dirname(openapi_file.source_abs), ref_file))
-            for ref_file in ref_files
-        ]
-
     def detect(self, fs: Filesystem, previous_operations):
         openapi_spec_files = self._detect_yaml_files(
             fs, previous_operations
         ) + self._detect_json_files(fs, previous_operations)
-        return [
+
+        filtered_operations = [
             op
             for op in previous_operations
-            if not any(spec in [spec.source_abs for spec in openapi_spec_files] for spec in op.source_files())
-        ] + [
+            if not any(
+                src_file == spec.source_abs
+                for src_file in op.source_files()
+                for spec in openapi_spec_files
+            )
+        ]
+
+        altered_operations = filtered_operations + [
             OpenAPIOperation(
                 spec.source_abs,
                 spec.destination_abs,
                 spec.ref_files,
                 self.bundler,
                 self.validator,
-                previous_operations,
+                filtered_operations,
             )
             for spec in openapi_spec_files
         ]
+
+        return altered_operations
+
+    def _detect_yaml_files(self, fs, previous_operations):
+        yaml_ops = [
+            op
+            for op in previous_operations
+            if any(f.endswith((".yaml", ".yml")) for f in op.source_files())
+        ]
+        openapi_spec_files = []
+
+        for yaml_op in yaml_ops:
+            file = io.StringIO(fs.read_string(yaml_op.source_abs))
+            if file.readline().startswith("openapi:"):
+                if any(line.startswith("paths:\n") for line in file):
+                    destination = yaml_op.destination_abs.replace(
+                        ".yaml", ".json"
+                    ).replace(".yml", ".json")
+                    visited = set()
+                    ref_files = self._collect_references(
+                        fs, yaml_op.source_abs, visited
+                    )
+                    openapi_spec_files.append(
+                        OpenAPIFile(yaml_op.source_abs, destination, ref_files)
+                    )
+        return openapi_spec_files
+
+    def _detect_json_files(self, fs, previous_operations):
+        json_ops = [
+            op
+            for op in previous_operations
+            if any(f.endswith(".json") for f in op.source_files())
+        ]
+        openapi_spec_files = []
+
+        for json_op in json_ops:
+            try:
+                data = json.loads(fs.read_string(json_op.source_abs))
+            except json.JSONDecodeError:
+                continue  # Not valid JSON, skip
+
+            if isinstance(data, dict) and data.get("openapi") and data.get("paths"):
+                visited = set()
+                ref_files = self._collect_references(fs, json_op.source_abs, visited)
+                openapi_spec_files.append(
+                    OpenAPIFile(json_op.source_abs, json_op.destination_abs, ref_files)
+                )
+        return openapi_spec_files
+
+    def _collect_references(self, fs, file_abs, visited):
+        if file_abs in visited:
+            return []
+        visited.add(file_abs)
+
+        if file_abs.lower().endswith((".yaml", ".yml")):
+            return self._collect_yaml_references(fs, file_abs, visited)
+        elif file_abs.lower().endswith(".json"):
+            return self._collect_json_references(fs, file_abs, visited)
+        else:
+            return []
+
+    def _collect_yaml_references(self, fs, file_abs, visited):
+        content = fs.read_string(file_abs)
+        lines = content.split("\n")
+        base_dir = path.dirname(file_abs)
+        abs_refs = []
+
+        for line in lines:
+            if "$ref" in line:
+                match = re.search(r"\$ref:\s*[\"']?([.a-zA-Z0-9_\-/.]+)", line)
+                if match:
+                    ref_path = match.group(1)
+                    ref_abs = path.abspath(path.join(base_dir, ref_path))
+                    abs_refs.append(ref_abs)
+
+        all_nested = self.get_nested_references(abs_refs, file_abs, fs, visited)
+
+        return list(set(abs_refs + all_nested))
+
+    def _collect_json_references(self, fs, file_abs, visited):
+        try:
+            data = json.loads(fs.read_string(file_abs))
+        except json.JSONDecodeError:
+            return []
+
+        base_dir = path.dirname(file_abs)
+        collected = []
+
+        def look_for_refs(obj):
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    if key == "$ref" and isinstance(value, str):
+                        match = re.search(r"^([.a-zA-Z0-9_\-/]+)", value)
+                        if match:
+                            collected.append(match.group(1))
+                    else:
+                        look_for_refs(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    look_for_refs(item)
+
+        look_for_refs(data)
+
+        abs_refs = [path.abspath(path.join(base_dir, f)) for f in collected]
+        all_nested = self.get_nested_references(abs_refs, file_abs, fs, visited)
+
+        return list(set(abs_refs + all_nested))
+
+    def get_nested_references(self, abs_refs, file_abs, fs, visited):
+        all_nested = []
+        for ref in abs_refs:
+            try:
+                all_nested.extend(self._collect_references(fs, ref, visited))
+            except FileNotFoundError:
+                raise Exception(f"File {file_abs} references non-existing file {ref}")
+        return all_nested
