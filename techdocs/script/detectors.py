@@ -222,8 +222,7 @@ class OpenAPIDetector:
             fs, previous_operations
         ) + self._detect_json_files(fs, previous_operations)
 
-        # Filter out the original operations that are replaced by our new OpenAPIOperations
-        transformed = [
+        altered_operations = [
             op
             for op in previous_operations
             if not any(
@@ -233,8 +232,7 @@ class OpenAPIDetector:
             )
         ]
 
-        # Add our new OpenAPIOperations to the returned list
-        transformed += [
+        altered_operations += [
             OpenAPIOperation(
                 spec.source_abs,
                 spec.destination_abs,
@@ -245,7 +243,7 @@ class OpenAPIDetector:
             )
             for spec in openapi_spec_files
         ]
-        return transformed
+        return altered_operations
 
     def _detect_yaml_files(self, fs, previous_operations):
         yaml_ops = [
@@ -316,7 +314,6 @@ class OpenAPIDetector:
 
         for line in lines:
             if "$ref" in line:
-                # Regex to find a path-like reference.
                 match = re.search(r"\$ref:\s*[\"']?([.a-zA-Z0-9_\-/.]+)", line)
                 if match:
                     ref_path = match.group(1)
@@ -342,7 +339,7 @@ class OpenAPIDetector:
             if isinstance(obj, dict):
                 for key, value in obj.items():
                     if key == "$ref" and isinstance(value, str):
-                        match = re.search(r"([.a-zA-Z0-9_\-/.]+)", value)
+                        match = re.search(r"^([.a-zA-Z0-9_\-/]+)", value)
                         if match:
                             collected.append(match.group(1))
                     else:
@@ -355,7 +352,6 @@ class OpenAPIDetector:
 
         abs_refs = [path.abspath(path.join(base_dir, f)) for f in collected]
 
-        # Recursively gather sub-references
         all_nested = []
         for ref_file in abs_refs:
             all_nested.extend(self._collect_references(fs, ref_file, visited))
