@@ -83,11 +83,7 @@ def test_copy_create_operation_variants(
     )
     copy_operation = detector._create_operation(
         MockFilesystem(
-            {
-                "/tmp/Tech-docs/projects.json": json.dumps(
-                    {"promil": {"path": "docs/promil"}}
-                )
-            }
+            {"/tmp/Tech-docs/projects.json": json.dumps({"promil": {"path": "docs/promil"}})}
         ),
         file,
         Mock(
@@ -189,13 +185,9 @@ def test_delete():
     assert operations[0].destination_abs == "/tmp/dst/a-file"
     assert operations[1].name() == "delete"
 
-    assert (
-        operations[1].destination_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
-    )
+    assert operations[1].destination_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
     assert index.items == (FileIndexItem("a-file", "Promil"),)
-    assert index.removed == (
-        FileIndexItem("a-file-that-does-not-exist-anymore", "Promil"),
-    )
+    assert index.removed == (FileIndexItem("a-file-that-does-not-exist-anymore", "Promil"),)
 
 
 def test_filtering():
@@ -223,9 +215,7 @@ def test_filtering():
 
     assert len(operations) == 1
     assert operations[0].name() == "delete"
-    assert (
-        operations[0].destination_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
-    )
+    assert operations[0].destination_abs == "/tmp/dst/a-file-that-does-not-exist-anymore"
 
 
 def test_plantuml():

@@ -26,9 +26,9 @@ class GenericFileCopyOperation:
         fs.copy(self.source_abs, self.destination_abs)
 
     def has_changes(self, fs):
-        if (not fs.is_file(self.destination_abs)) or hashb(
-            fs.read_bytes(self.source_abs)
-        ) != hashb(fs.read_bytes(self.destination_abs)):
+        if (not fs.is_file(self.destination_abs)) or hashb(fs.read_bytes(self.source_abs)) != hashb(
+                fs.read_bytes(self.destination_abs)
+        ):
             return True
         return False
 
@@ -68,24 +68,18 @@ class YAMLPrefaceEnrichingCopyOperation:
         fs.write_string(self.destination_abs, new_content)
 
     def has_changes(self, fs):
-        dest_file = (
-            fs.read_string(self.destination_abs)
-            if fs.is_file(self.destination_abs)
-            else ""
-        )
+        dest_file = fs.read_string(self.destination_abs) if fs.is_file(self.destination_abs) else ""
         source_file = fs.read_string(self.source_abs)
 
         if any(
-            [
-                not fs.is_file(self.destination_abs),
-                file_has_no_frontmatter(fs, dest_file),
-                files_content_ignoring_frontmatter_is_different(
-                    fs, source_file, dest_file
-                ),
-                source_frontmatter_hash_is_different_than_one_cached_in_destination(
-                    fs, source_file, dest_file
-                ),
-            ]
+                [
+                    not fs.is_file(self.destination_abs),
+                    file_has_no_frontmatter(fs, dest_file),
+                    files_content_ignoring_frontmatter_is_different(fs, source_file, dest_file),
+                    source_frontmatter_hash_is_different_than_one_cached_in_destination(
+                        fs, source_file, dest_file
+                    ),
+                ]
         ):
             return True
         return False
@@ -111,7 +105,7 @@ def files_content_ignoring_frontmatter_is_different(fs, first_file, second_file)
 
 
 def source_frontmatter_hash_is_different_than_one_cached_in_destination(
-    fs, source_file, destination_file
+        fs, source_file, destination_file
 ):
     return source_file.startswith("---") and hashb(
         source_file.split("---\n")[1].encode()
@@ -187,20 +181,14 @@ def get_full_puml_content(fs, the_path):
     content = fs.read_bytes(the_path)
     lines = content.split(b"\n")
     for i, line in enumerate(lines):
-        if (
-            line.startswith(b"!include ")
-            and b"http://" not in line
-            and b"https://" not in line
-        ):
+        if line.startswith(b"!include ") and b"http://" not in line and b"https://" not in line:
             try:
                 lines[i] = get_full_puml_content(
                     fs,
-                    os.path.join(
-                        os.path.dirname(the_path), line.split(b"!include ")[1].decode()
-                    ),
+                    os.path.join(os.path.dirname(the_path), line.split(b"!include ")[1].decode()),
                 )
             except (
-                FileNotFoundError
+                    FileNotFoundError
             ):  # Let PlantUML handle the error, also we don't need to hack 10 ifs with various import syntaxes here
                 pass
     return b"\n".join(lines)
@@ -257,9 +245,7 @@ class OpenAPIOperation:
     def execute(self, fs):
         self.validator.validate(self.source_abs)
         checksum = hashb(fs.read_string(self.source_abs).encode())
-        bundled_content = json.loads(
-            self.bundler.bundle(fs, self.source_abs, self.destination_abs)
-        )
+        bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.destination_abs))
         bundled_content["x-api-checksum"] = checksum
 
         fs.write_string(self.destination_abs, json.dumps(bundled_content, indent=2))
