@@ -223,7 +223,15 @@ class DockerPlantUMLGenerator:
 
 
 class OpenAPIOperation:
-    def __init__(self, source_abs, destination_abs, ref_files, bundler, validator, previous_operations):
+    def __init__(
+        self,
+        source_abs,
+        destination_abs,
+        ref_files,
+        bundler,
+        validator,
+        previous_operations,
+    ):
         self.source_abs = source_abs
         self.destination_abs = destination_abs
         self.ref_files = ref_files
@@ -248,7 +256,8 @@ class OpenAPIOperation:
                 if not isinstance(operation, GenericFileCopyOperation):
                     continue
                 if ref_file in operation.source_files():
-                    return operation.has_changes(fs)
+                    if operation.has_changes(fs):
+                        return True
         if not fs.is_file(self.destination_abs):
             return True
         return not self.valid_checksum(fs, self.source_abs, self.destination_abs)
@@ -264,7 +273,9 @@ class OpenAPIOperation:
 
     def valid_checksum(self, fs, source_abs, destination_abs):
         source_checksum = hashb(fs.read_string(source_abs).encode())
-        destination_checksum = json.loads(fs.read_string(destination_abs))["x-api-checksum"]
+        destination_checksum = json.loads(fs.read_string(destination_abs))[
+            "x-api-checksum"
+        ]
         return source_checksum == destination_checksum
 
 
@@ -321,5 +332,7 @@ class OpenAPIValidator:
             capture_output=True,
         )
         if output.returncode != 0:
-            raise Exception(f"{output.stderr.decode()}"
-                            f"\nOpenAPI validation failed for '{source_abs}'")
+            raise Exception(
+                f"{output.stderr.decode()}"
+                f"\nOpenAPI validation failed for '{source_abs}'"
+            )
