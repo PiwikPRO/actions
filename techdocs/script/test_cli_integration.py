@@ -43,24 +43,23 @@ def test_integration(tmp_path):
             }.items()
         }
     )
-    assert (
-        subprocess.run(
-            [
-                "python",
-                "cli.py",
-                "copy",
-                "--from",
-                os.path.join(tmp_path, "src"),
-                "--to",
-                os.path.join(tmp_path, "dst"),
-                "--config",
-                os.path.join(tmp_path, "config.json"),
-                "--index",
-                "promil",
-            ]
-        ).returncode
-        == 0
+    output = subprocess.run(
+        [
+            "python",
+            "script/cli.py",
+            "copy",
+            "--from",
+            os.path.join(tmp_path, "src"),
+            "--to",
+            os.path.join(tmp_path, "dst"),
+            "--config",
+            os.path.join(tmp_path, "config.json"),
+            "--index",
+            "promil",
+        ],
+        capture_output=True,
     )
+    assert output.returncode == 0
     assert os.path.exists(os.path.join(tmp_path, "dst/docs/promil/bla.md"))
     assert os.path.exists(os.path.join(tmp_path, "dst/docs/promil/somedir/one.md"))
     assert not os.path.exists(os.path.join(tmp_path, "dst/docs/promil/somedir/two.txt"))

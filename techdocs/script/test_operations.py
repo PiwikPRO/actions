@@ -4,8 +4,8 @@ from unittest.mock import Mock
 import pytest
 
 from filesystem import MockFilesystem
-from operations import PlantUMLDiagramRenderOperation, YAMLPrefaceEnrichingCopyOperation
-from techdocs.script.operations import GenericFileCopyOperation, OpenAPIOperation
+from operations import GenericFileCopyOperation, OpenAPIOperation, PlantUMLDiagramRenderOperation, \
+    YAMLPrefaceEnrichingCopyOperation
 
 
 def test_yaml_preface_operation(filesystem):

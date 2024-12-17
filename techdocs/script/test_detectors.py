@@ -342,14 +342,14 @@ def test_openapi_detector_json():
     assert operations[4].name() == "openapi"
     assert operations[4].ref_files == []
     assert operations[5].name() == "openapi"
-    assert operations[5].ref_files == [
-        "/tmp/Promil/nested-components.json",
+    assert sorted(operations[5].ref_files) == [
         "/tmp/Promil/components.json",
+        "/tmp/Promil/nested-components.json",
     ]
     assert operations[6].name() == "openapi"
-    assert operations[6].ref_files == [
-        "/tmp/Promil/nested-components.json",
+    assert sorted(operations[6].ref_files) == [
         "/tmp/Promil/components.json",
+        "/tmp/Promil/nested-components.json",
     ]
 
     # when
