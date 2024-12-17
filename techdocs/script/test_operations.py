@@ -19,8 +19,9 @@ def test_yaml_preface_operation(filesystem):
 
     op.execute(filesystem)
 
-    assert "https://github.com/PiwikPRO/foo/edit/master/README.md" in filesystem.read_string(
-        "/tmp/bar/README.md"
+    assert (
+        "https://github.com/PiwikPRO/foo/edit/master/README.md"
+        in filesystem.read_string("/tmp/bar/README.md")
     )
 
 
