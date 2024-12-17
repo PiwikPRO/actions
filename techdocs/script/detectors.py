@@ -21,7 +21,7 @@ from operations import OpenAPIBundler, OpenAPIOperation
 
 class CopyDetector:
     def __init__(
-            self, from_path: str, to_path: str, author: str, branch: str, config: Config
+        self, from_path: str, to_path: str, author: str, branch: str, config: Config
     ) -> None:
         self.copy_rules = [
             Rule(
@@ -50,7 +50,9 @@ class CopyDetector:
         return None
 
     def _create_operation(self, fs, file, rule):
-        if nodes.looks_fileish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
+        if nodes.looks_fileish(rule.config.source) and nodes.looks_dirish(
+            rule.config.destination
+        ):
             destination_file = path.basename(file)
             if nodes.looks_globish(rule.config.source):
                 source_base = rule.config.source.split("**/*")[0]
@@ -61,16 +63,18 @@ class CopyDetector:
                 path.join(rule.config.destination, destination_file),
             )
         elif nodes.looks_fileish(rule.config.source) and nodes.looks_fileish(
-                rule.config.destination
+            rule.config.destination
         ):
             relative_src, relative_dst = (
                 file,
                 rule.config.destination,
             )
-        elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(rule.config.destination):
+        elif nodes.looks_dirish(rule.config.source) and nodes.looks_dirish(
+            rule.config.destination
+        ):
             relative_src, relative_dst = (
                 file,
-                path.join(rule.config.destination, file[len(rule.config.source) - 1:]),
+                path.join(rule.config.destination, file[len(rule.config.source) - 1 :]),
             )
         else:
             return None
@@ -79,14 +83,23 @@ class CopyDetector:
             destination_abs=path.abspath(
                 path.join(
                     self.to_path,
-                    ProjectDetailsReader(self.to_path, fs).doc_path(rule.config.project),
+                    ProjectDetailsReader(self.to_path, fs).doc_path(
+                        rule.config.project
+                    ),
                     relative_dst,
                 ),
             ),
         )
-        if any([relative_src.endswith(suffix) for suffix in [".md", ".MD", ".mdx", ".MDX"]]):
+        if any(
+            [relative_src.endswith(suffix) for suffix in [".md", ".MD", ".mdx", ".MDX"]]
+        ):
             return YAMLPrefaceEnrichingCopyOperation(
-                **dict(**kwargs, from_abs=self.from_path, author=self.author, branch=self.branch)
+                **dict(
+                    **kwargs,
+                    from_abs=self.from_path,
+                    author=self.author,
+                    branch=self.branch,
+                )
             )
         return GenericFileCopyOperation(**kwargs)
 
@@ -94,7 +107,9 @@ class CopyDetector:
 class DefaultMatcher:
     def __init__(self, str_to_match):
         # How to handle glob like **/* in the source
-        self.regex = (re.escape(str_to_match).replace("\\*\\*/\\*", ".*")).replace("\\*", "[^/]*")
+        self.regex = (re.escape(str_to_match).replace("\\*\\*/\\*", ".*")).replace(
+            "\\*", "[^/]*"
+        )
 
     def match(self, path):
         return re.match(self.regex, path) is not None
@@ -207,7 +222,7 @@ class OpenAPIDetector:
             fs, previous_operations
         ) + self._detect_json_files(fs, previous_operations)
 
-        altered_operations = [
+        filtered_operations = [
             op
             for op in previous_operations
             if not any(
@@ -217,17 +232,18 @@ class OpenAPIDetector:
             )
         ]
 
-        altered_operations += [
+        altered_operations = filtered_operations + [
             OpenAPIOperation(
                 spec.source_abs,
                 spec.destination_abs,
                 spec.ref_files,
                 self.bundler,
                 self.validator,
-                previous_operations,
+                filtered_operations,
             )
             for spec in openapi_spec_files
         ]
+
         return altered_operations
 
     def _detect_yaml_files(self, fs, previous_operations):
@@ -239,22 +255,19 @@ class OpenAPIDetector:
         openapi_spec_files = []
 
         for yaml_op in yaml_ops:
-            content = fs.read_string(yaml_op.source_abs)
-            lines = content.split("\n")
-
-            if (
-                lines
-                and lines[0].startswith("openapi:")
-                and any(line.startswith("paths:") for line in lines)
-            ):
-                destination = yaml_op.destination_abs.replace(".yaml", ".json").replace(
-                    ".yml", ".json"
-                )
-                visited = set()
-                ref_files = self._collect_references(fs, yaml_op.source_abs, visited)
-                openapi_spec_files.append(
-                    OpenAPIFile(yaml_op.source_abs, destination, ref_files)
-                )
+            file = io.StringIO(fs.read_string(yaml_op.source_abs))
+            if file.readline().startswith("openapi:"):
+                if any(line.startswith("paths:\n") for line in file):
+                    destination = yaml_op.destination_abs.replace(
+                        ".yaml", ".json"
+                    ).replace(".yml", ".json")
+                    visited = set()
+                    ref_files = self._collect_references(
+                        fs, yaml_op.source_abs, visited
+                    )
+                    openapi_spec_files.append(
+                        OpenAPIFile(yaml_op.source_abs, destination, ref_files)
+                    )
         return openapi_spec_files
 
     def _detect_json_files(self, fs, previous_operations):
@@ -305,9 +318,7 @@ class OpenAPIDetector:
                     ref_abs = path.abspath(path.join(base_dir, ref_path))
                     abs_refs.append(ref_abs)
 
-        all_nested = []
-        for ref in abs_refs:
-            all_nested.extend(self._collect_references(fs, ref, visited))
+        all_nested = self.get_nested_references(abs_refs, file_abs, fs, visited)
 
         return list(set(abs_refs + all_nested))
 
@@ -336,9 +347,15 @@ class OpenAPIDetector:
         look_for_refs(data)
 
         abs_refs = [path.abspath(path.join(base_dir, f)) for f in collected]
-
-        all_nested = []
-        for ref_file in abs_refs:
-            all_nested.extend(self._collect_references(fs, ref_file, visited))
+        all_nested = self.get_nested_references(abs_refs, file_abs, fs, visited)
 
         return list(set(abs_refs + all_nested))
+
+    def get_nested_references(self, abs_refs, file_abs, fs, visited):
+        all_nested = []
+        for ref in abs_refs:
+            try:
+                all_nested.extend(self._collect_references(fs, ref, visited))
+            except FileNotFoundError:
+                raise Exception(f"File {file_abs} references non-existing file {ref}")
+        return all_nested
