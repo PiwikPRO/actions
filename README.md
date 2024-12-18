@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4 # pin latest commit-hash
         with:
           ref: ${{ github.event.pull_request.head.ref }}
       - name: Verify CHANGELOG.md kacl-cl structure
@@ -143,7 +143,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # pin latest commit-hash
 
       # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO
       - name: Download dtools
@@ -264,7 +264,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # pin latest commit-hash
 
       # Simple linting, uses .golangci configiration file from the repo that is being linted:
       - name: Run linters
@@ -348,8 +348,8 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v4 # pin latest commit-hash
+       
       # Simple tests without code coverage:
       - name: Run unit tests
         uses: PiwikPRO/actions/go/test@master
@@ -387,7 +387,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # pin latest commit-hash
 
       - name: Setup integration tests
         uses: PiwikPRO/actions/go/setup/integration@master
@@ -417,7 +417,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # pin latest commit-hash
 
       - name: Release the binary
         uses: PiwikPRO/actions/go/release@master
@@ -444,7 +444,7 @@ Example usage:
 ...
   steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # pin latest commit-hash
 
       # Simple linting, uses predefined configuration file from this repository:
       - name: Run linters
@@ -498,7 +498,7 @@ Example usage:
 ```yaml
 ...
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4 # pin latest commit-hash
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
@@ -561,12 +561,12 @@ making it as generic as possible.
 
 ```yaml
 # Basic usage
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4 # pin latest commit-hash
       - name: Run linters
         uses: PiwikPRO/actions/javascript/lts-lint@master
 
 # If eslint and prettier are defined in the package.json
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4 # pin latest commit-hash
       - name: Run linters
         uses: PiwikPRO/actions/javascript/lts-lint@master
         with:
@@ -623,7 +623,7 @@ jobs:
         private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
         app-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4 # pin latest commit-hash
       with:
         submodules: true
         token: ${{ steps.get-token.outputs.token }}
@@ -639,7 +639,7 @@ jobs:
         duration: 60s
 
     - name: Archive benchmark results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4 # pin latest commit-hash
       with:
         name: summary
         path: summary.json
@@ -720,7 +720,7 @@ jobs:
           example-infra-2
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4 # pin latest commit-hash
 
     - name: Get kubeconfig
       id: get-kubeconfig
@@ -750,7 +750,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # pin latest commit-hash
 
       - name: Prepare CRDs
         uses: PiwikPRO/actions/helm/extract-piwikpro-crds@DEVOPS-7919
