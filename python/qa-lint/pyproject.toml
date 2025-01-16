@@ -16,7 +16,7 @@ extend-select = [
 ]
 ignore = [
     "F811", # F811 `Redefinition of unused name` - fixtures that does not return value
-    "D101", # D101 Missing docstring in public class
+    "D10*", # D10* Missing docstring
     "ANN204", # ANN204 Missing return type annotation for special method `__init__`
 ]
 
