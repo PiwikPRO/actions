@@ -7,7 +7,7 @@ select = [
     "E",   # General PEP8 compliance
     "F",   # Pyflakes for finding common issues
     "B",   # Bugbear for catching potential bugs and performance issues
-    "UP",  # PyUpgrade for keeping up with Python 3.12 features,
+    "UP",  # PyUpgrade for keeping up with Python 3.13 features,
     "C",   # Complexity checks
 ]
 extend-select = [
@@ -16,8 +16,7 @@ extend-select = [
 ]
 ignore = [
     "F811", # F811 `Redefinition of unused name` - fixtures that does not return value
-    "ANN101", # ANN101 Missing type annotation for self in method
-    "ANN102", # ANN102 Missing type annotation for cls in class method
+    "D10*", # D10* Missing docstring
     "ANN204", # ANN204 Missing return type annotation for special method `__init__`
 ]
 
