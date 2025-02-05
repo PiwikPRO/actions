@@ -11,7 +11,7 @@ inputs:
   ruff-version:
     required: false
     description: Version of ruff
-    default: "0.8.*"
+    default: "0.9.*"
 
 runs:
   using: "composite"
