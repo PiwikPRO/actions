@@ -71,6 +71,9 @@ runs:
       id: sign_check
       if: ${{ startsWith(github.ref, 'refs/tags/') }}
       shell: bash
+      env:
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
       run: |
         if [[ "${{ inputs.skip-signing }}" == 'true' ]]; then
           echo "::set-output name=should_sign::false"
