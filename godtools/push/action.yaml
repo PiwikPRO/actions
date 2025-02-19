@@ -67,6 +67,20 @@ runs:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
 
+    - name: Check if tag should be signed & verify signing configuration
+      id: sign_check
+      if: ${{ startsWith(github.ref, 'refs/tags/') }}
+      shell: bash
+      env:
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
+      run: |
+        if [[ "${{ inputs.skip-signing }}" == 'true' ]]; then
+          echo "::set-output name=should_sign::false"
+          exit 0
+        fi
+        godtools docker sign-verify --registry-id "${{ inputs.registries }}"
+        echo "::set-output name=should_sign::true"
 
     - name: Push production docker image
       if: startsWith(github.ref, 'refs/tags')
@@ -77,18 +91,6 @@ runs:
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
-
-
-    - name: Check if tag should be signed
-      id: sign_check
-      if: ${{ startsWith(github.ref, 'refs/tags/') }}
-      shell: bash
-      run: |
-        if [[ "${{ inputs.skip-signing }}" == 'true' ]]; then
-          echo "::set-output name=should_sign::false"
-          exit 0
-        fi
-        echo "::set-output name=should_sign::true"
 
     - name: Download image signing toolkit (cosign)
       if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
