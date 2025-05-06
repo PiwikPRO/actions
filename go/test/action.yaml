@@ -42,6 +42,11 @@ inputs:
     required: false
     description: Application ID of token generator application
 
+  timeout:
+    required: false
+    default: 10
+    description: Timeout for the tests
+
 runs:
   using: "composite"
   steps:
@@ -66,7 +71,7 @@ runs:
         EXISTING_DIRS=$(echo "${{ inputs.go-packages }}" | tr ',' '\n' | while read dir; do if [ -d "$dir" ]; then printf "%s," "$dir"; fi; done | sed 's/,$/\n/')
 
         # Runs the tests formatting the above variable to format accepted by go test and -coverpkg (./foo/... ./bar/... and ./foo/...,./bar/... respectively)
-        go test $(echo $EXISTING_DIRS | sed 's/[^,]*/\.\/&\/.../g; s/,/ /g') -v -coverpkg=$(echo $EXISTING_DIRS | sed 's/[^,]*/\.\/&\/.../g') -coverprofile cover.out
+        go test $(echo $EXISTING_DIRS | sed 's/[^,]*/\.\/&\/.../g; s/,/ /g') -v -coverpkg=$(echo $EXISTING_DIRS | sed 's/[^,]*/\.\/&\/.../g') -coverprofile cover.out -timeout ${{ inputs.timeout }}
 
     - name: Extract coverage
       if: ${{ inputs.cov == 'true' }}
