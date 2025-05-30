@@ -68,8 +68,8 @@ runs:
 
     - name: Run linters
       if: ${{ inputs.inclint == 'false' }}
-      # golangci-lint-action: v6.1.0 (commit of tag used instead of tag to avoid tag overwrite)
-      uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86
+      # golangci-lint-action: v6.5.2 (commit of tag used instead of tag to avoid tag overwrite)
+      uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84
       with:
         version: ${{ inputs.golangci-lint-version }}
         # Extended timeout to ensure all the linters are installed before it hits
@@ -77,8 +77,8 @@ runs:
 
     - name: Run linters (with incremental improvements)
       if: ${{ inputs.inclint == 'true' }}
-      # golangci-lint-action: v6.1.0 (commit of tag used instead of tag to avoid tag overwrite)
-      uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86
+      # golangci-lint-action: v6.5.2 (commit of tag used instead of tag to avoid tag overwrite)
+      uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84
       with:
         version: ${{ inputs.golangci-lint-version }}
         args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
