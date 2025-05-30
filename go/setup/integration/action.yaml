@@ -5,6 +5,10 @@ inputs:
     required: false
     description: Name of the directory the tests are stored in
     default: "tests"
+  python-version:
+    description: "Python version that will be used in operator tests"
+    required: false
+    default: "3.10"
 runs:
   using: "composite"
   steps:
@@ -13,15 +17,19 @@ runs:
       with:
         go-version: "1.23.x"
 
+    - name: Install Poetry
+      uses: snok/install-poetry@v1.3.4
+
     - name: Install Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.x"
+        python-version: ${{ inputs.python-version }}
+        architecture: "x64"
+        cache: "poetry"
+        cache-dependency-path: |
+          toolkit/poetry.lock
+          poetry.lock
 
-    - name: Install setuptools
+    - name: Install dependencies
       shell: bash
-      run: pip install setuptools
-
-    - name: Install packages required for tests
-      shell: bash
-      run: cd ${{ inputs.test-directory }} && python setup.py develop
+      run: cd ${{ inputs.test-directory }} && poetry install
