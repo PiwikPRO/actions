@@ -126,7 +126,7 @@ jobs:
         run: |
           cd Tech-docs
           git fetch
-          git checkout master
+          git checkout feature/ARCH-732-docusaurus-faster 
           git branch -d $TECH_DOCS_BRANCH
           git checkout -b $TECH_DOCS_BRANCH
 
