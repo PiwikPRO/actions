@@ -17,7 +17,7 @@ runs:
     - name: "Download binary"
       shell: bash
       run: |
-        API_URL="https://api.github.com/repos/sigstore/cosign/releasses/${{ inputs.version }}"
+        API_URL="https://api.github.com/repos/sigstore/cosign/releases/${{ inputs.version }}"
         MAX_ATTEMPTS=${{ inputs.max_attempts }}
         ASSET_NAME="cosign-linux-amd64"
         TEMP_FILE="/tmp/cosign_release.json"
