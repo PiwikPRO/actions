@@ -31,9 +31,11 @@ runs:
         while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
           echo "Attempt $ATTEMPT of $MAX_ATTEMPTS"
           
-          HTTP_STATUS=$(curl -w "%{http_code}" -s -o "$TEMP_FILE" "$API_URL")
+          # Fetch API response with error handling
+          HTTP_STATUS=$(curl -w "%{http_code}" -s -o "$TEMP_FILE" "$API_URL" 2>/dev/null)
+          CURL_EXIT_CODE=$?
           
-          if [ "$HTTP_STATUS" -eq 200 ]; then
+          if [ $CURL_EXIT_CODE -eq 0 ] && [ -n "$HTTP_STATUS" ] && [ "$HTTP_STATUS" -eq 200 ]; then
             if jq -e ".assets[]? | select(.name==\"$ASSET_NAME\") | .browser_download_url" "$TEMP_FILE" > /dev/null 2>&1; then
               URL=$(jq -r ".assets[] | select(.name==\"$ASSET_NAME\") | .browser_download_url" "$TEMP_FILE")
               
@@ -61,9 +63,13 @@ runs:
               cat "$TEMP_FILE"
             fi
           else
-            echo "::error title=GitHub API Error::API request failed with HTTP status $HTTP_STATUS"
-            echo "API Response:"
-            cat "$TEMP_FILE" 2>/dev/null || echo "No response body available"
+            if [ $CURL_EXIT_CODE -ne 0 ]; then
+              echo "::error title=Network Error::Failed to connect to GitHub API (curl exit code: $CURL_EXIT_CODE)"
+            else
+              echo "::error title=GitHub API Error::API request failed with HTTP status $HTTP_STATUS"
+              echo "API Response:"
+              cat "$TEMP_FILE" 2>/dev/null || echo "No response body available"
+            fi
           fi
           
           if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
