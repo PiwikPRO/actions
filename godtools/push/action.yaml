@@ -94,7 +94,7 @@ runs:
 
     - name: Download image signing toolkit (cosign)
       if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
-      uses: PiwikPRO/actions/cosign/download@85b53606f434c343f5b885839b188a7376d38d12
+      uses: PiwikPRO/actions/cosign/download@da68a14b17cbfd388838c51ecc5322aa3815046d
 
     - name: Sign production docker image
       if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
