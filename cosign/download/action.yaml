@@ -36,26 +36,21 @@ runs:
           CURL_EXIT_CODE=$?
           
           if [ $CURL_EXIT_CODE -eq 0 ] && [ -n "$HTTP_STATUS" ] && [ "$HTTP_STATUS" -eq 200 ]; then
-            if jq -e ".assets[]? | select(.name==\"$ASSET_NAME\") | .browser_download_url" "$TEMP_FILE" > /dev/null 2>&1; then
-              URL=$(jq -r ".assets[] | select(.name==\"$ASSET_NAME\") | .browser_download_url" "$TEMP_FILE")
+            # Extract download URL with single jq execution
+            URL=$(jq -r ".assets[]? | select(.name==\"$ASSET_NAME\") | .browser_download_url" "$TEMP_FILE" 2>/dev/null)
+            
+            if [ -n "$URL" ] && [ "$URL" != "null" ]; then
+              echo "Found download URL: $URL"
               
-              if [ -n "$URL" ] && [ "$URL" != "null" ]; then
-                echo "Found download URL: $URL"
-                
-                if wget -q "$URL" --output-document "$BINARY_NAME"; then
-                  chmod +x "$BINARY_NAME"
-                  mkdir -p "$INSTALL_DIR"
-                  mv "$BINARY_NAME" "$INSTALL_DIR"
-                  echo "Cosign binary successfully downloaded and installed to $INSTALL_DIR"
-                  rm -f "$TEMP_FILE"
-                  exit 0
-                else
-                  echo "::error title=Download Failed::Failed to download cosign binary from $URL"
-                fi
+              if wget -q "$URL" --output-document "$BINARY_NAME"; then
+                chmod +x "$BINARY_NAME"
+                mkdir -p "$INSTALL_DIR"
+                mv "$BINARY_NAME" "$INSTALL_DIR"
+                echo "Cosign binary successfully downloaded and installed to $INSTALL_DIR"
+                rm -f "$TEMP_FILE"
+                exit 0
               else
-                echo "::error title=Invalid Response::Empty or null download URL extracted from GitHub API"
-                echo "API Response:"
-                cat "$TEMP_FILE"
+                echo "::error title=Download Failed::Failed to download cosign binary from $URL"
               fi
             else
               echo "::error title=Asset Not Found::Release ${{ inputs.version }} doesn't contain expected $ASSET_NAME asset"
