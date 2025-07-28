@@ -94,7 +94,7 @@ runs:
 
     - name: Download image signing toolkit (cosign)
       if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
-      uses: PiwikPRO/actions/cosign/download@da68a14b17cbfd388838c51ecc5322aa3815046d
+      uses: PiwikPRO/actions/cosign/download@bugfix/ARCH-711-handle-invalid-cosign-download-responses
 
     - name: Sign production docker image
       if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
