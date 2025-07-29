@@ -76,11 +76,11 @@ runs:
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
       run: |
         if [[ "${{ inputs.skip-signing }}" == 'true' ]]; then
-          echo "::set-output name=should_sign::false"
+          echo "should_sign=false" >> $GITHUB_OUTPUT
           exit 0
         fi
         godtools docker sign-verify --registry-id "${{ inputs.registries }}"
-        echo "::set-output name=should_sign::true"
+        echo "should_sign=true" >> $GITHUB_OUTPUT
 
     - name: Push production docker image
       if: startsWith(github.ref, 'refs/tags')
