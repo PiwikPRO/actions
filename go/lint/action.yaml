@@ -73,7 +73,7 @@ runs:
       with:
         version: ${{ inputs.golangci-lint-version }}
         # Extended timeout to ensure all the linters are installed before it hits
-        args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
+        args: --concurrency ${{ inputs.golangci-lint-concurrency }} --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
 
     - name: Run linters (with incremental improvements)
       if: ${{ inputs.inclint == 'true' }}
@@ -81,7 +81,7 @@ runs:
       uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9
       with:
         version: ${{ inputs.golangci-lint-version }}
-        args: --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
+        args: --concurrency ${{ inputs.golangci-lint-concurrency }} --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }} -c ${{ github.action_path }}/.golangci.yml
 
     - name: Generate PiwikPRO access token for inclint action
       uses: PiwikPRO/github-app-token-generator@v1
@@ -94,7 +94,7 @@ runs:
     - name: Re-run linters (uses cache) to extract amount of linter errors
       if: ${{ inputs.inclint == 'true' }}
       shell: bash
-      run: golangci-lint run --concurrency ${{ inputs.golangci-lint-concurrency }} --exclude-use-default=false --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }}  --out-format tab -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
+      run: golangci-lint run --concurrency ${{ inputs.golangci-lint-concurrency }} --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }}  -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
 
     - name: Extract amount of linter errors
       if: ${{ inputs.inclint == 'true' }}
