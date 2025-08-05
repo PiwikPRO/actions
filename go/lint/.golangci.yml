@@ -40,6 +40,8 @@ linters:
       min-occurrences: 4
     lll:
       line-length: 120
+    staticcheck:
+      checks: ["all", "-ST1005"]
   exclusions:
     generated: lax
     paths:
