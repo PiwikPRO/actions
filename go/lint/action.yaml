@@ -94,7 +94,7 @@ runs:
     - name: Re-run linters (uses cache) to extract amount of linter errors
       if: ${{ inputs.inclint == 'true' }}
       shell: bash
-      run: golangci-lint run --concurrency ${{ inputs.golangci-lint-concurrency }} --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }}  -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
+      run: golangci-lint run --concurrency ${{ inputs.golangci-lint-concurrency }} --issues-exit-code=0 --timeout=${{ inputs.golangci-lint-timeout }} --output.tab.path=stdout --show-stats=false -c ${{ github.action_path }}/.golangci.yml | tee /tmp/golangci-inclint-results.txt
 
     - name: Extract amount of linter errors
       if: ${{ inputs.inclint == 'true' }}
