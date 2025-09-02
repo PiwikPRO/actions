@@ -12,7 +12,6 @@ from frontmatter import (
     source_frontmatter_hash,
 )
 from hash import hashb
-from pathlib import Path
 
 
 class GenericFileCopyOperation:
