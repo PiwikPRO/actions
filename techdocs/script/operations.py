@@ -321,17 +321,17 @@ class OpenAPIValidator:
         ref_files_volumes = {os.path.dirname(ref_file) for ref_file in ref_files} | {os.path.dirname(source_abs)}
         base_path = os.path.commonpath(ref_files_volumes)
         args = [
-                "docker",
-                "run",
-                "-v",
-                f"{base_path}:/spec",
-                "-w",
-                "/spec",
-                f"ghcr.io/readmeio/rdme:{self.RDME_VERSION}",
-                "openapi:validate",
-                f"/spec/{os.path.relpath(source_abs, base_path)}",
-                f"--workingDirectory=/spec/{os.path.dirname(os.path.relpath(source_abs, base_path))}",
-            ]
+            "docker",
+            "run",
+            "-v",
+            f"{base_path}:/spec",
+            "-w",
+            "/spec",
+            f"ghcr.io/readmeio/rdme:{self.RDME_VERSION}",
+            "openapi:validate",
+            f"/spec/{os.path.relpath(source_abs, base_path)}",
+            f"--workingDirectory=/spec/{os.path.dirname(os.path.relpath(source_abs, base_path))}",
+        ]
         output = subprocess.run(args, capture_output=True)
         if output.returncode != 0:
             raise Exception(f"{output.stderr.decode()}"
