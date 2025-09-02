@@ -243,7 +243,7 @@ class OpenAPIOperation:
         return "openapi"
 
     def execute(self, fs):
-        self.validator.validate(self.source_abs)
+        self.validator.validate(self.source_abs, self.ref_files)
         checksum = hashb(fs.read_string(self.source_abs).encode())
         bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.destination_abs))
         bundled_content["x-api-checksum"] = checksum
@@ -314,13 +314,15 @@ class OpenAPIBundler:
 class OpenAPIValidator:
     RDME_VERSION = "latest"
 
-    def validate(self, source_abs):
+    def validate(self, source_abs, ref_files: list[str]):
+        ref_files_volumes = {os.path.dirname(ref_file) for ref_file in ref_files}
         output = subprocess.run(
             [
                 "docker",
                 "run",
                 "-v",
                 f"{os.path.dirname(source_abs)}:/spec",
+                *[item for vol in ref_files_volumes for item in ("-v", f"{vol}:/spec")],
                 "-w",
                 "/spec",
                 f"ghcr.io/readmeio/rdme:{self.RDME_VERSION}",
