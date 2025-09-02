@@ -34,6 +34,8 @@
       - [Get kubeconfig](#get-kubeconfig)
     - [Helm]
       - [Extract PiwikPRO CRDs](#extract-piwikpro-crds)
+    - [Slack]
+      - [Sending slack message to any channel](#slack)
 <!--toc:end-->
 
 Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
@@ -775,4 +777,23 @@ jobs:
             }
           ]
         }
+```
+
+### Slack
+
+You can send a slack message from any pipeline, for that:
+* Go to your channel, ping `@Github actions` bot and invite it to the channel
+* Add the following step to your workflow; the secret is inherited from global, per-organization secrets, so just copy/paste the below, change channel and message, period.
+* All the possibilities are listed here: https://tools.slack.dev/slack-github-action/sending-techniques/sending-data-slack-api-method/
+
+```
+
+    - name: Post text to a Slack channel
+      uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # v2.1.0
+      with:
+        method: chat.postMessage
+        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        payload: |
+          channel: data-warehouse-alerts
+          text: "howdy! This is a test message from the data warehouse pipeline."
 ```

@@ -5,16 +5,76 @@ inputs:
     required: false
     description: "Specific release id, selected from https://github.com/sigstore/cosign/releases"
     # Find ID by tag:
-    # curl https://api.github.com/repos/sigstore/cosign/releases | jq '.[] | select(.tag_name == "v2.2.0").id'
-    default: "139369855" # v2.2.3
+    # curl https://api.github.com/repos/sigstore/cosign/releases | jq '.[] | select(.tag_name == "v2.5.3").id'
+    default: "233309868" # v2.5.3
+  max_attempts:
+    required: false
+    description: "Maximum number of download attempts before giving up"
+    default: "3"
 runs:
   using: "composite"
   steps:
     - name: "Download binary"
       shell: bash
       run: |
-        URL=`curl -s https://api.github.com/repos/sigstore/cosign/releases/${{ inputs.version }} | jq -r '.assets[] | select(.name=="cosign-linux-amd64") | .browser_download_url'`;
-        wget -q $URL --output-document cosign;
-        chmod +x cosign;
-        mkdir -p $HOME/.local/bin;
-        mv cosign $HOME/.local/bin;
+        API_URL="https://api.github.com/repos/sigstore/cosign/releases/${{ inputs.version }}"
+        MAX_ATTEMPTS=${{ inputs.max_attempts }}
+        ASSET_NAME="cosign-linux-amd64"
+        TEMP_FILE="/tmp/cosign_release.json"
+        BINARY_NAME="cosign"
+        INSTALL_DIR="$HOME/.local/bin"
+        
+        ATTEMPT=1
+        
+        echo "Downloading cosign binary for release ${{ inputs.version }}"
+        
+        while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+          echo "Attempt $ATTEMPT of $MAX_ATTEMPTS"
+          
+          # Fetch API response with error handling
+          HTTP_STATUS=$(curl -w "%{http_code}" -s -o "$TEMP_FILE" "$API_URL" 2>/dev/null)
+          CURL_EXIT_CODE=$?
+          
+          if [ $CURL_EXIT_CODE -eq 0 ] && [ -n "$HTTP_STATUS" ] && [ "$HTTP_STATUS" -eq 200 ]; then
+            # Extract download URL with single jq execution
+            URL=$(jq -r ".assets[]? | select(.name==\"$ASSET_NAME\") | .browser_download_url" "$TEMP_FILE" 2>/dev/null)
+            
+            if [ -n "$URL" ] && [ "$URL" != "null" ]; then
+              echo "Found download URL: $URL"
+              
+              if wget -q "$URL" --output-document "$BINARY_NAME"; then
+                chmod +x "$BINARY_NAME"
+                mkdir -p "$INSTALL_DIR"
+                mv "$BINARY_NAME" "$INSTALL_DIR"
+                echo "Cosign binary successfully downloaded and installed to $INSTALL_DIR"
+                rm -f "$TEMP_FILE"
+                exit 0
+              else
+                echo "::error title=Download Failed::Failed to download cosign binary from $URL"
+              fi
+            else
+              echo "::error title=Asset Not Found::Release ${{ inputs.version }} doesn't contain expected $ASSET_NAME asset"
+              echo "API Response:"
+              cat "$TEMP_FILE"
+            fi
+          else
+            if [ $CURL_EXIT_CODE -ne 0 ]; then
+              echo "::error title=Network Error::Failed to connect to GitHub API (curl exit code: $CURL_EXIT_CODE)"
+            else
+              echo "::error title=GitHub API Error::API request failed with HTTP status $HTTP_STATUS"
+              echo "API Response:"
+              cat "$TEMP_FILE" 2>/dev/null || echo "No response body available"
+            fi
+          fi
+          
+          if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+            SLEEP_TIME=$((ATTEMPT * 2))
+            echo "::warning title=Retry Attempt::Download attempt $ATTEMPT failed, retrying in ${SLEEP_TIME} seconds..."
+            sleep $SLEEP_TIME
+          fi
+          
+          ATTEMPT=$((ATTEMPT + 1))
+        done
+        
+        echo "::error title=Maximum Attempts Exceeded::Failed to download cosign binary after $MAX_ATTEMPTS attempts"
+        exit 1
