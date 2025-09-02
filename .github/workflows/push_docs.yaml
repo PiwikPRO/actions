@@ -103,7 +103,7 @@ jobs:
 
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
-        uses: PiwikPRO/actions/techdocs@master
+        uses: PiwikPRO/actions/techdocs@MID-4096
         if: ${{ github.ref_name == env.MAIN_BRANCH || env.BRANCH_EXISTS == 'true' }}
         with:
           from: .
@@ -138,7 +138,7 @@ jobs:
           echo "CHANGES=1" >> $GITHUB_ENV
 
       - name: Run Copy Script
-        uses: PiwikPRO/actions/techdocs@master
+        uses: PiwikPRO/actions/techdocs@MID-4096
         id: copy
         if: env.CHANGES != '0'
         with:
@@ -290,7 +290,7 @@ jobs:
 
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
-        uses: PiwikPRO/actions/techdocs@master
+        uses: PiwikPRO/actions/techdocs@MID-4096
         with:
           from: .
           to: Tech-docs

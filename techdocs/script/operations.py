@@ -12,6 +12,7 @@ from frontmatter import (
     source_frontmatter_hash,
 )
 from hash import hashb
+from pathlib import Path
 
 
 class GenericFileCopyOperation:
@@ -224,13 +225,13 @@ class DockerPlantUMLGenerator:
 
 class OpenAPIOperation:
     def __init__(
-        self,
-        source_abs,
-        destination_abs,
-        ref_files,
-        bundler,
-        validator,
-        previous_operations,
+            self,
+            source_abs,
+            destination_abs,
+            ref_files,
+            bundler,
+            validator,
+            previous_operations,
     ):
         self.source_abs = source_abs
         self.destination_abs = destination_abs
@@ -315,19 +316,24 @@ class OpenAPIValidator:
     RDME_VERSION = "latest"
 
     def validate(self, source_abs, ref_files: list[str]):
-        ref_files_volumes = {os.path.dirname(ref_file) for ref_file in ref_files}
+        ref_files_volumes = {os.path.dirname(ref_file) for ref_file in ref_files} | {os.path.dirname(source_abs)}
+        base_path = os.path.commonpath(ref_files_volumes)
+        print("ref_files_volumes: ", ref_files_volumes)
+        print("base_path: ", base_path)
+        print("{os.path.relpath(source_abs, base_path)}", os.path.relpath(source_abs, base_path))
         output = subprocess.run(
             [
                 "docker",
                 "run",
                 "-v",
-                f"{os.path.dirname(source_abs)}:/spec",
-                *[item for vol in ref_files_volumes for item in ("-v", f"{vol}:/spec")],
+                f"{base_path}:/spec",
                 "-w",
                 "/spec",
                 f"ghcr.io/readmeio/rdme:{self.RDME_VERSION}",
                 "openapi:validate",
-                f"/spec/{os.path.basename(source_abs)}",
+                f"/spec/{os.path.relpath(source_abs, base_path)}",
+                "--workingDirectory",
+                "/spec",
             ],
             capture_output=True,
         )
