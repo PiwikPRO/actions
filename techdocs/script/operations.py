@@ -243,6 +243,7 @@ class OpenAPIOperation:
         return "openapi"
 
     def execute(self, fs):
+        self.validator.validate(self.source_abs, self.ref_files)
         checksum = hashb(fs.read_string(self.source_abs).encode())
         bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.destination_abs))
         bundled_content["x-api-checksum"] = checksum
