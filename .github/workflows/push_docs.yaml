@@ -103,7 +103,7 @@ jobs:
 
       - name: Run Copy Script in Dry Run Mode
         id: dry-run
-        uses: PiwikPRO/actions/techdocs@MID-4096
+        uses: PiwikPRO/actions/techdocs@master
         if: ${{ github.ref_name == env.MAIN_BRANCH || env.BRANCH_EXISTS == 'true' }}
         with:
           from: .
