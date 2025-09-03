@@ -138,7 +138,7 @@ jobs:
           echo "CHANGES=1" >> $GITHUB_ENV
 
       - name: Run Copy Script
-        uses: PiwikPRO/actions/techdocs@MID-4096
+        uses: PiwikPRO/actions/techdocs@master
         id: copy
         if: env.CHANGES != '0'
         with:
