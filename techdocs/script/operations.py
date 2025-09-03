@@ -224,13 +224,13 @@ class DockerPlantUMLGenerator:
 
 class OpenAPIOperation:
     def __init__(
-        self,
-        source_abs,
-        destination_abs,
-        ref_files,
-        bundler,
-        validator,
-        previous_operations,
+            self,
+            source_abs,
+            destination_abs,
+            ref_files,
+            bundler,
+            validator,
+            previous_operations,
     ):
         self.source_abs = source_abs
         self.destination_abs = destination_abs
@@ -245,7 +245,7 @@ class OpenAPIOperation:
     def execute(self, fs):
         self.validator.validate(self.source_abs, self.ref_files)
         checksum = hashb(fs.read_string(self.source_abs).encode())
-        bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.destination_abs))
+        bundled_content = json.loads(self.bundler.bundle(fs, self.source_abs, self.ref_files, self.destination_abs))
         bundled_content["x-api-checksum"] = checksum
 
         fs.write_string(self.destination_abs, json.dumps(bundled_content, indent=2))
@@ -278,21 +278,23 @@ class OpenAPIOperation:
 
 
 class OpenAPIBundler:
-    def bundle(self, fs, source_abs, destination_abs):
+    def bundle(self, fs, source_abs, ref_files: list[str], destination_abs):
         try:
+            ref_files_volumes = {os.path.dirname(ref_file) for ref_file in ref_files} | {os.path.dirname(source_abs)}
+            base_path = os.path.commonpath(ref_files_volumes)
             dir_path = tempfile.mkdtemp()
             output = subprocess.run(
                 [
                     "docker",
                     "run",
                     "-v",
-                    f"{os.path.dirname(source_abs)}:/spec",
+                    f"{base_path}:/spec",
                     "-v",
                     f"{dir_path}:/out",
                     "redocly/cli",
                     "bundle",
                     "--dereferenced",
-                    f"/spec/{os.path.basename(source_abs)}",
+                    f"/spec/{os.path.relpath(source_abs, base_path)}",
                     "--output",
                     f"/out/{os.path.basename(destination_abs)}",
                     "--ext",
@@ -315,22 +317,21 @@ class OpenAPIValidator:
     RDME_VERSION = "latest"
 
     def validate(self, source_abs, ref_files: list[str]):
-        ref_files_volumes = {os.path.dirname(ref_file) for ref_file in ref_files}
-        output = subprocess.run(
-            [
-                "docker",
-                "run",
-                "-v",
-                f"{os.path.dirname(source_abs)}:/spec",
-                *[item for vol in ref_files_volumes for item in ("-v", f"{vol}:/spec")],
-                "-w",
-                "/spec",
-                f"ghcr.io/readmeio/rdme:{self.RDME_VERSION}",
-                "openapi:validate",
-                f"/spec/{os.path.basename(source_abs)}",
-            ],
-            capture_output=True,
-        )
+        ref_files_volumes = {os.path.dirname(ref_file) for ref_file in ref_files} | {os.path.dirname(source_abs)}
+        base_path = os.path.commonpath(ref_files_volumes)
+        args = [
+            "docker",
+            "run",
+            "-v",
+            f"{base_path}:/spec",
+            "-w",
+            "/spec",
+            f"ghcr.io/readmeio/rdme:{self.RDME_VERSION}",
+            "openapi:validate",
+            f"/spec/{os.path.relpath(source_abs, base_path)}",
+            f"--workingDirectory=/spec/{os.path.dirname(os.path.relpath(source_abs, base_path))}",
+        ]
+        output = subprocess.run(args, capture_output=True)
         if output.returncode != 0:
             raise Exception(f"{output.stderr.decode()}"
                             f"\nOpenAPI validation failed for '{source_abs}'")
