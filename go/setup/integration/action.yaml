@@ -17,19 +17,16 @@ runs:
       with:
         go-version: "1.23.x"
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1.3.4
-
-    - name: Install Python
-      uses: actions/setup-python@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6.6.1
       with:
         python-version: ${{ inputs.python-version }}
-        architecture: "x64"
-        cache: "poetry"
-        cache-dependency-path: |
-          toolkit/poetry.lock
-          poetry.lock
+        enable-cache: true
+
+    - name: Install Python
+      shell: bash
+      run: uv python install
 
     - name: Install dependencies
       shell: bash
-      run: cd ${{ inputs.test-directory }} && poetry install
+      run: cd ${{ inputs.test-directory }} && uv sync
