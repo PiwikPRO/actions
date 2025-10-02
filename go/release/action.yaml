@@ -4,7 +4,7 @@ inputs:
   go-version:
     required: false
     description: Version of go
-    default: "1.23.x"
+    default: "1.25.x"
   cgo-enabled:
     required: false
     description: CGO_ENABLED build flag, allows using C libraries
