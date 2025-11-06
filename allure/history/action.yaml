@@ -36,7 +36,7 @@ runs:
       shell: bash
       run: |
         echo "S3_BUCKET=piwikpro-artifactory" >> $GITHUB_ENV
-        echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}" >> $GITHUB_ENV
+        echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}" >> $GITHUB_ENV
 
     - name: Download Allure history from S3 before generating report
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
@@ -65,11 +65,7 @@ runs:
         fi
 
     - name: Generate allure report
-      uses: ./allure/report
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
-        AWS_DEFAULT_REGION: eu-central-1
+      uses: PiwikPRO/actions/allure/report@PIT-831-alure-action
 
     - name: Upload HTML report to S3
       uses: PiwikPRO/actions/s3/upload@master
