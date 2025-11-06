@@ -36,6 +36,8 @@
       - [Extract PiwikPRO CRDs](#extract-piwikpro-crds)
     - [Slack]
       - [Sending slack message to any channel](#slack)
+    - [Allure]
+      - [Generating allure report](#allure)
 <!--toc:end-->
 
 Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
@@ -797,3 +799,41 @@ You can send a slack message from any pipeline, for that:
           channel: data-warehouse-alerts
           text: "howdy! This is a test message from the data warehouse pipeline."
 ```
+
+### Allure
+
+Paste the following code into your workflows under the `.github` directory.
+
+Before the run tests step:
+```
+    - name: Generate Allure report URL
+      shell: bash
+      run: |
+        TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+        S3_PATH="${{ inputs.retention }}/{{ provide_team_name }}/${{ github.workflow }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}/${TIMESTAMP}/"
+        echo "S3_PATH=${S3_PATH}" >> $GITHUB_ENV
+        echo "ALLURE_REPORT_URL=https://piwikpro-artifactory.s3.amazonaws.com/${S3_PATH}allure-report/index.html" >> $GITHUB_ENV
+```
+You need to define the following environment variables before running tests:
+
+- `S3_PATH`
+- `ALLURE_REPORT_URL`
+
+These are required to properly upload and display results in Allure.
+
+After the run tests step:
+```
+      - name: Report generating
+        uses: PiwikPRO/actions/allure/history@master
+        with:
+          aws-access-key-id: ${{ secrets.ARTIFACTORY_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ARTIFACTORY_S3_SECRET_ACCESS_KEY }}
+          aws-http-proxy: ${{ secrets.FORWARD_PROXY_HTTP }}
+          aws-https-proxy: ${{ secrets.FORWARD_PROXY_HTTPS }}
+          environment:  # usually it’s just inputs.environment or matrix.environment`
+          enable-history: 'true'
+          retention: '30days'
+          team: 'qa-team` # or cia/mit etc.
+```
+
+Above setup will allow you to preserve the history of test runs in your Allure Report.
