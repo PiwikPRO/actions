@@ -36,7 +36,7 @@
       - [Extract PiwikPRO CRDs](#extract-piwikpro-crds)
     - [Slack]
       - [Sending slack message to any channel](#slack)
-    - [Allure]
+    - [Allure](#allure)
       - [Generating allure report](#allure)
 <!--toc:end-->
 
@@ -810,7 +810,7 @@ Before the run tests step:
       shell: bash
       run: |
         TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
-        S3_PATH="${{ inputs.retention }}/{{ provide_team_name }}/${{ github.workflow }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}/${TIMESTAMP}/"
+        S3_PATH="${{ inputs.retention }}/{{ provide_team_name }}/${{ github.workflow_ref }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}/${TIMESTAMP}/"
         echo "S3_PATH=${S3_PATH}" >> $GITHUB_ENV
         echo "ALLURE_REPORT_URL=https://piwikpro-artifactory.s3.amazonaws.com/${S3_PATH}allure-report/index.html" >> $GITHUB_ENV
 ```
@@ -831,7 +831,7 @@ After the run tests step:
           aws-http-proxy: ${{ secrets.FORWARD_PROXY_HTTP }}
           aws-https-proxy: ${{ secrets.FORWARD_PROXY_HTTPS }}
           environment:  # usually it’s just inputs.environment or matrix.environment`
-          enable-history: 'true'
+          enable-history: 'true'  # Set 'false' to disable history in the report
           retention: '30days'
           team: 'qa-team` # or cia/mit etc.
 ```
