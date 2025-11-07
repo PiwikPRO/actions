@@ -805,7 +805,18 @@ You can send a slack message from any pipeline, for that:
 Paste the following code into your workflows under the `.github` directory.
 
 Before the run tests step:
-```
+``` 
+inputs:  
+    environment: # required field
+        required: true
+        description: Environment name for Allure report URL
+    retention: # It's needed if you do not hardcode this value
+        required: false
+        default: '30days'
+        description: Test report storage folder
+    
+    (...) 
+    
     - name: Generate Allure report URL
       shell: bash
       run: |
@@ -830,10 +841,10 @@ After the run tests step:
           aws-secret-access-key: ${{ secrets.ARTIFACTORY_S3_SECRET_ACCESS_KEY }}
           aws-http-proxy: ${{ secrets.FORWARD_PROXY_HTTP }}
           aws-https-proxy: ${{ secrets.FORWARD_PROXY_HTTPS }}
-          environment:  # usually it’s just inputs.environment or matrix.environment`
-          enable-history: 'true'  # Set 'false' to disable history in the report
-          retention: '30days'
-          team: 'qa-team` # or cia/mit etc.
+          environment:  # usually it’s just inputs.environment or matrix.environment
+          team: 'qa-team' # required field. cia/mit etc.
+          enable-history: 'true'  # optional field. Default value is false. 
+          retention: '60days' # optional field. Default value is 30days
 ```
 
 Above setup will allow you to preserve the history of test runs in your Allure Report.
