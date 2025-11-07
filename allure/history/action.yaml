@@ -65,7 +65,7 @@ runs:
         fi
 
     - name: Generate allure report
-      uses: PiwikPRO/actions/allure/report@PIT-831-alure-action
+      uses: PiwikPRO/actions/allure/report@master
 
     - name: Upload HTML report to S3
       uses: PiwikPRO/actions/s3/upload@master
