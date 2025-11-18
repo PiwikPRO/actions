@@ -1,0 +1,6 @@
+name: 'Allure report'
+description: 'Generate Allure report from test results'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
