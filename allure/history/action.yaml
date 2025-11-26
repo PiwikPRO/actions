@@ -27,6 +27,10 @@ inputs:
   team:
     required: true
     description: Team name
+  path-to-artifacts:
+    required: false
+    default: artifacts/
+    description: Path to artifacts directory
 
 runs:
   using: "composite"
@@ -76,7 +80,7 @@ runs:
         aws-https-proxy: ${{ inputs.aws-https-proxy }}
         aws-bucket: ${{ env.S3_BUCKET }}
         aws-region: eu-central-1
-        src-path: artifacts/
+        src-path: ${{ inputs.path-to-artifacts }}
         dst-path: ${{ env.S3_PATH }}
 
     - name: Upload new Allure history to S3
