@@ -11,6 +11,10 @@ inputs:
     required: false
     description: "Maximum number of download attempts before giving up"
     default: "3"
+  github_token:
+    required: false
+    description: "GitHub token for API authentication (uses github.token by default)"
+    default: "${{ github.token }}"
 runs:
   using: "composite"
   steps:
@@ -27,12 +31,15 @@ runs:
         ATTEMPT=1
         
         echo "Downloading cosign binary for release ${{ inputs.version }}"
-        
+
         while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
           echo "Attempt $ATTEMPT of $MAX_ATTEMPTS"
-          
-          # Fetch API response with error handling
-          HTTP_STATUS=$(curl -w "%{http_code}" -s -o "$TEMP_FILE" "$API_URL" 2>/dev/null)
+
+          # Fetch API response with error handling (using authenticated request)
+          HTTP_STATUS=$(curl -w "%{http_code}" -s -o "$TEMP_FILE" \
+            -H "Authorization: Bearer ${{ inputs.github_token }}" \
+            -H "content-type: application/json" \
+            "$API_URL" 2>/dev/null)
           CURL_EXIT_CODE=$?
           
           if [ $CURL_EXIT_CODE -eq 0 ] && [ -n "$HTTP_STATUS" ] && [ "$HTTP_STATUS" -eq 200 ]; then
