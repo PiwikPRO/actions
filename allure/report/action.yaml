@@ -1,5 +1,10 @@
 name: 'Allure report'
 description: 'Generate Allure report from test results'
+inputs:
+  path-to-artifacts:
+    required: false
+    default: 'artifacts/'
+    description: 'Path to parent artifacts directory containing allure/ folder'
 
 runs:
   using: 'docker'

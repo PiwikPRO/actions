@@ -29,8 +29,8 @@ inputs:
     description: Team name
   path-to-artifacts:
     required: false
-    default: artifacts/
-    description: Path to artifacts directory
+    default: 'artifacts/'
+    description: 'Path to parent artifacts directory containing allure/ folder'
 
 runs:
   using: "composite"
@@ -52,16 +52,20 @@ runs:
         HTTP_PROXY: ${{ inputs.aws-http-proxy }}
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
       run: |
-        # Create history directory
-        mkdir -p artifacts/allure/history/
+        # Remove trailing slash from path
+        ARTIFACTS_PARENT="${{ inputs.path-to-artifacts }}"
+        ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
+        
+        # Create history directory inside allure folder
+        mkdir -p "${ARTIFACTS_PARENT}/allure/history/"
         
         # Download all history from S3
         echo "Downloading all history for environment: ${{ inputs.environment }}"
-        aws s3 sync s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ artifacts/allure/history/ || echo "No previous history found"
+        aws s3 sync s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ "${ARTIFACTS_PARENT}/allure/history/" || echo "No previous history found"
         
         # Verify history was downloaded
-        if [ -d "artifacts/allure/history" ] && [ "$(ls -A artifacts/allure/history)" ]; then
-          HISTORY_COUNT=$(find artifacts/allure/history -type f 2>/dev/null | wc -l)
+        if [ -d "${ARTIFACTS_PARENT}/allure/history" ] && [ "$(ls -A ${ARTIFACTS_PARENT}/allure/history)" ]; then
+          HISTORY_COUNT=$(find "${ARTIFACTS_PARENT}/allure/history" -type f 2>/dev/null | wc -l)
           echo "Downloaded $HISTORY_COUNT history files"
           echo "History downloaded successfully"
         else
@@ -70,6 +74,8 @@ runs:
 
     - name: Generate allure report
       uses: PiwikPRO/actions/allure/report@master
+      with:
+        path-to-artifacts: ${{ inputs.path-to-artifacts }}
 
     - name: Upload HTML report to S3
       uses: PiwikPRO/actions/s3/upload@master
@@ -93,10 +99,14 @@ runs:
         HTTP_PROXY: ${{ inputs.aws-http-proxy }}
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
       run: |
+        # Remove trailing slash from path
+        ARTIFACTS_PARENT="${{ inputs.path-to-artifacts }}"
+        ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
+        
         # Upload new history to S3
         # Note: All history is kept in S3 and all history is downloaded for display
         echo "Uploading new history for environment: ${{ github.workflow_ref }}/${{ inputs.environment }}"
-        aws s3 sync artifacts/allure-report/history/ s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ || echo "Failed to upload history"
+        aws s3 sync "${ARTIFACTS_PARENT}/allure-report/history/" s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ || echo "Failed to upload history"
         
         echo "History uploaded successfully. All history is preserved in S3."
 

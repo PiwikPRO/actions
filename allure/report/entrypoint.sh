@@ -9,8 +9,17 @@ cd /github/workspace || {
 
 unset JAVA_HOME
 
+# Get path to parent artifacts directory from input or use default
+ARTIFACTS_PARENT="${INPUT_PATH_TO_ARTIFACTS:-artifacts/}"
+# Remove trailing slash if present
+ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
+
+echo "Using artifacts parent directory: ${ARTIFACTS_PARENT}"
+echo "Allure results location: ${ARTIFACTS_PARENT}/allure"
+echo "Report output location: ${ARTIFACTS_PARENT}/allure-report"
+
 # Check if history exists (downloaded by workflow)
-if [ -d "artifacts/allure/history" ] && [ "$(ls -A artifacts/allure/history 2>/dev/null)" ]; then
+if [ -d "${ARTIFACTS_PARENT}/allure/history" ] && [ "$(ls -A ${ARTIFACTS_PARENT}/allure/history 2>/dev/null)" ]; then
   echo "History found, will include in report"
 else
   echo "No history found, generating report without history"
@@ -18,10 +27,10 @@ fi
 
 # Generate Allure report with history (if available)
 echo "Generating Allure report..."
-if allure generate artifacts/allure -o artifacts/allure-report; then
+if allure generate "${ARTIFACTS_PARENT}/allure" -o "${ARTIFACTS_PARENT}/allure-report"; then
   echo "Report generated successfully"
-  if [ -d "artifacts/allure-report" ]; then
-    echo "Report size: $(du -sh artifacts/allure-report | cut -f1)"
+  if [ -d "${ARTIFACTS_PARENT}/allure-report" ]; then
+    echo "Report size: $(du -sh ${ARTIFACTS_PARENT}/allure-report | cut -f1)"
   fi
 else
   echo "Report generation failed"
