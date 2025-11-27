@@ -830,7 +830,7 @@ You need to define the following environment variables before running tests:
 - `S3_PATH`
 - `ALLURE_REPORT_URL`
 
-These are required to properly upload and display results in Allure.
+These are required to properly upload and display results in Allure and folder with results should be keep in artifacts/allure. 
 
 After the run tests step:
 ```
