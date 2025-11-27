@@ -73,12 +73,12 @@ runs:
         fi
 
     - name: Generate allure report
-      uses: PiwikPRO/actions/allure/report@master
+      uses: PiwikPRO/actions/allure/report@${{ github.action_ref }}
       with:
         path-to-artifacts: ${{ inputs.path-to-artifacts }}
 
     - name: Upload HTML report to S3
-      uses: PiwikPRO/actions/s3/upload@master
+      uses: PiwikPRO/actions/s3/upload@${{ github.action_ref }}
       with:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
