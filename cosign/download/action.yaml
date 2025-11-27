@@ -38,6 +38,7 @@ runs:
           # Fetch API response with error handling (using authenticated request)
           HTTP_STATUS=$(curl -w "%{http_code}" -s -o "$TEMP_FILE" \
             -H "Authorization: Bearer ${{ inputs.github_token }}" \
+            -H "content-type: application/json" \
             "$API_URL" 2>/dev/null)
           CURL_EXIT_CODE=$?
           
