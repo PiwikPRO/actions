@@ -27,7 +27,7 @@ inputs:
   team:
     required: true
     description: Team name
-  path-to-artifacts:
+  path_to_artifacts:
     required: false
     default: 'artifacts/'
     description: 'Path to parent artifacts directory containing allure/ folder'
@@ -53,7 +53,7 @@ runs:
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
       run: |
         # Remove trailing slash from path
-        ARTIFACTS_PARENT="${{ inputs.path-to-artifacts }}"
+        ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
         ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
         
         # Create history directory inside allure folder
@@ -75,7 +75,7 @@ runs:
     - name: Generate allure report
       uses: PiwikPRO/actions/allure/report@PPTT-5264-history-reports-in-tracker
       with:
-        path-to-artifacts: ${{ inputs.path-to-artifacts }}
+        path_to_artifacts: ${{ inputs.path_to_artifacts }}
 
     - name: Upload HTML report to S3
       uses: PiwikPRO/actions/s3/upload@PPTT-5264-history-reports-in-tracker
@@ -86,7 +86,7 @@ runs:
         aws-https-proxy: ${{ inputs.aws-https-proxy }}
         aws-bucket: ${{ env.S3_BUCKET }}
         aws-region: eu-central-1
-        src-path: ${{ inputs.path-to-artifacts }}
+        src-path: ${{ inputs.path_to_artifacts }}
         dst-path: ${{ env.S3_PATH }}
 
     - name: Upload new Allure history to S3
@@ -100,7 +100,7 @@ runs:
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
       run: |
         # Remove trailing slash from path
-        ARTIFACTS_PARENT="${{ inputs.path-to-artifacts }}"
+        ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
         ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
         
         # Upload new history to S3
