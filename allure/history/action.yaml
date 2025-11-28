@@ -73,7 +73,7 @@ runs:
         fi
 
     - name: Generate allure report
-      uses: PiwikPRO/actions/allure/report@PPTT-5264-history-reports-in-tracker
+      uses: PiwikPRO/actions/allure/report@master
       with:
         path_to_artifacts: ${{ inputs.path_to_artifacts }}
 
