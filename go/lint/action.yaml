@@ -4,12 +4,12 @@ inputs:
   go-version:
     required: false
     description: Version of go
-    default: "1.24.x"
+    default: "1.25.x"
   
   golangci-lint-version:
     required: false
     description: Version of golangci-lint
-    default: "v2.6.1"
+    default: "v2.6.2"
   golangci-lint-concurrency:
     required: false
     description: Concurrency for golangci-lint
