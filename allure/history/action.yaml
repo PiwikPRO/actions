@@ -78,7 +78,7 @@ runs:
         path_to_artifacts: ${{ inputs.path_to_artifacts }}
 
     - name: Upload HTML report to S3
-      uses: PiwikPRO/actions/s3/upload@PPTT-5264-history-reports-in-tracker
+      uses: PiwikPRO/actions/s3/upload@master
       with:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
