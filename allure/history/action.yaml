@@ -57,15 +57,16 @@ runs:
         ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
         
         # Create history directory inside allure folder
-        mkdir -p "${ARTIFACTS_PARENT}/allure/history/"
+        ALLURE_REPORT_HISTORY_DIR="${ARTIFACTS_PARENT}/allure/history"
+        mkdir -p "${ALLURE_REPORT_HISTORY_DIR}"
         
         # Download all history from S3
         echo "Downloading all history for environment: ${{ inputs.environment }}"
-        aws s3 sync s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ "${ARTIFACTS_PARENT}/allure/history/" || echo "No previous history found"
+        aws s3 sync s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ "${ALLURE_REPORT_HISTORY_DIR}/" || echo "No previous history found"
         
         # Verify history was downloaded
-        if [ -d "${ARTIFACTS_PARENT}/allure/history" ] && [ "$(ls -A ${ARTIFACTS_PARENT}/allure/history)" ]; then
-          HISTORY_COUNT=$(find "${ARTIFACTS_PARENT}/allure/history" -type f 2>/dev/null | wc -l)
+        if [ -d "${ALLURE_REPORT_HISTORY_DIR}" ] && [ "$(ls -A ${ALLURE_REPORT_HISTORY_DIR})" ]; then
+          HISTORY_COUNT=$(find "${ALLURE_REPORT_HISTORY_DIR}" -type f 2>/dev/null | wc -l)
           echo "Downloaded $HISTORY_COUNT history files"
           echo "History downloaded successfully"
         else
@@ -105,8 +106,9 @@ runs:
         
         # Upload new history to S3
         # Note: All history is kept in S3 and all history is downloaded for display
+        ALLURE_GENERATED_HISTORY_DIR="${ARTIFACTS_PARENT}/allure-report/history"
         echo "Uploading new history for environment: ${{ github.workflow_ref }}/${{ inputs.environment }}"
-        aws s3 sync "${ARTIFACTS_PARENT}/allure-report/history/" s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ || echo "Failed to upload history"
+        aws s3 sync "${ALLURE_GENERATED_HISTORY_DIR}/" s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ || echo "Failed to upload history"
         
         echo "History uploaded successfully. All history is preserved in S3."
 
