@@ -825,6 +825,16 @@ inputs:
         echo "S3_PATH=${S3_PATH}" >> $GITHUB_ENV
         echo "ALLURE_REPORT_URL=https://piwikpro-artifactory.s3.amazonaws.com/${S3_PATH}allure-report/index.html" >> $GITHUB_ENV
 ```
+
+You also need to install AWS CLI before using this action:
+```yaml
+      - name: Install awscli
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install awscli
+```
+
 You need to define the following environment variables before running tests:
 
 - `S3_PATH`
