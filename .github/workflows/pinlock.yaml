@@ -28,8 +28,18 @@ jobs:
       pull-requests: write
 
     steps:
+      - uses: PiwikPRO/actions/github-app-token-generator@master
+        name: Generate token for GHA Pinlock
+        id: get-token
+        with:
+          private-key: ${{ secrets.GHA_PINLOCK_PRIVATE_KEY }}
+          app-id: ${{ secrets.GHA_PINLOCK_APPLICATION_ID }}
+          repo: ${{ github.repository }}
+
       - name: Checkout consumer repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          token: ${{ steps.get-token.outputs.token }}
 
       - name: Checkout actions repository for config
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
