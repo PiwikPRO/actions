@@ -59,6 +59,7 @@ runs:
         # Create history directory inside allure folder
         ALLURE_REPORT_HISTORY_DIR="${ARTIFACTS_PARENT}/allure/history"
         sudo mkdir -p "${ALLURE_REPORT_HISTORY_DIR}"
+        sudo chown -R $USER:$USER "${ARTIFACTS_PARENT}/allure"
         
         # Download all history from S3
         echo "Downloading all history for environment: ${{ inputs.environment }}"
@@ -74,7 +75,7 @@ runs:
         fi
 
     - name: Generate allure report
-      uses: PiwikPRO/actions/allure/report@master
+      uses: PiwikPRO/actions/allure/report@uzi-allure
       with:
         path_to_artifacts: ${{ inputs.path_to_artifacts }}
 
