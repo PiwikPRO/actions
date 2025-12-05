@@ -5,8 +5,8 @@ on:
     inputs:
       config-path:
         description: "Path to the configuration file"
-        required: true
-        default: ./actions-repo/pinlock/dependactionbot.json
+        required: false
+        default: ./actions-repo/actions-pinlock/dependactionbot.json
         type: string
       dry-run:
         description: "Preview changes without making them"
