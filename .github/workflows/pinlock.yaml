@@ -18,21 +18,18 @@ on:
         required: false
         default: true
         type: boolean
-      gha-pinlock-private-key:
-        description: "Private key for GHA Pinlock"
-        required: false
-        default: ""
-        type: string
-      gha-pinlock-application-id:
-        description: "Application ID for GHA Pinlock"
-        required: false
-        default: ""
-        type: string
+    secrets:
+      GHA_PINLOCK_PRIVATE_KEY:
+        description: "Private key for GHA Pinlock APP"
+        required: true
+      GHA_PINLOCK_APPLICATION_ID:
+        description: "Application ID for GHA Pinlock APP"
+        required: true
 
 jobs:
   pinlock:
     runs-on: ubuntu-latest
-    permissions:
+    permissions: # TODO verify
       actions: write
       contents: write
       pull-requests: write
@@ -42,8 +39,8 @@ jobs:
         name: Generate token for GHA Pinlock
         id: get-token
         with:
-          private-key: ${{ inputs.gha-pinlock-private-key }}
-          app-id: ${{ inputs.gha-pinlock-application-id }}
+          private-key: ${{ secrets.GHA_PINLOCK_PRIVATE_KEY }}
+          app-id: ${{ secrets.GHA_PINLOCK_APPLICATION_ID }}
           repo: ${{ github.repository }}
 
       - name: Checkout consumer repository
