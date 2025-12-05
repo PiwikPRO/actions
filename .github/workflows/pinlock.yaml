@@ -1,36 +1,65 @@
-name: Pinlock
+name: Actions Pinlock
 
 on:
   workflow_call:
     inputs:
+      config-path:
+        description: "Path to the configuration file"
+        required: false
+        default: ./actions-repo/actions-pinlock/dependactionbot.json
+        type: string
       dry-run:
         description: "Preview changes without making them"
         required: false
         default: false
         type: boolean
+      pr:
+        description: "Create a pull request"
+        required: false
+        default: true
+        type: boolean
+    secrets:
+      GHA_PINLOCK_PRIVATE_KEY:
+        description: "Private key for GHA Pinlock APP"
+        required: true
+      GHA_PINLOCK_APPLICATION_ID:
+        description: "Application ID for GHA Pinlock APP"
+        required: true
 
 jobs:
   pinlock:
     runs-on: ubuntu-latest
-    permissions:
+    permissions: # TODO verify
+      actions: write
       contents: write
       pull-requests: write
 
     steps:
+      - uses: PiwikPRO/actions/github-app-token-generator@master
+        name: Generate token for GHA Pinlock
+        id: get-token
+        with:
+          private-key: ${{ secrets.GHA_PINLOCK_PRIVATE_KEY }}
+          app-id: ${{ secrets.GHA_PINLOCK_APPLICATION_ID }}
+          repo: ${{ github.repository }}
+
       - name: Checkout consumer repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          token: ${{ steps.get-token.outputs.token }}
 
       - name: Checkout actions repository for config
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
-          repository: jzy/actions
+          repository: PiwikPRO/actions
+          ref: poc-gha-pinlock
           path: ./actions-repo
-          sparse-checkout: pinlock
+          sparse-checkout: actions-pinlock
           sparse-checkout-cone-mode: false
 
       - name: Run Pinlock
-        uses: ./actions-repo/pinlock
+        uses: ./actions-repo/actions-pinlock
         with:
-          config-path: ./actions-repo/pinlock/dependactionbot.json
+          config-path: ${{ inputs.config-path }}
           dry-run: ${{ inputs.dry-run && 'true' || 'false' }}
-          no-pr: "false"
+          pr: ${{ inputs.pr && 'true' || 'false' }}

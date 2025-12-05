@@ -217,7 +217,7 @@ class Pinlock:
             self.run_git_command(["add", str(filepath)])
 
         # Commit changes
-        commit_msg = "chore: update GitHub Actions to approved versions"
+        commit_msg = "Pinlock: update GitHub Actions to approved versions"
         print("\n💾 Committing changes...")
         self.run_git_command(["commit", "-m", commit_msg])
 
@@ -229,7 +229,7 @@ class Pinlock:
         if self.pr:
             print("\n🔀 Creating pull request...")
             pr_body = self.create_pr_body(mismatches)
-            pr_title = "chore: update GitHub Actions to approved versions"
+            pr_title = "Pinlock: update GitHub Actions to approved versions"
 
             result = subprocess.run(
                 ["gh", "pr", "create", "--title", pr_title, "--body", pr_body],
