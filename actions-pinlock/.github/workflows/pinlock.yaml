@@ -1,0 +1,36 @@
+name: Pinlock
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Preview changes without making them"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  pinlock:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout consumer repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+
+      - name: Checkout actions repository for config
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          repository: jzy/actions
+          path: ./actions-repo
+          sparse-checkout: pinlock
+          sparse-checkout-cone-mode: false
+
+      - name: Run Pinlock
+        uses: ./actions-repo/pinlock
+        with:
+          config-path: ./actions-repo/pinlock/dependactionbot.json
+          dry-run: ${{ inputs.dry-run && 'true' || 'false' }}
+          no-pr: "false"

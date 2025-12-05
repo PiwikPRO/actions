@@ -1,0 +1,41 @@
+name: "Pinlock"
+description: "Automated GitHub Actions version updater"
+
+inputs:
+  config-path:
+    description: "Path to dependactionbot.json config file (absolute or workspace-relative)"
+    required: false
+    default: "dependactionbot.json"
+  dry-run:
+    description: "Preview changes without making them"
+    required: false
+    default: "false"
+  no-pr:
+    description: "Push branch but don't create PR"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
+      with:
+        python-version: "3.12"
+
+    - name: Configure Git
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Run Pinlock
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        python "${{ github.action_path }}/pinlock.py" \
+          --repo "${{ github.workspace }}" \
+          --config "${{ github.workspace }}/${{ inputs.config-path }}" \
+          ${{ inputs.dry-run == 'true' && '--dry-run' || '' }} \
+          ${{ inputs.no-pr == 'true' && '--no-pr' || '' }}
