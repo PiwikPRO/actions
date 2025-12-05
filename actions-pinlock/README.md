@@ -91,8 +91,8 @@ Pinlock supports multiple version formats:
 - **Required**: false
 - **Default**: `false`
 
-### `no-pr`
-- **Description**: Push branch but don't create PR
+### `pr`
+- **Description**: Create a pull request with the changes
 - **Required**: false
 - **Default**: `false`
 

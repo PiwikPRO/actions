@@ -10,8 +10,8 @@ inputs:
     description: "Preview changes without making them"
     required: false
     default: "false"
-  no-pr:
-    description: "Push branch but don't create PR"
+  pr:
+    description: "Create a pull request with the changes"
     required: false
     default: "false"
 
@@ -38,4 +38,4 @@ runs:
           --repo "${{ github.workspace }}" \
           --config "${{ github.workspace }}/${{ inputs.config-path }}" \
           ${{ inputs.dry-run == 'true' && '--dry-run' || '' }} \
-          ${{ inputs.no-pr == 'true' && '--no-pr' || '' }}
+          ${{ inputs.pr == 'true' && '--pr' || '' }}
