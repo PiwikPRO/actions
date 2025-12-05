@@ -1,4 +1,4 @@
-name: Pinlock
+name: Actions Pinlock
 
 on:
   workflow_call:
@@ -34,12 +34,13 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
           repository: PiwikPRO/actions
+          ref: poc-gha-pinlock
           path: ./actions-repo
-          sparse-checkout: pinlock
+          sparse-checkout: actions-pinlock
           sparse-checkout-cone-mode: false
 
       - name: Run Pinlock
-        uses: ./actions-repo/pinlock
+        uses: ./actions-repo/actions-pinlock
         with:
           config-path: ${{ inputs.config-path }}
           dry-run: ${{ inputs.dry-run && 'true' || 'false' }}
