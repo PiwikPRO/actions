@@ -18,6 +18,16 @@ on:
         required: false
         default: true
         type: boolean
+      gha-pinlock-private-key:
+        description: "Private key for GHA Pinlock"
+        required: false
+        default: ""
+        type: string
+      gha-pinlock-application-id:
+        description: "Application ID for GHA Pinlock"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   pinlock:
@@ -32,8 +42,8 @@ jobs:
         name: Generate token for GHA Pinlock
         id: get-token
         with:
-          private-key: ${{ secrets.GHA_PINLOCK_PRIVATE_KEY }}
-          app-id: ${{ secrets.GHA_PINLOCK_APPLICATION_ID }}
+          private-key: ${{ inputs.gha-pinlock-private-key }}
+          app-id: ${{ inputs.gha-pinlock-application-id }}
           repo: ${{ github.repository }}
 
       - name: Checkout consumer repository
