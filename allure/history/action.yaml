@@ -56,11 +56,12 @@ runs:
         ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
         ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
         
+        TARGET_USER=${SUDO_USER:-$(id -un)}
+        TARGET_GROUP=$(id -gn "$TARGET_USER")
         # Create history directory inside allure folder
         ALLURE_REPORT_HISTORY_DIR="${ARTIFACTS_PARENT}/allure/history"
         sudo mkdir -p "${ALLURE_REPORT_HISTORY_DIR}"
-        TARGET_USER=${SUDO_USER:-$USER}
-        sudo chown -R "$TARGET_USER:$TARGET_USER" "${ARTIFACTS_PARENT}/allure"
+        sudo chown -R "$TARGET_USER:$TARGET_GROUP" "${ARTIFACTS_PARENT}/allure"
         
         # Download all history from S3
         echo "Downloading all history for environment: ${{ inputs.environment }}"
