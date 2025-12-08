@@ -44,13 +44,23 @@ runs:
       shell: bash
       run: |
         echo "S3_BUCKET=piwikpro-artifactory" >> $GITHUB_ENV
-
-        # Sanitize matrix_block for use in S3 path by replacing spaces with underscores
+   
+    - name: Set history path
+      shell: bash
+      run: |
+        # Sanitize matrix_block for S3 history path
         MATRIX_BLOCK_RAW="${{ inputs.matrix_block }}"
         MATRIX_BLOCK_SANITIZED="${MATRIX_BLOCK_RAW// /_}"
         
-        echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}/${MATRIX_BLOCK_SANITIZED}" >> $GITHUB_ENV
-
+        # Build S3 history path conditionally
+        if [ -n "${MATRIX_BLOCK_SANITIZED}" ]; then
+          S3_HISTORY_PATH="${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}/${MATRIX_BLOCK_SANITIZED}"
+        else
+          S3_HISTORY_PATH="${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}"
+        fi
+        
+        echo "S3_HISTORY_PATH=${S3_HISTORY_PATH}" >> $GITHUB_ENV
+      
     - name: Download Allure history from S3 before generating report
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
       shell: bash
