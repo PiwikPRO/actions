@@ -49,7 +49,7 @@ runs:
         MATRIX_BLOCK_RAW="${{ inputs.matrix_block }}"
         MATRIX_BLOCK_SANITIZED="${MATRIX_BLOCK_RAW// /_}"
         
-        echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}/${{MATRIX_BLOCK_SANITIZED}}" >> $GITHUB_ENV
+        echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}/${MATRIX_BLOCK_SANITIZED}" >> $GITHUB_ENV
 
     - name: Download Allure history from S3 before generating report
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
