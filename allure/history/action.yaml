@@ -44,6 +44,11 @@ runs:
       shell: bash
       run: |
         echo "S3_BUCKET=piwikpro-artifactory" >> $GITHUB_ENV
+
+        # Sanitize matrix_block for use in S3 path by replacing spaces with underscores
+        MATRIX_BLOCK_RAW="${{ inputs.matrix_block }}"
+        MATRIX_BLOCK_SANITIZED="${MATRIX_BLOCK_RAW// /_}"
+        
         echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}/${{ inputs.matrix_block }}" >> $GITHUB_ENV
 
     - name: Download Allure history from S3 before generating report
