@@ -806,24 +806,13 @@ Paste the following code into your workflows under the `.github` directory.
 
 Before the run tests step:
 ``` 
-inputs:  
-    environment: # required field
-        required: true
-        description: Environment name for Allure report URL
-    retention: # It's needed if you do not hardcode this value
-        required: false
-        default: '30days'
-        description: Test report storage folder
-    
-    (...) 
-    
-    - name: Generate Allure report URL
-      shell: bash
-      run: |
-        TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
-        S3_PATH="${{ inputs.retention }}/{{ provide_team_name }}/${{ github.workflow_ref }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}/${TIMESTAMP}/"
-        echo "S3_PATH=${S3_PATH}" >> $GITHUB_ENV
-        echo "ALLURE_REPORT_URL=https://piwikpro-artifactory.s3.amazonaws.com/${S3_PATH}allure-report/index.html" >> $GITHUB_ENV
+      - name: Generate S3 paths
+        uses: PiwikPRO/actions/allure/s3_path@master
+        with:
+          environment: ${{ inputs.environment }} # usually it’s just inputs.environment or matrix.environment
+          team: 'qa-team'  # required field. cia/mit etc.
+          matrix_block: ${{ matrix.testblock }} # optional field. Use if the matrix strategy is used.
+          retention: '30days'  # optional field. Default value is 30days
 ```
 
 You also need to install AWS CLI before using this action:
@@ -834,13 +823,6 @@ You also need to install AWS CLI before using this action:
           python -m pip install --upgrade pip
           pip install awscli
 ```
-
-You need to define the following environment variables before running tests:
-
-- `S3_PATH`
-- `ALLURE_REPORT_URL`
-
-These are required to properly upload and display results in Allure and folder with results should be keep in artifacts/allure. 
 
 After the run tests step:
 ```

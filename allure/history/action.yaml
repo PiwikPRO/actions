@@ -31,6 +31,10 @@ inputs:
     required: false
     default: 'artifacts/'
     description: 'Path to parent artifacts directory containing allure/ folder'
+  matrix_block:
+    required: false
+    description: 'Optional field if someone uses a matrix in the repository'
+
 
 runs:
   using: "composite"
@@ -40,7 +44,22 @@ runs:
       shell: bash
       run: |
         echo "S3_BUCKET=piwikpro-artifactory" >> $GITHUB_ENV
-        echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ github.head_ref || github.ref_name }}/${{ inputs.environment }}" >> $GITHUB_ENV
+
+    - name: Set history path
+      shell: bash
+      run: |
+        # Sanitize matrix_block for S3 history path
+        MATRIX_BLOCK_RAW="${{ inputs.matrix_block }}"
+        MATRIX_BLOCK_SANITIZED="${MATRIX_BLOCK_RAW// /_}"
+        
+        # Build S3 history path conditionally
+        if [ -n "${MATRIX_BLOCK_SANITIZED}" ]; then
+          S3_HISTORY_PATH="${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}/${MATRIX_BLOCK_SANITIZED}"
+        else
+          S3_HISTORY_PATH="${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}"
+        fi
+        
+        echo "S3_HISTORY_PATH=${S3_HISTORY_PATH}" >> $GITHUB_ENV
 
     - name: Download Allure history from S3 before generating report
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
@@ -56,9 +75,12 @@ runs:
         ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
         ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
         
+        TARGET_USER=${SUDO_USER:-$(id -un)}
+        TARGET_GROUP=$(id -gn "$TARGET_USER")
         # Create history directory inside allure folder
         ALLURE_REPORT_HISTORY_DIR="${ARTIFACTS_PARENT}/allure/history"
-        mkdir -p "${ALLURE_REPORT_HISTORY_DIR}"
+        sudo mkdir -p "${ALLURE_REPORT_HISTORY_DIR}"
+        sudo chown -R "$TARGET_USER:$TARGET_GROUP" "${ARTIFACTS_PARENT}/allure"
         
         # Download all history from S3
         echo "Downloading all history for environment: ${{ inputs.environment }}"
