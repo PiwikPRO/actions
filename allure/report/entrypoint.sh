@@ -36,6 +36,11 @@ if allure generate "${ALLURE_RESULTS_DIR}" -o "${ALLURE_REPORT_DIR}"; then
     REPORT_SIZE="$(du -sh "${ALLURE_REPORT_DIR}" | cut -f1)"
     echo "Report size: ${REPORT_SIZE}"
   fi
+  
+  # Clean up raw allure results to reduce upload size
+  echo "Cleaning up raw allure results..."
+  rm -rf "${ALLURE_RESULTS_DIR}"
+  echo "Removed ${ALLURE_RESULTS_DIR} to reduce upload size"
 else
   echo "Report generation failed"
   exit 1
