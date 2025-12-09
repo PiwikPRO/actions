@@ -815,15 +815,6 @@ Before the run tests step:
           retention: '30days'  # optional field. Default value is 30days
 ```
 
-You also need to install AWS CLI before using this action:
-```yaml
-      - name: Install awscli
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip
-          pip install awscli
-```
-
 After the run tests step:
 ```
       - name: Report generating
