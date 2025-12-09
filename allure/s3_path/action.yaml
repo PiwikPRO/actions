@@ -1,0 +1,39 @@
+name: 'S3 path and report URL generating'
+description: 'Generate S3 path and report URL for allure history'
+inputs:
+  environment:
+    required: true
+    description: Environment name
+  team:
+    required: true
+    description: Team name
+  matrix_block:
+    required: false
+    description: 'Optional field if someone uses a matrix in the repository'
+  retention:
+    required: false
+    default: '30days'
+    description: Test report storage folder
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Generate S3 path
+      shell: bash
+      run: |
+        TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+        # Sanitize matrix_block for use in S3 path by replacing spaces with underscores
+        MATRIX_BLOCK_RAW="${{ inputs.matrix_block }}"
+        MATRIX_BLOCK_SANITIZED="${MATRIX_BLOCK_RAW// /_}"
+        # Build S3 path conditionally based on whether matrix_block is provided
+        if [ -n "${MATRIX_BLOCK_SANITIZED}" ]; then
+          # Matrix is used - include matrix_block in path
+          S3_PATH="${{ inputs.retention }}/${{ inputs.team }}/${{ github.workflow_ref }}/${{ inputs.environment }}/${MATRIX_BLOCK_SANITIZED}/${TIMESTAMP}/"
+        else
+          # No matrix - exclude matrix_block from path
+          S3_PATH="${{ inputs.retention }}/${{ inputs.team }}/${{ github.workflow_ref }}/${{ inputs.environment }}/${TIMESTAMP}/"
+        fi
+    
+        echo "S3_PATH=${S3_PATH}" >> $GITHUB_ENV
+        echo "ALLURE_REPORT_URL=https://piwikpro-artifactory.s3.amazonaws.com/${S3_PATH}allure-report/index.html" >> $GITHUB_ENV
