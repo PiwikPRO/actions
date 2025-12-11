@@ -1,5 +1,5 @@
-name: 'Piwik PRO godtools docker image push'
-description: 'Installs godtools'
+name: "Piwik PRO godtools docker image push"
+description: "Installs godtools"
 inputs:
   godtools-config:
     required: true
@@ -9,6 +9,7 @@ inputs:
     description: godtools encryption key
   image:
     required: true
+
     description: Image, that should be pushed to the registry
   destination-tag:
     required: false
@@ -37,22 +38,50 @@ inputs:
   skip-signing:
     required: false
     default: "false"
-    description: Don't sign pushed images. By default images are signed if tag is a valid semver.
+    description: Don't sign any pushed images (tmp, develop, production). By default all images are signed if signing configuration is available.
 runs:
   using: "composite"
   steps:
+    - name: Verify signing configuration for all images
+      id: sign_check
+      if: ${{ inputs.skip-signing != 'true' }}
+      shell: bash
+      env:
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
+      run: |
+        godtools docker sign-verify --registry-id "${{ inputs.registries }}"
+        echo "should_sign=true" >> $GITHUB_OUTPUT
+
+    - name: Download image signing toolkit (cosign)
+      if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
+      uses: PiwikPRO/actions/cosign/download@master
+
     - name: Push tmp docker images
       if: ${{ inputs.push-tmp-image == 'true' && !startsWith(github.ref, 'refs/tags') && inputs.tag-latest == 'true' }}
       shell: bash
       run: |
         IMAGE_BY_COMMIT=tmp-$(git rev-parse --short HEAD)
         IMAGE_BY_BRANCH=tmp-$(git rev-parse --abbrev-ref HEAD | tr "/" "-" | tr '[:upper:]' '[:lower:]')
-        
+
         docker tag ${{ inputs.image }} ${{ inputs.image }}:$IMAGE_BY_COMMIT;
         docker tag ${{ inputs.image }}:$IMAGE_BY_COMMIT ${{ inputs.image }}:$IMAGE_BY_BRANCH;
-        
+
         godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:$IMAGE_BY_COMMIT;
         godtools docker push --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:$IMAGE_BY_BRANCH;
+      env:
+        GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
+        GODTOOLS_KEY: ${{ inputs.godtools-key }}
+
+    - name: Sign tmp docker images
+      if: ${{ steps.sign_check.outputs.should_sign == 'true' && inputs.push-tmp-image == 'true' && !startsWith(github.ref, 'refs/tags') && inputs.tag-latest == 'true' }}
+      shell: bash
+      run: |
+        IMAGE_BY_COMMIT=tmp-$(git rev-parse --short HEAD)
+        IMAGE_BY_BRANCH=tmp-$(git rev-parse --abbrev-ref HEAD | tr "/" "-" | tr '[:upper:]' '[:lower:]')
+
+        godtools docker sign --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:$IMAGE_BY_COMMIT
+        godtools docker sign --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:$IMAGE_BY_BRANCH
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
@@ -67,20 +96,14 @@ runs:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
 
-    - name: Check if tag should be signed & verify signing configuration
-      id: sign_check
-      if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    - name: Sign develop docker image
+      if: ${{ steps.sign_check.outputs.should_sign == 'true' && inputs.push-develop-image == 'true' && startsWith(github.ref, format('refs/heads/{0}',inputs.push-develop-branch)) }}
       shell: bash
+      run: |
+        godtools docker sign --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ inputs.push-develop-branch }}
       env:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
-      run: |
-        if [[ "${{ inputs.skip-signing }}" == 'true' ]]; then
-          echo "should_sign=false" >> $GITHUB_OUTPUT
-          exit 0
-        fi
-        godtools docker sign-verify --registry-id "${{ inputs.registries }}"
-        echo "should_sign=true" >> $GITHUB_OUTPUT
 
     - name: Push production docker image
       if: startsWith(github.ref, 'refs/tags')
@@ -92,12 +115,8 @@ runs:
         GODTOOLS_CONFIG: ${{ inputs.godtools-config }}
         GODTOOLS_KEY: ${{ inputs.godtools-key }}
 
-    - name: Download image signing toolkit (cosign)
-      if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
-      uses: PiwikPRO/actions/cosign/download@master
-
     - name: Sign production docker image
-      if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
+      if: ${{ steps.sign_check.outputs.should_sign == 'true' && startsWith(github.ref, 'refs/tags') }}
       shell: bash
       run: |
         godtools docker sign --registry-id "${{ inputs.registries }}" ${{ inputs.image }}:${{ inputs.destination-tag }}
