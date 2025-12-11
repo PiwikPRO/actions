@@ -55,7 +55,7 @@ runs:
 
     - name: Download image signing toolkit (cosign)
       if: ${{ steps.sign_check.outputs.should_sign == 'true' }}
-      uses: PiwikPRO/actions/cosign/download@master
+      uses: PiwikPRO/actions/cosign/download@feature/DEVOPS-9390
 
     - name: Push tmp docker images
       if: ${{ inputs.push-tmp-image == 'true' && !startsWith(github.ref, 'refs/tags') && inputs.tag-latest == 'true' }}
