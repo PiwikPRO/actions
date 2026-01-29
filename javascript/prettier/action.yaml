@@ -1,0 +1,31 @@
+---
+name: "Lint with Prettier"
+description: "Run Prettier to check formatting of JavaScript, JSON, YAML and Markdown files"
+
+inputs:
+  install-command:
+    required: false
+    description: "Command used to install Prettier"
+    default: "npm install prettier@^3.8.1"
+  skip-install:
+    required: false
+    description: "Skip installation (use when npm install done separately)"
+    default: "false"
+  args:
+    required: false
+    description: "Arguments passed to prettier"
+    default: "--check ."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Prettier
+      if: ${{ inputs.skip-install != 'true' }}
+      shell: bash
+      run: ${{ inputs.install-command }}
+    - name: Set PATH
+      shell: bash
+      run: echo PATH="$PWD/node_modules/.bin:$PATH" >> "$GITHUB_ENV"
+    - name: Run prettier
+      shell: bash
+      run: prettier ${{ inputs.args }}
