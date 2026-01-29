@@ -1,0 +1,31 @@
+---
+name: "Lint with ESLint"
+description: "Run ESLint to verify JavaScript code quality"
+
+inputs:
+  install-command:
+    required: false
+    description: "Command used to install ESLint"
+    default: "npm install eslint@^9.39.2"
+  skip-install:
+    required: false
+    description: "Skip installation (use when npm install done separately)"
+    default: "false"
+  args:
+    required: false
+    description: "Arguments passed to eslint"
+    default: "--quiet ."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install ESLint
+      if: ${{ inputs.skip-install != 'true' }}
+      shell: bash
+      run: ${{ inputs.install-command }}
+    - name: Set PATH
+      shell: bash
+      run: echo PATH="$PWD/node_modules/.bin:$PATH" >> "$GITHUB_ENV"
+    - name: Run eslint
+      shell: bash
+      run: eslint ${{ inputs.args }}

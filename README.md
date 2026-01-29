@@ -553,29 +553,62 @@ Example usage
 
 ### JavaScript
 
-#### LTS-lint
+#### Prettier
 
-This action runs [prettier](https://prettier.io) and [eslint](https://eslint.org/)
-on the target repository. It is currently used exclusively in the
-[onprem platform](https://github.com/PiwikPRO/Promil-platform-onprem)
-by the LTS team.
-This action does not provide any configuration for the linters,
-it relies on a configfile (such as `package.json`) located in the target repository,
-making it as generic as possible.
+This action runs [Prettier](https://prettier.io) to check formatting of JavaScript, JSON, YAML and Markdown files.
+It relies on a configuration file (such as `.prettierrc` or `package.json`) located in the target repository.
 
 ```yaml
 # Basic usage
-      - uses: actions/checkout@v4 # pin latest commit-hash
-      - name: Run linters
-        uses: PiwikPRO/actions/javascript/lts-lint@master
+      - uses: actions/checkout@v4
+      - name: Run Prettier
+        uses: PiwikPRO/actions/javascript/prettier@master
 
-# If eslint and prettier are defined in the package.json
-      - uses: actions/checkout@v4 # pin latest commit-hash
-      - name: Run linters
-        uses: PiwikPRO/actions/javascript/lts-lint@master
+# If prettier is defined in the package.json
+      - uses: actions/checkout@v4
+      - name: Run Prettier
+        uses: PiwikPRO/actions/javascript/prettier@master
         with:
           install-command: npm install
 ```
+
+#### ESLint
+
+This action runs [ESLint](https://eslint.org/) to verify JavaScript code quality.
+It relies on a configuration file (such as `.eslintrc` or `package.json`) located in the target repository.
+
+```yaml
+# Basic usage
+      - uses: actions/checkout@v4
+      - name: Run ESLint
+        uses: PiwikPRO/actions/javascript/eslint@master
+
+# If eslint is defined in the package.json
+      - uses: actions/checkout@v4
+      - name: Run ESLint
+        uses: PiwikPRO/actions/javascript/eslint@master
+        with:
+          install-command: npm install
+```
+
+#### Using Prettier and ESLint together
+
+When using both actions, install dependencies once and use `skip-install: true` to avoid duplicate installation:
+
+```yaml
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm install
+      - name: Run Prettier
+        uses: PiwikPRO/actions/javascript/prettier@master
+        with:
+          skip-install: true
+      - name: Run ESLint
+        uses: PiwikPRO/actions/javascript/eslint@master
+        with:
+          skip-install: true
+```
+
 ### K6
 
 K6 action is a part of benchmarking workflow described below and on its own is not very useful. Here is the reference of parameters that can be passed to the action:
