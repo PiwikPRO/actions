@@ -26,7 +26,9 @@
     - [Coverage (internal)](#coverage-internal)
     - [Inclint (internal)](#inclint-internal)
     - [JavaScript](#javascript)
-      - [LTS-lint](#lts-lint)
+      - [Prettier](#prettier)
+      - [ESLint](#eslint)
+      - [Using Prettier and ESLint together](#using-prettier-and-eslint-together)
     - [K6](#k6)
     - [Benchmarking](#benchmarking)
     - [Platform outdated dependencies notifier](#platform-outdated-dependencies-notifier)
@@ -575,7 +577,7 @@ It relies on a configuration file (such as `.prettierrc` or `package.json`) loca
 #### ESLint
 
 This action runs [ESLint](https://eslint.org/) to verify JavaScript code quality.
-It relies on a configuration file (such as `.eslintrc` or `package.json`) located in the target repository.
+It relies on a configuration file (such as `eslint.config.js` or `package.json`) located in the target repository.
 
 ```yaml
 # Basic usage
