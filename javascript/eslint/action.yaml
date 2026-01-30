@@ -14,7 +14,23 @@ inputs:
   args:
     required: false
     description: "Arguments passed to eslint"
-    default: "--quiet ."
+    default: "."
+  github-token:
+    required: false
+    description: "GitHub token for PR comments (required for reviewdog)"
+    default: ""
+  reporter:
+    required: false
+    description: "reviewdog reporter: github-pr-check, github-pr-review, github-check"
+    default: "github-pr-review"
+  fail-level:
+    required: false
+    description: "Fail level for reviewdog [none, any, info, warning, error]"
+    default: "error"
+  filter-mode:
+    required: false
+    description: "Filtering mode for reviewdog [added, diff_context, file, nofilter]"
+    default: "nofilter"
 
 runs:
   using: "composite"
@@ -23,9 +39,65 @@ runs:
       if: ${{ inputs.skip-install != 'true' }}
       shell: bash
       run: ${{ inputs.install-command }}
-    - name: Set PATH
+
+    - name: Setup reviewdog
+      if: ${{ inputs.github-token != '' }}
+      uses: reviewdog/action-setup@v1
+
+    - name: Run ESLint with reviewdog
+      if: ${{ inputs.github-token != '' }}
       shell: bash
-      run: echo PATH="$PWD/node_modules/.bin:$PATH" >> "$GITHUB_ENV"
-    - name: Run eslint
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ inputs.github-token }}
+      run: |
+        export PATH="$PWD/node_modules/.bin:$PATH"
+
+        echo "=== Running ESLint (stylish for display) ==="
+        eslint --format stylish ${{ inputs.args }} 2>&1 || true
+
+        echo "=== Running ESLint with JSON output ==="
+        eslint --format json ${{ inputs.args }} > eslint-output.json 2>&1 || true
+
+        echo "=== Converting to rdjson format ==="
+        # Create jq script file to avoid shell quoting issues
+        # Strip GITHUB_WORKSPACE prefix to get relative paths for reviewdog
+        cat > /tmp/eslint-to-rdjson.jq << 'EOFSCRIPT'
+        {
+          source: {name: "eslint", url: "https://eslint.org/"},
+          diagnostics: [
+            .[] | (.filePath | ltrimstr($workspace) | ltrimstr("/")) as $relpath | .messages[] | {
+              message: .message,
+              location: {
+                path: $relpath,
+                range: {
+                  start: {line: .line, column: .column}
+                }
+              },
+              severity: (if .severity == 2 then "ERROR" elif .severity == 1 then "WARNING" else "INFO" end),
+              code: {
+                value: .ruleId
+              }
+            }
+          ]
+        }
+        EOFSCRIPT
+
+        jq --arg workspace "$GITHUB_WORKSPACE" -f /tmp/eslint-to-rdjson.jq eslint-output.json > eslint-rdjson.json
+
+        echo "=== rdjson output ==="
+        cat eslint-rdjson.json
+
+        echo "=== Sending to reviewdog ==="
+        cat eslint-rdjson.json | reviewdog \
+          -f=rdjson \
+          -name="eslint" \
+          -reporter="${{ inputs.reporter }}" \
+          -filter-mode="${{ inputs.filter-mode }}" \
+          -fail-level="${{ inputs.fail-level }}"
+
+    - name: Run ESLint (without reviewdog)
+      if: ${{ inputs.github-token == '' }}
       shell: bash
-      run: eslint ${{ inputs.args }}
+      run: |
+        export PATH="$PWD/node_modules/.bin:$PATH"
+        eslint --quiet ${{ inputs.args }}
