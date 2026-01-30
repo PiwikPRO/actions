@@ -36,18 +36,18 @@ jobs:
     steps:
 
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: Download artifact
         if: ${{ inputs.artifact != '' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: ${{ inputs.artifact }}
           path: .techdocs-artifact
 
       - name: Download artifact by pattern
         if: ${{ inputs.artifact-pattern != '' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           pattern: ${{ inputs.artifact-pattern }}
           path: .techdocs-artifact
@@ -61,7 +61,7 @@ jobs:
           repo: PiwikPRO/Tech-docs
 
       - name: Check out Tech-docs
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
           repository: 'PiwikPRO/Tech-docs'
           token: ${{ steps.get-token.outputs.token }}
@@ -158,7 +158,7 @@ jobs:
           echo "CHANGES=$CHANGED_FILES" >> $GITHUB_ENV
 
       - name: Check out actions repo for local-dev
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
           repository: 'PiwikPRO/actions'
           token: ${{ steps.get-token.outputs.token }}
@@ -219,18 +219,18 @@ jobs:
     steps:
 
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: Download artifact
         if: ${{ inputs.artifact != '' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: ${{ inputs.artifact }}
           path: .techdocs-artifact
 
       - name: Download artifact by pattern
         if: ${{ inputs.artifact-pattern != '' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           pattern: ${{ inputs.artifact-pattern }}
           path: .techdocs-artifact
@@ -262,7 +262,7 @@ jobs:
       - name: Check out Tech-docs (base branch)
         id: checkout-base
         continue-on-error: true
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
           repository: 'PiwikPRO/Tech-docs'
           token: ${{ steps.get-token.outputs.token }}
@@ -306,7 +306,7 @@ jobs:
 
       - name: Check for Tech Docs Agent Comment
         id: check-bot-comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -336,7 +336,7 @@ jobs:
           app-id: ${{ secrets.TECH_DOCS_AGENT_APPLICATION_ID }}
 
       - name: Prepare Pull Request Comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
         if: env.COUNT != '0' || (env.COUNT == '0' && steps.check-bot-comment.outputs.techDocsCommentId != '')
         env:
           COUNT: ${{ env.COUNT }}
