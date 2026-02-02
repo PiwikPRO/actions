@@ -12,6 +12,10 @@ inputs:
     required: false
     description: Version of ruff
     default: "0.9.*"
+  working-directory:
+    required: false
+    description: Where to run the linter
+    default: "." 
 
 runs:
   using: "composite"
@@ -33,8 +37,8 @@ runs:
 
     - name: Run ruff linter
       shell: bash
-      run: ruff check . --config ${{ github.action_path }}/pyproject.toml
+      run: cd "${{ inputs.working-directory }}" && ruff check . --config ${{ github.action_path }}/pyproject.toml
 
     - name: Run ruff formatter
       shell: bash
-      run: ruff format --check . --config ${{ github.action_path }}/pyproject.toml
+      run: cd "${{ inputs.working-directory }}" && ruff format --check . --config ${{ github.action_path }}/pyproject.toml
