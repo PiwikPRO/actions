@@ -46,4 +46,4 @@ runs:
         AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
         HTTP_PROXY: ${{ inputs.aws-http-proxy }}
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
-      run: s5cmd --log error cp "s3://${{ inputs.aws-bucket }}/${{ inputs.src-path }}" "${{ github.workspace }}/${{ inputs.dst-path }}"
+      run: s5cmd --log error cp "s3://${{ inputs.aws-bucket }}/${{ inputs.src-path }}*" "${{ github.workspace }}/${{ inputs.dst-path }}"
