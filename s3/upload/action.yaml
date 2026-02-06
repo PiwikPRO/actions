@@ -55,7 +55,7 @@ runs:
         AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
         HTTP_PROXY: ${{ inputs.aws-http-proxy }}
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
-      run: s5cmd --log error cp "${{ github.workspace }}/${{ inputs.src-path }}*" "s3://${{ inputs.aws-bucket }}/${{ inputs.dst-path }}" || echo "No objects found at ${{ github.workspace }}/${{ inputs.src-path }}"
+      run: s5cmd --log error cp "${{ github.workspace }}/${{ inputs.src-path }}" "s3://${{ inputs.aws-bucket }}/${{ inputs.dst-path }}"
 
     - name: Report URL
       if: ${{ inputs.echo-destination-index-html == 'true' }}
