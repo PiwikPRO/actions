@@ -65,7 +65,7 @@ runs:
 
     - name: Download Allure history from S3 before generating report
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
-      uses: PiwikPRO/actions/s3/download@MID-6856-update-allure-action-test
+      uses: PiwikPRO/actions/s3/download@master
       with:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
@@ -78,12 +78,12 @@ runs:
         ignore-missing: 'true'
 
     - name: Generate allure report
-      uses: PiwikPRO/actions/allure/report@MID-6856-update-allure-action-test
+      uses: PiwikPRO/actions/allure/report@master
       with:
         path_to_artifacts: ${{ inputs.path_to_artifacts }}
 
     - name: Upload HTML report to S3
-      uses: PiwikPRO/actions/s3/upload@MID-6856-update-allure-action-test
+      uses: PiwikPRO/actions/s3/upload@master
       with:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
@@ -96,7 +96,7 @@ runs:
 
     - name: Upload new Allure history to S3
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
-      uses: PiwikPRO/actions/s3/upload@MID-6856-update-allure-action-test
+      uses: PiwikPRO/actions/s3/upload@master
       with:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
