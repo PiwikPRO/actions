@@ -1,0 +1,49 @@
+name: 'Download from S3'
+description: 'Download recursively from s3.'
+inputs:
+  src-path:
+    required: false
+    description: Path to source dir in S3. Must end with '/'.
+    default: "${{ github.repository }}/@${{ github.ref_name }}/artifacts/"
+  dst-path:
+    required: false
+    description: Path to local destination dir. Path must be relative to `github.workspace`.
+    default: 'artifacts/'
+  aws-access-key-id:
+    required: true
+    description: AWS Access Key ID
+  aws-secret-access-key:
+    required: true
+    description: AWS Secret Access Key
+  aws-bucket:
+    required: true
+    description: AWS Bucket
+  aws-region:
+    required: false
+    description: AWS Region
+    default: eu-central-1
+  aws-http-proxy:
+    required: false
+    description: URI for aws-cli HTTP proxy
+  aws-https-proxy:
+    required: false
+    description: URI for aws-cli HTTPS proxy
+runs:
+  using: 'composite'
+  steps:
+    - name: Install s5cmd
+      shell: bash
+      run: |
+        S5CMD_VERSION="2.3.0"
+        curl -fsSL "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" -o /tmp/s5cmd.tar.gz
+        sudo tar xzf /tmp/s5cmd.tar.gz -C /usr/local/bin s5cmd
+
+    - name: Download from s3
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+        HTTP_PROXY: ${{ inputs.aws-http-proxy }}
+        HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
+      run: s5cmd --log error cp "s3://${{ inputs.aws-bucket }}/${{ inputs.src-path }}" "${{ github.workspace }}/${{ inputs.dst-path }}"
