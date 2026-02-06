@@ -3,12 +3,12 @@ description: 'Download recursively from s3.'
 inputs:
   src-path:
     required: false
-    description: Path to source dir in S3. Must end with '/'.
-    default: "${{ github.repository }}/@${{ github.ref_name }}/artifacts/"
+    description: Path to source dir in S3. Leading/trailing slashes will be normalized.
+    default: "${{ github.repository }}/@${{ github.ref_name }}/artifacts"
   dst-path:
     required: false
-    description: Path to local destination dir. Path must be relative to `github.workspace`.
-    default: 'artifacts/'
+    description: Path to local destination dir. Path must be relative to `github.workspace`. Leading/trailing slashes will be normalized.
+    default: 'artifacts'
   aws-access-key-id:
     required: true
     description: AWS Access Key ID
@@ -41,6 +41,23 @@ runs:
         S5CMD_VERSION="2.3.0"
         curl -fsSL "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" -o /tmp/s5cmd.tar.gz
         sudo tar xzf /tmp/s5cmd.tar.gz -C /usr/local/bin s5cmd
+    
+    - name: Normalize paths
+      shell: bash
+      run: |
+        SOURCE_PATH="${{ inputs.src-path }}"
+        DESTINATION_PATH="${{ inputs.dst-path }}"
+        
+        # Remove leading slashes
+        SOURCE_PATH="${SOURCE_PATH#/}"
+        DESTINATION_PATH="${DESTINATION_PATH#/}"
+        
+        # Ensure trailing slashes
+        DESTINATION_PATH="${DESTINATION_PATH%/}/"
+        SOURCE_PATH="${SOURCE_PATH%/}/"
+        
+        echo "SOURCE_PATH=$SOURCE_PATH" >> $GITHUB_ENV
+        echo "DESTINATION_PATH=$DESTINATION_PATH" >> $GITHUB_ENV
 
     - name: Download from s3
       shell: bash
@@ -50,6 +67,6 @@ runs:
         AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
         HTTP_PROXY: ${{ inputs.aws-http-proxy }}
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
-      run: >-
-        s5cmd --log error cp "s3://${{ inputs.aws-bucket }}/${{ inputs.src-path }}*" "${{ github.workspace }}/${{ inputs.dst-path }}"
-        ${{ inputs.ignore-missing == 'true' && '|| echo "No objects found (ignored)"' || '' }}
+      run: |
+        s5cmd --log error cp "s3://${{ inputs.aws-bucket }}/${{ env.SOURCE_PATH }}*" "${{ github.workspace }}/${{ env.DESTINATION_PATH }}" \
+          || [[ "${{ inputs.ignore-missing }}" == "true" ]] || exit 1
