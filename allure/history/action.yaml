@@ -75,7 +75,7 @@ runs:
         aws-https-proxy: ${{ inputs.aws-https-proxy }}
         src-path: ${{ env.S3_HISTORY_PATH }}/
         dst-path: ${{ inputs.path_to_artifacts }}allure/history/
-        ignore-missing: 'false'
+        ignore-missing: 'true'
 
     - name: Generate allure report
       uses: PiwikPRO/actions/allure/report@MID-6856-update-allure-action-test
