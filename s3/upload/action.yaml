@@ -3,12 +3,12 @@ description: 'Upload recursively to s3.'
 inputs:
   src-path:
     required: false
-    description: Path to dir that may be uploaded. Path must be relative to `github.workspace`. 
-    default: 'artifacts/'
+    description: Path to dir that may be uploaded. Path must be relative to `github.workspace`. Leading/trailing slashes will be normalized.
+    default: 'artifacts'
   dst-path:
     required: false
-    description: Path to destination dir. Must end with '/'.
-    default: "${{ github.repository }}/@${{ github.ref_name }}/artifacts/"
+    description: Path to destination dir. Leading/trailing slashes will be normalized.
+    default: "${{ github.repository }}/@${{ github.ref_name }}/artifacts"
   aws-access-key-id: 
     required: true
     description: AWS Access Key ID
@@ -35,12 +35,34 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: unfor19/install-aws-cli-action@v1
+    - name: Install s5cmd
+      shell: bash
+      run: |
+        S5CMD_VERSION="2.3.0"
+        curl -fsSL "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" -o /tmp/s5cmd.tar.gz
+        sudo tar xzf /tmp/s5cmd.tar.gz -C /usr/local/bin s5cmd
+
+    - name: Normalize paths
+      shell: bash
+      run: |
+        SOURCE_PATH="${{ inputs.src-path }}"
+        DESTINATION_PATH="${{ inputs.dst-path }}"
+        
+        # Remove leading slashes
+        SOURCE_PATH="${SOURCE_PATH#/}"
+        DESTINATION_PATH="${DESTINATION_PATH#/}"
+        
+        # Ensure trailing slashes
+        DESTINATION_PATH="${DESTINATION_PATH%/}/"
+        SOURCE_PATH="${SOURCE_PATH%/}/"
+        
+        echo "SOURCE_PATH=$SOURCE_PATH" >> $GITHUB_ENV
+        echo "DESTINATION_PATH=$DESTINATION_PATH" >> $GITHUB_ENV
 
     - name: Generate index.html if it doesn't exist
       if: ${{ inputs.echo-destination-index-html == 'true' }}
       shell: bash
-      run: python ${{ github.action_path }}/create-index-html-if-not-exists.py ${{ github.workspace }}/${{ inputs.src-path }}
+      run: python ${{ github.action_path }}/create-index-html-if-not-exists.py ${{ github.workspace }}/${{ env.SOURCE_PATH }}
 
     - name: Copy to s3
       shell: bash
@@ -50,9 +72,9 @@ runs:
         AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
         HTTP_PROXY: ${{ inputs.aws-http-proxy }}
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
-      run: aws s3 cp --recursive ${{ github.workspace }}/${{ inputs.src-path }} s3://${{ inputs.aws-bucket }}/${{ inputs.dst-path }}
+      run: s5cmd --log error cp "${{ github.workspace }}/${{ env.SOURCE_PATH }}" "s3://${{ inputs.aws-bucket }}/${{ env.DESTINATION_PATH }}"
 
     - name: Report URL
       if: ${{ inputs.echo-destination-index-html == 'true' }}
       shell: bash
-      run: echo https://${{ inputs.aws-bucket }}.s3.amazonaws.com/${{ inputs.dst-path }}index.html
+      run: echo https://${{ inputs.aws-bucket }}.s3.amazonaws.com/${{ env.DESTINATION_PATH }}index.html
