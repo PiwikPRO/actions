@@ -35,7 +35,12 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: unfor19/install-aws-cli-action@v1
+    - name: Install s5cmd
+      shell: bash
+      run: |
+        S5CMD_VERSION="2.3.0"
+        curl -fsSL "https://github.com/peak/s5cmd/releases/download/v${S5CMD_VERSION}/s5cmd_${S5CMD_VERSION}_Linux-64bit.tar.gz" -o /tmp/s5cmd.tar.gz
+        sudo tar xzf /tmp/s5cmd.tar.gz -C /usr/local/bin s5cmd
 
     - name: Generate index.html if it doesn't exist
       if: ${{ inputs.echo-destination-index-html == 'true' }}
@@ -50,7 +55,7 @@ runs:
         AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
         HTTP_PROXY: ${{ inputs.aws-http-proxy }}
         HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
-      run: aws s3 cp --recursive ${{ github.workspace }}/${{ inputs.src-path }} s3://${{ inputs.aws-bucket }}/${{ inputs.dst-path }}
+      run: s5cmd --log error cp "${{ github.workspace }}/${{ inputs.src-path }}" "s3://${{ inputs.aws-bucket }}/${{ inputs.dst-path }}"
 
     - name: Report URL
       if: ${{ inputs.echo-destination-index-html == 'true' }}
