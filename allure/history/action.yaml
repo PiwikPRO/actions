@@ -50,6 +50,19 @@ runs:
         echo "S3_BUCKET=piwikpro-artifactory" >> $GITHUB_ENV
         echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}${MATRIX_SUFFIX}" >> $GITHUB_ENV
 
+    - name: Prepare history directory
+      if: ${{ inputs.enable-history == 'true' && !cancelled() }}
+      shell: bash
+      run: |
+        ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
+        ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
+
+        TARGET_USER=${SUDO_USER:-$(id -un)}
+        TARGET_GROUP=$(id -gn "$TARGET_USER")
+        ALLURE_REPORT_HISTORY_DIR="${ARTIFACTS_PARENT}/allure/history"
+        sudo mkdir -p "${ALLURE_REPORT_HISTORY_DIR}"
+        sudo chown -R "$TARGET_USER:$TARGET_GROUP" "${ARTIFACTS_PARENT}/allure"
+
     - name: Download Allure history from S3 before generating report
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
       uses: PiwikPRO/actions/s3/download@MID-6856-update-allure-action-test
@@ -93,6 +106,7 @@ runs:
         aws-https-proxy: ${{ inputs.aws-https-proxy }}
         src-path: ${{ inputs.path_to_artifacts }}allure-report/history/
         dst-path: ${{ env.S3_HISTORY_PATH }}/
+        echo-destination-index-html: 'false'
 
     - name: Generate summary
       shell: bash
