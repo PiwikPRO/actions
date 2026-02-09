@@ -1,0 +1,100 @@
+name: Trigger version update
+description: Triggers version update workflow in a target repository based on dev branch commits or tags
+inputs:
+  service-name:
+    description: "Name of the service to update (e.g. etl, reporting, ui, administrationUI)"
+    required: true
+  dev-branch:
+    description: "Name of the development branch to validate tags against"
+    required: false
+    default: "develop"
+  target-repo:
+    description: "Target repository to trigger workflow in (e.g. Promil-stack-analytics)"
+    required: true
+  workflow-token:
+    description: "GitHub token with workflow dispatch permissions (fine-grained PAT with 'Actions: Read and write')"
+    required: true
+  target-workflow-ref:
+    description: "Git ref to use when triggering the target workflow"
+    required: false
+    default: "develop"
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for all branches and tags
+
+    - name: Determine version and validate tag
+      id: version
+      shell: bash
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          # Extract tag name
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          
+          # Check if this tag's commit exists in dev branch
+          if git merge-base --is-ancestor "${{ github.sha }}" origin/${{ inputs.dev-branch }}; then
+            echo "✅ Tag $TAG points to a commit that exists in ${{ inputs.dev-branch }} branch"
+            echo "version=$TAG" >> $GITHUB_OUTPUT
+            echo "should_trigger=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Tag $TAG does not exist in ${{ inputs.dev-branch }} branch (likely a hotfix tag from master)"
+            echo "Skipping version update trigger"
+            echo "should_trigger=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          # This is a push to dev branch
+          SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "version=tmp-$SHA" >> $GITHUB_OUTPUT
+          echo "should_trigger=true" >> $GITHUB_OUTPUT
+          echo "Version will be: tmp-$SHA"
+        fi
+
+    - name: Trigger workflow_dispatch in target repository
+      if: steps.version.outputs.should_trigger == 'true'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.workflow-token }}
+        script: |
+          await github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: '${{ inputs.target-repo }}',
+            workflow_id: 'update-service-version.yaml',
+            ref: '${{ inputs.target-workflow-ref }}',
+            inputs: {
+              service_name: '${{ inputs.service-name }}',
+              version: '${{ steps.version.outputs.version }}',
+            }
+          });
+          console.log('✅ Workflow dispatch triggered successfully');
+          console.log('Service: ${{ inputs.service-name }}');
+          console.log('Version: ${{ steps.version.outputs.version }}');
+          console.log('Target repo: ${{ inputs.target-repo }}');
+          console.log('Triggered by: ${{ github.actor }}');
+
+    - name: Summary
+      if: steps.version.outputs.should_trigger == 'true'
+      shell: bash
+      run: |
+        echo "### Version Update Triggered" >> $GITHUB_STEP_SUMMARY
+        echo "- Service: **${{ inputs.service-name }}**" >> $GITHUB_STEP_SUMMARY
+        echo "- Version: **${{ steps.version.outputs.version }}**" >> $GITHUB_STEP_SUMMARY
+        echo "- Target: ${{ inputs.target-repo }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Triggered by: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Source commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "[View workflow runs in target repo →](https://github.com/${{ github.repository_owner }}/${{ inputs.target-repo }}/actions/workflows/update-service-version.yaml)" >> $GITHUB_STEP_SUMMARY
+
+    - name: Skipped Summary
+      if: steps.version.outputs.should_trigger == 'false'
+      shell: bash
+      run: |
+        echo "### Version Update Skipped" >> $GITHUB_STEP_SUMMARY
+        echo "⚠️ Tag **${{ steps.version.outputs.tag }}** does not exist in ${{ inputs.dev-branch }} branch" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "This is likely a hotfix tag released directly from master." >> $GITHUB_STEP_SUMMARY
+        echo "Version updates are only triggered for tags that exist in the ${{ inputs.dev-branch }} branch." >> $GITHUB_STEP_SUMMARY
