@@ -32,6 +32,7 @@
     - [K6](#k6)
     - [Benchmarking](#benchmarking)
     - [Platform outdated dependencies notifier](#platform-outdated-dependencies-notifier)
+    - [Trigger version update](#trigger-version-update)
     - [1Password](#1Password)
       - [Get kubeconfig](#get-kubeconfig)
     - [Helm]
@@ -734,6 +735,68 @@ jobs:
         github-token-charts: ${{ steps.get-token.outputs.token }}
         github-token-platform: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+### Trigger version update
+
+This action triggers a version update workflow in a target repository based on development branch commits or tags.
+Main idea is to automate bumping explicit tmp images in stack repo to allow testing latest develop changes, without relying on unversioned tmp-develop branches.
+
+**How It Works:**
+
+For **dev branch commits**: When a commit is pushed to the dev branch, it generates a version string like `tmp-cf3ebd52` and triggers the `update-service-version.yaml` workflow in the target repository.
+
+For **tags**: When a tag is created, it extracts the tag name (e.g., `1.32.4`) and checks if the tagged commit exists in the dev branch using `git merge-base --is-ancestor`. If the commit exists in dev, it triggers the workflow with the tag name as version. If not, it skips triggering (assumes hotfix from master).
+
+#### Usage
+
+```yaml .github/workflows/version_update.yaml
+name: Trigger version update
+
+on:
+  workflow_run:
+    # Name of the workflow that has to finish to trigger the version update  
+    workflows: ["Build and Test"]
+    types:
+      - completed
+    branches:
+      - develop
+
+# explicitly limit action permissions 
+permissions:
+  contents: read
+
+jobs:
+  trigger-update:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Trigger version update
+        uses: PiwikPRO/actions/version-update/trigger@master
+        with:
+          service-name: reporting
+          target-repo: Promil-stack-analytics
+          # Requires fine-grained PAT with "Actions: Read and write" permission as WORKFLOW_TRIGGER_TOKEN
+          workflow-token: ${{ secrets.WORKFLOW_TRIGGER_TOKEN }}
+```
+
+#### Inputs
+
+| Input | Description | Required | Default   |
+|-------|-------------|----------|-----------|
+| `service-name` | Name of the service to update (e.g., etl, reporting, ui) | Yes | -         |
+| `target-repo` | Target repository to trigger workflow in | Yes | -         |
+| `workflow-token` | GitHub token with workflow dispatch permissions (fine-grained PAT with "Actions: Read and write") | Yes | -         |
+| `dev-branch` | Name of the development branch to validate tags against | No | `develop` |
+| `target-workflow-ref` | Git ref to use when triggering the target workflow | No | `develop` |
+
+#### Requirements
+
+In the source repository (where this action runs):
+- A fine-grained GitHub PAT with "Actions: Read and write" permission (in usage example stored as `WORKFLOW_TRIGGER_TOKEN` secret)
+- The PAT must have access to the target repository
+
+In the target repository:
+- Must have an `update-service-version.yaml` workflow that accepts `service_name` and `version` inputs
 
 ### 1Password
 #### Get kubeconfig
