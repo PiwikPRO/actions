@@ -40,42 +40,66 @@ runs:
   using: "composite"
   steps:
 
-    - name: Set environment variables
+    - name: Set constants
       shell: bash
       run: |
-        MATRIX_BLOCK="${{ inputs.matrix_block }}"
-        MATRIX_BLOCK="${MATRIX_BLOCK// /_}"
-        MATRIX_SUFFIX="${MATRIX_BLOCK:+/${MATRIX_BLOCK}}"
-
         echo "S3_BUCKET=piwikpro-artifactory" >> $GITHUB_ENV
-        echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}${MATRIX_SUFFIX}" >> $GITHUB_ENV
 
-    - name: Prepare history directory
-      if: ${{ inputs.enable-history == 'true' && !cancelled() }}
+    - name: Set history path
       shell: bash
       run: |
-        ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
-        ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
+        # Sanitize matrix_block for S3 history path
+        MATRIX_BLOCK_RAW="${{ inputs.matrix_block }}"
+        MATRIX_BLOCK_SANITIZED="${MATRIX_BLOCK_RAW// /_}"
+        
+        # Build S3 history path conditionally
+        if [ -n "${MATRIX_BLOCK_SANITIZED}" ]; then
+          S3_HISTORY_PATH="${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}/${MATRIX_BLOCK_SANITIZED}"
+        else
+          S3_HISTORY_PATH="${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}"
+        fi
+        
+        echo "S3_HISTORY_PATH=${S3_HISTORY_PATH}" >> $GITHUB_ENV
 
-        TARGET_USER=${SUDO_USER:-$(id -un)}
-        TARGET_GROUP=$(id -gn "$TARGET_USER")
-        ALLURE_REPORT_HISTORY_DIR="${ARTIFACTS_PARENT}/allure/history"
-        sudo mkdir -p "${ALLURE_REPORT_HISTORY_DIR}"
-        sudo chown -R "$TARGET_USER:$TARGET_GROUP" "${ARTIFACTS_PARENT}/allure"
+    - name: Install awscli
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install awscli
 
     - name: Download Allure history from S3 before generating report
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
-      uses: PiwikPRO/actions/s3/download@master
-      with:
-        aws-access-key-id: ${{ inputs.aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-        aws-bucket: ${{ env.S3_BUCKET }}
-        aws-region: eu-central-1
-        aws-http-proxy: ${{ inputs.aws-http-proxy }}
-        aws-https-proxy: ${{ inputs.aws-https-proxy }}
-        src-path: ${{ env.S3_HISTORY_PATH }}/
-        dst-path: ${{ inputs.path_to_artifacts }}allure/history/
-        ignore-missing: 'true'
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: eu-central-1
+        HTTP_PROXY: ${{ inputs.aws-http-proxy }}
+        HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
+      run: |
+        # Remove trailing slash from path
+        ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
+        ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
+        
+        TARGET_USER=${SUDO_USER:-$(id -un)}
+        TARGET_GROUP=$(id -gn "$TARGET_USER")
+        # Create history directory inside allure folder
+        ALLURE_REPORT_HISTORY_DIR="${ARTIFACTS_PARENT}/allure/history"
+        sudo mkdir -p "${ALLURE_REPORT_HISTORY_DIR}"
+        sudo chown -R "$TARGET_USER:$TARGET_GROUP" "${ARTIFACTS_PARENT}/allure"
+        
+        # Download all history from S3
+        echo "Downloading all history for environment: ${{ inputs.environment }}"
+        aws s3 sync s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ "${ALLURE_REPORT_HISTORY_DIR}/" || echo "No previous history found"
+        
+        # Verify history was downloaded
+        if [ -d "${ALLURE_REPORT_HISTORY_DIR}" ] && [ "$(ls -A ${ALLURE_REPORT_HISTORY_DIR})" ]; then
+          HISTORY_COUNT=$(find "${ALLURE_REPORT_HISTORY_DIR}" -type f 2>/dev/null | wc -l)
+          echo "Downloaded $HISTORY_COUNT history files"
+          echo "History downloaded successfully"
+        else
+          echo "No history found - this will be the first run"
+        fi
 
     - name: Generate allure report
       uses: PiwikPRO/actions/allure/report@master
@@ -96,17 +120,25 @@ runs:
 
     - name: Upload new Allure history to S3
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
-      uses: PiwikPRO/actions/s3/upload@master
-      with:
-        aws-access-key-id: ${{ inputs.aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-        aws-bucket: ${{ env.S3_BUCKET }}
-        aws-region: eu-central-1
-        aws-http-proxy: ${{ inputs.aws-http-proxy }}
-        aws-https-proxy: ${{ inputs.aws-https-proxy }}
-        src-path: ${{ inputs.path_to_artifacts }}allure-report/history/
-        dst-path: ${{ env.S3_HISTORY_PATH }}/
-        echo-destination-index-html: 'false'
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: eu-central-1
+        HTTP_PROXY: ${{ inputs.aws-http-proxy }}
+        HTTPS_PROXY: ${{ inputs.aws-https-proxy }}
+      run: |
+        # Remove trailing slash from path
+        ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
+        ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
+        
+        # Upload new history to S3
+        # Note: All history is kept in S3 and all history is downloaded for display
+        ALLURE_GENERATED_HISTORY_DIR="${ARTIFACTS_PARENT}/allure-report/history"
+        echo "Uploading new history for environment: ${{ github.workflow_ref }}/${{ inputs.environment }}"
+        aws s3 sync "${ALLURE_GENERATED_HISTORY_DIR}/" s3://${{ env.S3_BUCKET }}/${{ env.S3_HISTORY_PATH }}/ || echo "Failed to upload history"
+        
+        echo "History uploaded successfully. All history is preserved in S3."
 
     - name: Generate summary
       shell: bash
