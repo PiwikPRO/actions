@@ -35,6 +35,25 @@ inputs:
     required: false
     description: 'Optional field if someone uses a matrix in the repository'
 
+outputs:
+  total:
+    description: 'Total number of tests'
+    value: ${{ steps.allure_metrics.outputs.total }}
+  passed:
+    description: 'Number of passed tests'
+    value: ${{ steps.allure_metrics.outputs.passed }}
+  failed:
+    description: 'Number of failed tests'
+    value: ${{ steps.allure_metrics.outputs.failed }}
+  broken:
+    description: 'Number of broken tests'
+    value: ${{ steps.allure_metrics.outputs.broken }}
+  skipped:
+    description: 'Number of skipped tests'
+    value: ${{ steps.allure_metrics.outputs.skipped }}
+  unknown:
+    description: 'Number of unknown status tests'
+    value: ${{ steps.allure_metrics.outputs.unknown }}
 
 runs:
   using: "composite"
@@ -106,6 +125,30 @@ runs:
       with:
         path_to_artifacts: ${{ inputs.path_to_artifacts }}
 
+    - name: Extract Allure metrics
+      id: allure_metrics
+      shell: bash
+      run: |
+        ARTIFACTS_PARENT="${{ inputs.path_to_artifacts }}"
+        ARTIFACTS_PARENT="${ARTIFACTS_PARENT%/}"
+        SUMMARY_JSON="${ARTIFACTS_PARENT}/allure-report/widgets/summary.json"
+        if [ -f "$SUMMARY_JSON" ]; then
+          TOTAL=$(jq -r '.statistic.total // 0' "$SUMMARY_JSON")
+          PASSED=$(jq -r '.statistic.passed // 0' "$SUMMARY_JSON")
+          FAILED=$(jq -r '.statistic.failed // 0' "$SUMMARY_JSON")
+          BROKEN=$(jq -r '.statistic.broken // 0' "$SUMMARY_JSON")
+          SKIPPED=$(jq -r '.statistic.skipped // 0' "$SUMMARY_JSON")
+          UNKNOWN=$(jq -r '.statistic.unknown // 0' "$SUMMARY_JSON")
+        else
+          TOTAL=0; PASSED=0; FAILED=0; BROKEN=0; SKIPPED=0; UNKNOWN=0
+        fi
+        echo "total=${TOTAL}" >> $GITHUB_OUTPUT
+        echo "passed=${PASSED}" >> $GITHUB_OUTPUT
+        echo "failed=${FAILED}" >> $GITHUB_OUTPUT
+        echo "broken=${BROKEN}" >> $GITHUB_OUTPUT
+        echo "skipped=${SKIPPED}" >> $GITHUB_OUTPUT
+        echo "unknown=${UNKNOWN}" >> $GITHUB_OUTPUT
+
     - name: Upload HTML report to S3
       uses: PiwikPRO/actions/s3/upload@master
       with:
@@ -145,4 +188,5 @@ runs:
       run: |
         echo "[Allure Report](${{ env.ALLURE_REPORT_URL }})" >> $GITHUB_STEP_SUMMARY
         echo "Branch: ${{ github.head_ref || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "Tests: total ${{ steps.allure_metrics.outputs.total }} | passed ${{ steps.allure_metrics.outputs.passed }} | failed ${{ steps.allure_metrics.outputs.failed }} | broken ${{ steps.allure_metrics.outputs.broken }} | skipped ${{ steps.allure_metrics.outputs.skipped }}" >> $GITHUB_STEP_SUMMARY
         echo "ALLURE_REPORT_URL=${{ env.ALLURE_REPORT_URL }}" >> $GITHUB_ENV
