@@ -34,6 +34,9 @@ inputs:
   matrix_block:
     required: false
     description: 'Optional field if someone uses a matrix in the repository'
+  s3-history-path:
+    required: false
+    description: 'Optional custom S3 history path. Defaults to retention/team/tests/history/workflow_ref/environment[/matrix_block]'
 
 outputs:
   total:
@@ -62,12 +65,20 @@ runs:
     - name: Set environment variables
       shell: bash
       run: |
+        CUSTOM_S3_HISTORY_PATH="${{ inputs.s3-history-path }}"
+        CUSTOM_S3_HISTORY_PATH="${CUSTOM_S3_HISTORY_PATH%/}"
+
         MATRIX_BLOCK="${{ inputs.matrix_block }}"
         MATRIX_BLOCK="${MATRIX_BLOCK// /_}"
         MATRIX_SUFFIX="${MATRIX_BLOCK:+/${MATRIX_BLOCK}}"
 
         echo "S3_BUCKET=piwikpro-artifactory" >> $GITHUB_ENV
-        echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}${MATRIX_SUFFIX}" >> $GITHUB_ENV
+        if [ -n "${CUSTOM_S3_HISTORY_PATH}" ]; then
+          echo "Using custom S3 history path: ${CUSTOM_S3_HISTORY_PATH}"
+          echo "S3_HISTORY_PATH=${CUSTOM_S3_HISTORY_PATH}" >> $GITHUB_ENV
+        else
+          echo "S3_HISTORY_PATH=${{ inputs.retention }}/${{ inputs.team }}/tests/history/${{ github.workflow_ref }}/${{ inputs.environment }}${MATRIX_SUFFIX}" >> $GITHUB_ENV
+        fi
 
     - name: Prepare history directory
       if: ${{ inputs.enable-history == 'true' && !cancelled() }}
