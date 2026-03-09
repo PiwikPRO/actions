@@ -16,6 +16,7 @@
     - [Go](#go)
       - [Lint](#lint)
       - [Push dir to s3](#push-dir-to-s3)
+      - [S3 using s5cmd](#s3-actions-using-s5cmd)
       - [Test](#test)
       - [Integration tests setup (pytest)](#integration-tests-setup-pytest)
       - [Attach binary as github release when tag is built](#attach-binary-as-github-release-when-tag-is-built)
@@ -342,6 +343,11 @@ Example usage:
           echo-destination-index-html: true
 ...
 ```
+
+#### S3 actions using s5cmd
+Faster alternative to aws cli actions. [Read more](s3/s5cmd/README.md)
+- upload
+- download
 
 #### Test
 
@@ -926,3 +932,7 @@ After the run tests step:
 ```
 
 Above setup will allow you to preserve the history of test runs in your Allure Report.
+
+#### Allure history fast
+You can also use `PiwikPRO/actions/allure/history_fast@master` action. 
+It uses **s5cmd** that is faster, but we are not 100% sure about stability. [Read more](allure/history_fast/README.md)
