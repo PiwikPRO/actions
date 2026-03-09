@@ -8,7 +8,6 @@
     - [Developers Portal](#developers-portal)
     - [Changelog](#changelog)
     - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
-    - [Dtools](#dtools)
     - [Godtools](#godtools)
       - [Setup](#setup)
       - [Login](#login)
@@ -137,7 +136,6 @@ jobs:
 
 It is possible to configure the step that using aws-cli binary to make the connection through proxy. To do this, you must set the appropriate [environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-proxy.html).
 
-
 Ready URIs are available under organization level secrets:
 
 ```
@@ -146,34 +144,33 @@ FORWARD_PROXY_HTTPS
 ```
 
 Example usage:
+
 ```yaml
+
 ...
-  steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4 # pin latest commit-hash
+steps:
+  - name: Check out repository code
+    uses: actions/checkout@v4 # pin latest commit-hash
 
-      # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO
-      - name: Download dtools
-        uses: PiwikPRO/actions/dtools/setup@master
-        with:
-          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
-          reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
-          reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
-          include-registry: acr # acr is default value, could be a list (ecr, acr, docker_hub, internal_acr)
+  # Copy-pasting this snippet is enough, as all of those variables are exposed on organization level in Piwik PRO
+  - name: Setup godtools
+    uses: PiwikPRO/actions/godtools/setup@master
+    with:
+      reporeader-private-key: ${{ secrets.REPOREADER_PRIVATE_KEY }}
+      reporeader-application-id: ${{ secrets.REPOREADER_APPLICATION_ID }}
 
-      - name: Download events
-        uses: PiwikPRO/actions/dtools/s3_download
-        env:
-          HTTP_PROXY: ${{ secrets.FORWARD_PROXY_HTTP }}
-          HTTPS_PROXY: ${{ secrets.FORWARD_PROXY_HTTPS }}
-        with:
-          dtools-token: ${{ secrets.DTOOLS_TOKEN }}
+  - name: Login to registries
+    uses: PiwikPRO/actions/godtools/login@master
+    env:
+      HTTP_PROXY: ${{ secrets.FORWARD_PROXY_HTTP }}
+      HTTPS_PROXY: ${{ secrets.FORWARD_PROXY_HTTPS }}
+    with:
+      godtools-config: ${{ secrets.GODTOOLS_CONFIG }}
+      godtools-key: ${{ secrets.GODTOOLS_KEY }}
+      registries: acr # default is "acr, docker-hub", could be a list (ecr, acr, docker-hub, internal-acr)
 ...
 ```
 
-### Dtools
-
-Dtools are deprecated now, please use [godtools](#godtools) instead.
 
 ### Godtools
 
