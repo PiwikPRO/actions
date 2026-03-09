@@ -34,6 +34,9 @@ inputs:
   matrix_block:
     required: false
     description: 'Optional field if someone uses a matrix in the repository'
+  s3-history-path:
+    required: false
+    description: 'Optional custom S3 history path. Defaults to retention/team/tests/history/workflow_ref/environment[/matrix_block]'
 
 outputs:
   total:
@@ -67,6 +70,16 @@ runs:
     - name: Set history path
       shell: bash
       run: |
+        CUSTOM_S3_HISTORY_PATH="${{ inputs.s3-history-path }}"
+        CUSTOM_S3_HISTORY_PATH="${CUSTOM_S3_HISTORY_PATH%/}"
+
+        if [ -n "${CUSTOM_S3_HISTORY_PATH}" ]; then
+          S3_HISTORY_PATH="${CUSTOM_S3_HISTORY_PATH}"
+          echo "Using custom S3 history path: ${S3_HISTORY_PATH}"
+          echo "S3_HISTORY_PATH=${S3_HISTORY_PATH}" >> $GITHUB_ENV
+          exit 0
+        fi
+
         # Sanitize matrix_block for S3 history path
         MATRIX_BLOCK_RAW="${{ inputs.matrix_block }}"
         MATRIX_BLOCK_SANITIZED="${MATRIX_BLOCK_RAW// /_}"

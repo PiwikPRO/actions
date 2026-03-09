@@ -28,4 +28,5 @@ We need to verify that this current implementation does not have any issues befo
     team: 'qa-team' # required field. cia/mit etc.
     enable-history: 'true'  # optional field. Default value is false. 
     retention: '60days' # optional field. Default value is 30days
+    s3-history-path: 'custom-prefix/qa-team/tests/history/my-shared-path' # optional; overrides default history path
 ```
