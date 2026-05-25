@@ -1,0 +1,53 @@
+name: "Build container image for python project"
+description: "Runs few python linter"
+inputs:
+  image:
+    description: Target image name
+    required: true
+  packages:
+    description: Space separated list of project packages to copy into context
+    required: true
+  base-image:
+    description: Base image
+    required: false
+    default: piwikpro.azurecr.io/framework/base-image:1.4.0
+  uv-version:
+    description: UV version
+    required: false
+    default: latest
+  cmd:
+    description: Dockerfile command (chell form)
+    required: true
+  build-dependencies:
+    description: Build dependencies to be installed by apt or apk
+    required: false
+    default: ""
+  run-dependencies:
+    description: Run dependencies to be installed by apt or apk
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Buildx
+      uses: docker/setup-buildx-action@master
+
+    - name: Build container image
+      uses: docker/build-push-action@master
+      with:
+        push: false
+        context: .
+        load: true
+        file: ${{ github.action_path }}/Dockerfile
+        tags: ${{ inputs.image }}
+        cache-from: "type=gha"
+        cache-to: "type=gha,mode=max"
+        build-args: |
+          BASE_IMAGE=${{ inputs.base-image }}
+          UV_VERSION=${{ inputs.uv-version }}
+          PACKAGES=${{ inputs.packages }}
+          ENTRYPOINT=${{ inputs.entrypoint }}
+          CMD=${{ inputs.cmd }}
+          BUILD_DEPENDENCIES=${{ inputs.build-dependencies }}
+          RUN_DEPENDENCIES=${{ inputs.run-dependencies }}
