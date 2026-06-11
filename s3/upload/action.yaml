@@ -35,6 +35,8 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - uses: unfor19/install-aws-cli-action@v1
+
     - name: Generate index.html if it doesn't exist
       if: ${{ inputs.echo-destination-index-html == 'true' }}
       shell: bash
