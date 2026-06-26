@@ -46,7 +46,7 @@ runs:
             echo "should_trigger=false" >> $GITHUB_OUTPUT
           fi
         else
-          # This is a push to dev branch
+          # This is a push to the development branch.
           SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "sha=$SHA" >> $GITHUB_OUTPUT
           echo "version=tmp-$SHA" >> $GITHUB_OUTPUT

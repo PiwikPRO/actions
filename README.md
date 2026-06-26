@@ -746,41 +746,44 @@ Main idea is to automate bumping explicit tmp images in stack repo to allow test
 
 **How It Works:**
 
-For **dev branch commits**: When a commit is pushed to the dev branch, it generates a version string like `tmp-cf3ebd52` and triggers the `update-service-version.yaml` workflow in the target repository.
+For **dev branch commits**: When a commit is pushed to the configured development branch and the image build succeeds, it generates a version string like `tmp-cf3ebd52` and triggers the `update-service-version.yaml` workflow in the target repository.
 
-For **tags**: When a tag is created, it extracts the tag name (e.g., `1.32.4`) and checks if the tagged commit exists in the dev branch using `git merge-base --is-ancestor`. If the commit exists in dev, it triggers the workflow with the tag name as version. If not, it skips triggering (assumes hotfix from master).
+For **tags**: When a tag is created, it extracts the tag name (e.g., `1.32.4`) and checks if the tagged commit exists in the configured development branch using `git merge-base --is-ancestor`. If the commit exists in that branch, it triggers the workflow with the tag name as version. If not, it skips triggering (assumes a hotfix released from `master` that has not been merged back yet).
 
 #### Usage
 
-```yaml .github/workflows/version_update.yaml
-name: Trigger version update
+```yaml .github/workflows/build_and_push.yaml
+name: Build and push the image
 
 on:
-  workflow_run:
-    # Name of the workflow that has to finish to trigger the version update  
-    workflows: ["Build and Test"]
-    types:
-      - completed
-    branches:
-      - develop
+  push:
 
 # explicitly limit action permissions 
 permissions:
   contents: read
 
 jobs:
-  trigger-update:
+  build-and-trigger:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Build and push image
+        run: ./build-and-push-image.sh
+
       - name: Trigger version update
+        if: ${{ github.ref_name == github.event.repository.default_branch || startsWith(github.ref, 'refs/tags/') }}
         uses: PiwikPRO/actions/version-update/trigger@master
         with:
           service-name: reporting
+          dev-branch: ${{ github.event.repository.default_branch }}
           target-repo: Promil-stack-analytics
           # Requires fine-grained PAT with "Actions: Read and write" permission as WORKFLOW_TRIGGER_TOKEN
           workflow-token: ${{ secrets.WORKFLOW_TRIGGER_TOKEN }}
 ```
+
+Place the action after the step that builds and pushes the image. This way version updates are only triggered after a successful image build, and skipped workflows do not need any extra handling inside the action. In the calling workflow, gate the step so it only runs for the development branch and for tags.
 
 #### Inputs
 
