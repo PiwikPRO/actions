@@ -746,41 +746,47 @@ Main idea is to automate bumping explicit tmp images in stack repo to allow test
 
 **How It Works:**
 
-For **dev branch commits**: When a commit is pushed to the dev branch, it generates a version string like `tmp-cf3ebd52` and triggers the `update-service-version.yaml` workflow in the target repository.
+For **dev branch commits**: When a commit is pushed to the configured development branch and the image build succeeds, it generates a version string like `tmp-cf3ebd52` and triggers the `update-service-version.yaml` workflow in the target repository.
 
-For **tags**: When a tag is created, it extracts the tag name (e.g., `1.32.4`) and checks if the tagged commit exists in the dev branch using `git merge-base --is-ancestor`. If the commit exists in dev, it triggers the workflow with the tag name as version. If not, it skips triggering (assumes hotfix from master).
+For **tags**: When a tag is created, it extracts the tag name (e.g., `1.32.4`) and checks if the tagged commit exists in the configured development branch using `git merge-base --is-ancestor`. If the commit exists in that branch, it triggers the workflow with the tag name as version. If not, it skips triggering (assumes a hotfix released from `master` that has not been merged back yet).
 
 #### Usage
 
-```yaml .github/workflows/version_update.yaml
-name: Trigger version update
-
-on:
-  workflow_run:
-    # Name of the workflow that has to finish to trigger the version update  
-    workflows: ["Build and Test"]
-    types:
-      - completed
-    branches:
-      - develop
-
-# explicitly limit action permissions 
-permissions:
-  contents: read
-
+```yaml .github/workflows/build_and_push.yaml
+name: Build and push the image
+on: push
 jobs:
-  trigger-update:
+  build:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - name: Build and push image
+        run: ./my-build-and-push-image.sh
+
+  trigger-version-update:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ needs.build.result == 'success' && (github.ref_name == github.event.repository.default_branch || startsWith(github.ref, 'refs/tags/')) }}
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: PiwikPRO/actions/github-app-token-generator@master
+        with:
+          private-key: ${{ secrets.ANALYTICS_RELEASER_VERSION_UPDATER_GH_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.ANALYTICS_RELEASER_VERSION_UPDATER_GH_APP_ID }}
+          repo: PiwikPRO/Promil-stack-analytics
       - name: Trigger version update
         uses: PiwikPRO/actions/version-update/trigger@master
         with:
-          service-name: reporting
+          service-name: name-of-the-app
+          dev-branch: ${{ github.event.repository.default_branch }}
           target-repo: Promil-stack-analytics
-          # Requires fine-grained PAT with "Actions: Read and write" permission as WORKFLOW_TRIGGER_TOKEN
-          workflow-token: ${{ secrets.WORKFLOW_TRIGGER_TOKEN }}
+          target-workflow-ref: develop
+          workflow-token: ${{ steps.app-token.outputs.token }}
 ```
+
+Place the action after the step that builds and pushes the image. This way version updates are only triggered after a successful image build, and skipped workflows do not need any extra handling inside the action. In the calling workflow, gate the step so it only runs for the development branch and for tags.
 
 #### Inputs
 
@@ -794,9 +800,12 @@ jobs:
 
 #### Requirements
 
-In the source repository (where this action runs):
-- A fine-grained GitHub PAT with "Actions: Read and write" permission (in usage example stored as `WORKFLOW_TRIGGER_TOKEN` secret)
-- The PAT must have access to the target repository
+Action requires `workflow-token`, but preferred way of obtaining that fine-grained PAT is via `app-id`/`private-key` of an GitHub App with access to target repo and triggerer repos.  
+In Analytics' example that's Promil-stack-analytics + Reporting, ETL, etc.  
+Example task for app creation: [SEC-2761](https://piwikpro.atlassian.net/browse/SEC-2761).  
+App needs permissions:
+- **Read** access to metadata
+- **Read** and **write** access to actions, code, and workflows
 
 In the target repository:
 - Must have an `update-service-version.yaml` workflow that accepts `service_name` and `version` inputs
