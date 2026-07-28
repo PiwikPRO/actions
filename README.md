@@ -7,6 +7,7 @@
       - [Update changelog](#update-changelog)
     - [Developers Portal](#developers-portal)
     - [Changelog](#changelog)
+    - [PR title](#pr-title)
     - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
     - [Godtools](#godtools)
       - [Setup](#setup)
@@ -131,6 +132,47 @@ jobs:
         uses: PiwikPRO/actions/changelog/update@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### PR title
+
+Validates a pull request title against the [Conventional Commits](https://www.conventionalcommits.org/) format.
+
+A title is accepted when it matches `type(scope)?!?: subject`, where:
+- `type` is on the allowed list (`types` input)
+- `scope` is optional, and by default may be anything
+- `!` after the type or scope marks a breaking change
+- `subject` starts with a lowercase letter and does not end with a period
+
+Inputs:
+
+| Input | Default | Description |
+| --- | --- | --- |
+| `types` | `feat\|fix\|perf\|refactor\|docs\|test\|build\|ci\|chore\|revert` | Pipe-separated list of allowed types. |
+| `scopes` | `*` | Pipe-separated list of allowed scopes. The default `*` accepts any scope. Set it only if you want to restrict scopes to a fixed list, e.g. `release\|changelog\|deps`. |
+
+Example usage:
+```
+name: Lint PR Title
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: PiwikPRO/actions/pr-title@master
 ```
 
 ### Using aws-cli with proxy
