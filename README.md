@@ -8,6 +8,7 @@
     - [Developers Portal](#developers-portal)
     - [Changelog](#changelog)
     - [PR title](#pr-title)
+    - [Gitlint](#gitlint)
     - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
     - [Godtools](#godtools)
       - [Setup](#setup)
@@ -173,6 +174,17 @@ jobs:
     if: github.event.pull_request.draft == false
     steps:
       - uses: PiwikPRO/actions/pr-title@master
+```
+
+### Gitlint
+
+Validates commit titles against the organization-wide policy. Titles must start with a ticket number, optionally prefixed with `bugfix/` or `feature/`, and cannot exceed 120 characters. Placeholder tickets `INT-1`, `INT-1337`, `INT-666`, and `INTERNAL-1` are rejected. Commit bodies are unrestricted.
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+  - name: Run gitlint
+    uses: PiwikPRO/actions/gitlint@master
 ```
 
 ### Using aws-cli with proxy

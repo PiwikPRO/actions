@@ -1,0 +1,26 @@
+name: Run gitlint
+description: Lint commit messages using the organization-wide policy
+
+runs:
+  using: composite
+  steps:
+    - name: Install gitlint
+      shell: bash
+      run: sudo apt-get install -y gitlint
+
+    - name: Run gitlint
+      shell: bash
+      run: gitlint --config "${{ github.action_path }}/.gitlint"
+
+    - name: Reject placeholder tickets
+      shell: bash
+      run: |
+        title="$(git log -1 --pretty=%s)"
+        [[ "$title" =~ ^((bugfix|feature)/)?([A-Z]+-[0-9]+)[[:space:]] ]]
+
+        case "${BASH_REMATCH[3]}" in
+          INT-1|INT-1337|INT-666|INTERNAL-1)
+            echo "::error::If you have time to make a commit, you have time to create a ticket"
+            exit 1
+            ;;
+        esac
