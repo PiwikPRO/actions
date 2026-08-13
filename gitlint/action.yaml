@@ -10,17 +10,35 @@ runs:
 
     - name: Run gitlint
       shell: bash
-      run: gitlint --config "${{ github.action_path }}/.gitlint"
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        if [[ -n "$BASE_SHA" && -n "$HEAD_SHA" ]]; then
+          git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA"
+          gitlint --config "${{ github.action_path }}/.gitlint" --commits "$BASE_SHA..$HEAD_SHA"
+        else
+          gitlint --config "${{ github.action_path }}/.gitlint"
+        fi
 
     - name: Reject placeholder tickets
       shell: bash
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
-        title="$(git log -1 --pretty=%s)"
-        [[ "$title" =~ ^((bugfix|feature)/)?([A-Z]+-[0-9]+)[[:space:]] ]]
+        range="-1"
+        if [[ -n "$BASE_SHA" && -n "$HEAD_SHA" ]]; then
+          range="$BASE_SHA..$HEAD_SHA"
+        fi
 
-        case "${BASH_REMATCH[3]}" in
-          INT-1|INT-1337|INT-666|INTERNAL-1)
-            echo "::error::If you have time to make a commit, you have time to create a ticket"
-            exit 1
-            ;;
-        esac
+        while IFS= read -r title; do
+          [[ "$title" =~ ^((bugfix|feature)/)?([A-Z]+-[0-9]+)[[:space:]] ]]
+
+          case "${BASH_REMATCH[3]}" in
+            INT-1|INT-1337|INT-666|INTERNAL-1)
+              echo "::error::If you have time to make a commit, you have time to create a ticket"
+              exit 1
+              ;;
+          esac
+        done < <(git log "$range" --pretty=%s)
