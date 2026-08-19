@@ -31,6 +31,7 @@
       - [Prettier](#prettier)
       - [ESLint](#eslint)
       - [Using Prettier and ESLint together](#using-prettier-and-eslint-together)
+      - [Bump NPM package version](#bump-npm-package-version)
     - [K6](#k6)
     - [Benchmarking](#benchmarking)
     - [Platform outdated dependencies notifier](#platform-outdated-dependencies-notifier)
@@ -673,6 +674,55 @@ When using both actions, install dependencies once and use `skip-install: true` 
         uses: PiwikPRO/actions/javascript/eslint@master
         with:
           skip-install: true
+```
+
+#### Bump NPM package version
+
+This action bumps the npm package version, pushes a release branch, and opens a pull request.
+It checks out the target branch with GitHub App credentials so the PR can trigger other workflows.
+Node.js and npm are expected to be available on the runner.
+
+```yaml
+      - name: Bump NPM package version
+        id: npm-bump
+        uses: PiwikPRO/actions/javascript/npm-bump@master
+        with:
+          version: patch
+          private-key: ${{ secrets.PIWIKPRO_GITHUB_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.PIWIKPRO_GITHUB_APP_ID }}
+```
+
+* `version` - semver level to bump: `patch`, `minor`, or `major` (default `patch`)
+* `base` - branch to bump from and open the PR against (default `master`)
+* `prefix` - prefix for the release branch (default `release-`)
+* `pr-title` - PR and commit title prefix; the new version is appended (default `chore: release`)
+* `commit-all` - if `true`, commit all changes; otherwise only `package.json` and lock/shrinkwrap files when present (default `false`)
+* `reviewers` - comma-separated GitHub users or teams (`org/team`) to request as reviewers
+* `private-key` - private key for the PiwikPRO GitHub app
+* `app-id` - app ID for the PiwikPRO GitHub app
+
+Outputs:
+
+* `pr-url` - URL of the created pull request
+* `version` - the bumped package version
+* `branch` - the release branch that was pushed
+
+```yaml
+      - name: Bump from master and request reviewers
+        id: npm-bump
+        uses: PiwikPRO/actions/javascript/npm-bump@master
+        with:
+          version: minor
+          base: master
+          reviewers: octocat,my-org/js-team
+          private-key: ${{ secrets.PIWIKPRO_GITHUB_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.PIWIKPRO_GITHUB_APP_ID }}
+
+      - name: Print bump result
+        run: |
+          echo "PR: ${{ steps.npm-bump.outputs.pr-url }}"
+          echo "Version: ${{ steps.npm-bump.outputs.version }}"
+          echo "Branch: ${{ steps.npm-bump.outputs.branch }}"
 ```
 
 ### K6

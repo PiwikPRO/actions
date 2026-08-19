@@ -1,0 +1,136 @@
+---
+name: "Bump NPM Package Version"
+description: "Bump the version of the package and create a PR with the changes"
+
+inputs:
+  version:
+    required: false
+    description: "The semver level to bump (patch, minor, or major)"
+    default: "patch"
+  base:
+    required: false
+    description: "Branch to bump from and open the PR against"
+    default: "master"
+  prefix:
+    required: false
+    description: "The prefix for the release branch"
+    default: "release-"
+  pr-title:
+    required: false
+    description: "The title for the PR. Version will be placed after this content"
+    default: "chore: release"
+  commit-all:
+    required: false
+    description: "If true, commit all changes. If false, only commit package.json and lock/shrinkwrap files when present."
+    default: "false"
+  reviewers:
+    required: false
+    description: "Comma-separated GitHub users or teams (org/team) to request as reviewers"
+    default: ""
+  private-key:
+    required: true
+    description: "The private key for the PiwikPRO GitHub app"
+  app-id:
+    required: true
+    description: "The app ID for the PiwikPRO GitHub app"
+
+outputs:
+  pr-url:
+    description: "URL of the created pull request"
+    value: ${{ steps.create-pr.outputs.pr-url }}
+  version:
+    description: "The bumped package version"
+    value: ${{ steps.bump.outputs.version }}
+  branch:
+    description: "The release branch that was pushed"
+    value: ${{ steps.bump.outputs.branch }}
+
+runs:
+  using: composite
+  steps:
+    - name: Generate PiwikPRO access tokens
+      uses: PiwikPRO/github-app-token-generator@v1
+      id: get-token
+      with:
+        private-key: ${{ inputs.private-key }}
+        app-id: ${{ inputs.app-id }}
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.base }}
+        token: ${{ steps.get-token.outputs.token }}
+
+    - name: Bump NPM package version
+      id: bump
+      shell: bash
+      env:
+        VERSION_LEVEL: ${{ inputs.version }}
+        BRANCH_PREFIX: ${{ inputs.prefix }}
+        PR_TITLE: ${{ inputs.pr-title }}
+        COMMIT_ALL: ${{ inputs.commit-all }}
+      run: |
+        set -euo pipefail
+
+        case "$VERSION_LEVEL" in
+          patch|minor|major) ;;
+          *)
+            echo "version must be patch, minor, or major (got: $VERSION_LEVEL)"
+            exit 1
+            ;;
+        esac
+
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git config user.name "GitHub Actions"
+
+        npm version "$VERSION_LEVEL" --no-git-tag-version
+
+        VERSION=$(node -p "require('./package.json').version")
+        BRANCH="${BRANCH_PREFIX}${VERSION}"
+
+        git checkout -b "$BRANCH"
+        if [ "${COMMIT_ALL}" = "true" ]; then
+          git add . # some repositories may have npm hooks creating/modifying files
+        else
+          git add package.json
+          if [ -f package-lock.json ]; then
+            git add package-lock.json
+          fi
+          if [ -f npm-shrinkwrap.json ]; then
+            git add npm-shrinkwrap.json
+          fi
+        fi
+        git commit -m "${PR_TITLE} ${VERSION}"
+
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+        echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+    - name: Create NPM release PR
+      id: create-pr
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.get-token.outputs.token }}
+        BRANCH: ${{ steps.bump.outputs.branch }}
+        VERSION: ${{ steps.bump.outputs.version }}
+        REVIEWERS: ${{ inputs.reviewers }}
+        PR_TITLE: ${{ inputs.pr-title }}
+        BASE: ${{ inputs.base }}
+      run: |
+        set -euo pipefail
+
+        git push origin "HEAD:refs/heads/${BRANCH}"
+
+        pr_args=(
+          pr create
+          --title "${PR_TITLE} ${VERSION}"
+          --base "$BASE"
+          --body "This PR was created by the npm-bump action."
+          --head "$BRANCH"
+        )
+        if [ -n "${REVIEWERS}" ]; then
+          pr_args+=(--reviewer "${REVIEWERS}")
+        fi
+
+        PR_URL=$(gh "${pr_args[@]}")
+        echo "::notice::Pull request created: ${PR_URL}"
+        echo "pr-url=${PR_URL}" >> "$GITHUB_OUTPUT"
