@@ -18,7 +18,7 @@ inputs:
   pr-title:
     required: false
     description: "The title for the PR. Version will be placed after this content"
-    default: "chore: release"
+    default: "chore: bump package version to"
   commit-all:
     required: false
     description: "If true, commit all changes. If false, only commit package.json and lock/shrinkwrap files when present."
