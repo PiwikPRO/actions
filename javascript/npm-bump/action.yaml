@@ -27,12 +27,6 @@ inputs:
     required: false
     description: "Comma-separated GitHub users or teams (org/team) to request as reviewers"
     default: ""
-  private-key:
-    required: true
-    description: "The private key for the PiwikPRO GitHub app"
-  app-id:
-    required: true
-    description: "The app ID for the PiwikPRO GitHub app"
 
 outputs:
   pr-url:
@@ -48,18 +42,10 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Generate PiwikPRO access tokens
-      uses: PiwikPRO/github-app-token-generator@v1
-      id: get-token
-      with:
-        private-key: ${{ inputs.private-key }}
-        app-id: ${{ inputs.app-id }}
-
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         ref: ${{ inputs.base }}
-        token: ${{ steps.get-token.outputs.token }}
 
     - name: Bump NPM package version
       id: bump
@@ -109,7 +95,7 @@ runs:
       id: create-pr
       shell: bash
       env:
-        GH_TOKEN: ${{ steps.get-token.outputs.token }}
+        GH_TOKEN: ${{ github.token }}
         BRANCH: ${{ steps.bump.outputs.branch }}
         VERSION: ${{ steps.bump.outputs.version }}
         REVIEWERS: ${{ inputs.reviewers }}

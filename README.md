@@ -678,9 +678,9 @@ When using both actions, install dependencies once and use `skip-install: true` 
 
 #### Bump NPM package version
 
-This action bumps the npm package version, pushes a release branch, and opens a pull request.
-It checks out the target branch with GitHub App credentials so the PR can trigger other workflows.
-Node.js and npm are expected to be available on the runner.
+This action bumps the npm package version, pushes a release branch, and opens a pull request in the same repository.
+It checks out the target branch. Node.js and npm are expected to be available on the runner.
+The calling workflow needs `contents: write` and `pull-requests: write` permissions.
 
 ```yaml
       - name: Bump NPM package version
@@ -688,8 +688,6 @@ Node.js and npm are expected to be available on the runner.
         uses: PiwikPRO/actions/javascript/npm-bump@master
         with:
           version: patch
-          private-key: ${{ secrets.PIWIKPRO_GITHUB_APP_PRIVATE_KEY }}
-          app-id: ${{ secrets.PIWIKPRO_GITHUB_APP_ID }}
 ```
 
 * `version` - semver level to bump: `patch`, `minor`, or `major` (default `patch`)
@@ -698,8 +696,6 @@ Node.js and npm are expected to be available on the runner.
 * `pr-title` - PR and commit title prefix; the new version is appended (default `chore: release`)
 * `commit-all` - if `true`, commit all changes; otherwise only `package.json` and lock/shrinkwrap files when present (default `false`)
 * `reviewers` - comma-separated GitHub users or teams (`org/team`) to request as reviewers
-* `private-key` - private key for the PiwikPRO GitHub app
-* `app-id` - app ID for the PiwikPRO GitHub app
 
 Outputs:
 
@@ -715,8 +711,6 @@ Outputs:
           version: minor
           base: master
           reviewers: octocat,my-org/js-team
-          private-key: ${{ secrets.PIWIKPRO_GITHUB_APP_PRIVATE_KEY }}
-          app-id: ${{ secrets.PIWIKPRO_GITHUB_APP_ID }}
 
       - name: Print bump result
         run: |
