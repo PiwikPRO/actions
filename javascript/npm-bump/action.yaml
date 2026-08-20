@@ -14,7 +14,7 @@ inputs:
   prefix:
     required: false
     description: "The prefix for the release branch"
-    default: "release-"
+    default: "bump-npm-version-"
   pr-title:
     required: false
     description: "The title for the PR. Version will be placed after this content"
