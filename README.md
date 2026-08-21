@@ -692,8 +692,9 @@ The calling workflow needs `contents: write` and `pull-requests: write` permissi
 
 * `version` - semver level to bump: `patch`, `minor`, or `major` (default `patch`)
 * `base` - branch to bump from and open the PR against (default `master`)
-* `prefix` - prefix for the release branch (default `release-`)
-* `pr-title` - PR and commit title prefix; the new version is appended (default `chore: release`)
+* `working-directory` - directory containing the `package.json` to bump, relative to the repository root; useful for npm workspaces where the published package lives in a subdirectory (default `.`)
+* `prefix` - prefix for the release branch (default `bump-npm-version-`)
+* `pr-title` - PR and commit title prefix; the new version is appended (default `NPM-1: bump package version to`)
 * `commit-all` - if `true`, commit all changes; otherwise only `package.json` and lock/shrinkwrap files when present (default `false`)
 * `reviewers` - comma-separated GitHub users or teams (`org/team`) to request as reviewers
 
@@ -717,6 +718,16 @@ Outputs:
           echo "PR: ${{ steps.npm-bump.outputs.pr-url }}"
           echo "Version: ${{ steps.npm-bump.outputs.version }}"
           echo "Branch: ${{ steps.npm-bump.outputs.branch }}"
+```
+
+For npm workspaces where the published `package.json` lives in a subdirectory rather than the repository root:
+
+```yaml
+      - name: Bump NPM package version
+        uses: PiwikPRO/actions/javascript/npm-bump@master
+        with:
+          version: patch
+          working-directory: projects/my-package
 ```
 
 ### K6
