@@ -11,6 +11,10 @@ inputs:
     required: false
     description: "Branch to bump from and open the PR against"
     default: "master"
+  working-directory:
+    required: false
+    description: "Directory containing the package.json to bump, relative to the repository root"
+    default: "."
   prefix:
     required: false
     description: "The prefix for the release branch"
@@ -50,6 +54,7 @@ runs:
     - name: Bump NPM package version
       id: bump
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
         VERSION_LEVEL: ${{ inputs.version }}
         BRANCH_PREFIX: ${{ inputs.prefix }}
