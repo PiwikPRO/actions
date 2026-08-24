@@ -679,7 +679,7 @@ When using both actions, install dependencies once and use `skip-install: true` 
 #### Bump NPM package version
 
 This action bumps the npm package version, pushes a release branch, and opens a pull request in the same repository.
-It checks out the target branch. Node.js and npm are expected to be available on the runner.
+It checks out the target branch and runs `npm ci`, since some packages run scripts on `npm version` (e.g. changelog generation) that depend on installed dependencies. Node.js and npm are expected to be available on the runner.
 The calling workflow needs `contents: write` and `pull-requests: write` permissions.
 
 ```yaml
