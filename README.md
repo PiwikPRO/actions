@@ -863,7 +863,7 @@ Main idea is to automate bumping explicit tmp images in stack repo to allow test
 
 For **dev branch commits**: When a commit is pushed to the configured development branch and the image build succeeds, it generates a version string like `tmp-cf3ebd52` and triggers the `update-service-version.yaml` workflow in the target repository.
 
-For **tags**: When a tag is created, it extracts the tag name (e.g., `1.32.4`) and checks if the tagged commit exists in the configured development branch using `git merge-base --is-ancestor`. If the commit exists in that branch, it triggers the workflow with the tag name as version. If not, it skips triggering (assumes a hotfix released from `master` that has not been merged back yet).
+For **tags**: When any tag is created, including a hotfix tag, it triggers the workflow with the tag name (e.g., `1.32.4`) as the version.
 
 #### Usage
 
@@ -895,13 +895,12 @@ jobs:
         uses: PiwikPRO/actions/version-update/trigger@master
         with:
           service-name: name-of-the-app
-          dev-branch: ${{ github.event.repository.default_branch }}
           target-repo: Promil-stack-analytics
           target-workflow-ref: develop
           workflow-token: ${{ steps.app-token.outputs.token }}
 ```
 
-Place the action after the step that builds and pushes the image. This way version updates are only triggered after a successful image build, and skipped workflows do not need any extra handling inside the action. In the calling workflow, gate the step so it only runs for the development branch and for tags.
+Place the action after the step that builds and pushes the image so version updates are only triggered after a successful image build. In the calling workflow, gate the step so it only runs for the development branch and for tags. Every tag is dispatched, including hotfix tags.
 
 #### Inputs
 
@@ -910,7 +909,6 @@ Place the action after the step that builds and pushes the image. This way versi
 | `service-name` | Name of the service to update (e.g., etl, reporting, ui) | Yes | -         |
 | `target-repo` | Target repository to trigger workflow in | Yes | -         |
 | `workflow-token` | GitHub token with workflow dispatch permissions (fine-grained PAT with "Actions: Read and write") | Yes | -         |
-| `dev-branch` | Name of the development branch to validate tags against | No | `develop` |
 | `target-workflow-ref` | Git ref to use when triggering the target workflow | No | `develop` |
 
 #### Requirements
