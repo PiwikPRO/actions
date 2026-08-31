@@ -202,6 +202,10 @@ class DockerPlantUMLGenerator:
                 [
                     "docker",
                     "run",
+                    # Since v1.2026.7 the plantuml image runs as non-root (uid 1000),
+                    # which cannot write to the mounted mkdtemp dir; run as the host user.
+                    "--user",
+                    f"{os.getuid()}:{os.getgid()}",
                     "-v",
                     f"{os.path.dirname(source_puml_abs)}:/src",
                     "-v",
