@@ -32,7 +32,7 @@ runs:
   using: "composite"
   steps:
     - name: Install Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v7
       with:
         go-version: ${{ inputs.go-version }}
 
@@ -53,7 +53,7 @@ runs:
         GOARCH: ${{ inputs.goarch }}
 
     - name: Release the binary if on tag
-      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+      uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: ${{ inputs.binary-name }}
@@ -65,7 +65,7 @@ runs:
         sha256sum ${{ inputs.binary-name }} | awk '{ printf "%s", $1 }' > ${{ inputs.binary-name }}.checksum
 
     - name: Release the binary checksum if on tag
-      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+      uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
       if: startsWith(github.ref, 'refs/tags/') && ${{ inputs.generate-checksum == 'true' }}
       with:
         files: ${{ inputs.binary-name }}.checksum
