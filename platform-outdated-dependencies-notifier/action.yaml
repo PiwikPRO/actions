@@ -11,13 +11,13 @@ runs:
   using: "composite"
   steps:
     - name: Checkout platform repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         path: platform
         token: ${{ inputs.github-token-platform }}
 
     - name: Checkout chart repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         repository: PiwikPRO/Promil-helm-chart-repository-source
         path: charts
@@ -46,18 +46,22 @@ runs:
                 done
             fi
         done
-        echo "::set-output name=comment::$comment"
+        {
+          echo "comment<<EOF"
+          echo "$comment"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Create comment
       if: steps.check.outputs.comment != ''
-      uses: actions/github-script@v3
+      uses: actions/github-script@v9
       with:
         github-token: ${{ inputs.github-token-platform }}
         script: |
           const comment = `
           ${process.env.COMMENT.split('\\n').join('\n')}
           `;
-          github.issues.createComment({
+          github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
