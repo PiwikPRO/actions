@@ -8,6 +8,7 @@
     - [Developers Portal](#developers-portal)
     - [Changelog](#changelog)
     - [PR title](#pr-title)
+    - [PR description](#pr-description)
     - [Gitlint](#gitlint)
     - [Using aws-cli with proxy](#using-aws-cli-with-proxy)
     - [Godtools](#godtools)
@@ -173,6 +174,47 @@ jobs:
     if: github.event.pull_request.draft == false
     steps:
       - uses: PiwikPRO/actions/pr-title@master
+```
+
+### PR description
+
+Idempotently upserts a marked markdown block into a pull request's body, and optionally prefixes its title. Replaces `tzkhan/pr-update-action` (unmaintained, node12): reruns replace their own block in place via an HTML-comment marker instead of matching on the rendered body text, so a value that changes between runs (a timestamp, a commit SHA) no longer causes the block to stack. Resolve any variables (branch name, S3 path, etc.) into `body` before passing it in - the action does no templating itself.
+
+Inputs:
+
+| Input | Default | Description |
+| --- | --- | --- |
+| `github-token` | | GitHub token with pull-requests write permission. |
+| `marker` | | Stable id for this block (e.g. `jira-link`, `screenshot-comparison`). Scopes the upsert so multiple callers can coexist and so reruns replace rather than stack. |
+| `body` | | Markdown content to upsert. |
+| `title-prefix` | `""` | Optional literal string to ensure is prefixed onto the PR title, idempotently. |
+
+Example usage:
+```
+name: Add Jira issue link to PR description
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  update-pr-template:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Extract Jira issue link
+        id: extract-jira-link
+        run: |
+          ISSUE_KEY=$(echo "${GITHUB_HEAD_REF}" | grep -oE '[A-Z]+-[0-9]+')
+          echo "JIRA_LINK=https://piwikpro.atlassian.net/browse/$ISSUE_KEY" >> "$GITHUB_ENV"
+      - uses: PiwikPRO/actions/pr/update-description@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          marker: jira-link
+          body: |
+            ### Related Issue
+
+            [Related Jira Issue](${{ env.JIRA_LINK }})
 ```
 
 ### Gitlint
