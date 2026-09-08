@@ -178,7 +178,7 @@ jobs:
 
 ### PR description
 
-Idempotently upserts a marked markdown block into a pull request's body, and optionally prefixes its title. Replaces `tzkhan/pr-update-action` (unmaintained, node12): reruns replace their own block in place via an HTML-comment marker instead of matching on the rendered body text, so a value that changes between runs (a timestamp, a commit SHA) no longer causes the block to stack. Resolve any variables (branch name, S3 path, etc.) into `body` before passing it in - the action does no templating itself.
+Idempotently upserts a marked markdown block into a pull request's body, and optionally prefixes its title. 
 
 Inputs:
 
