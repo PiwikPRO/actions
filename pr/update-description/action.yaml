@@ -1,0 +1,50 @@
+name: Update PR description
+description: Idempotently upsert a marked markdown block into a pull request's body, and optionally prefix its title
+inputs:
+  github-token:
+    required: true
+    description: GitHub token with pull-requests write permission
+  marker:
+    required: true
+    description: Stable id for this block (e.g. "jira-link", "screenshot-comparison") - scopes the upsert so multiple callers can coexist and so reruns replace rather than stack
+  body:
+    required: true
+    description: Markdown content to upsert. Resolve any variables (branch name, S3 path, etc.) before passing it in.
+  title-prefix:
+    required: false
+    description: Optional literal string to ensure is prefixed onto the PR title, idempotently
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/github-script@v9
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const marker = '${{ inputs.marker }}';
+          const start = `<!-- pr-update-action:${marker}:start -->`;
+          const end = `<!-- pr-update-action:${marker}:end -->`;
+          const block = `${start}\n${{ toJSON(inputs.body) }}\n${end}`;
+
+          const { data: pr } = await github.rest.pulls.get({
+            ...context.repo,
+            pull_number: context.issue.number,
+          });
+
+          const body = pr.body ?? '';
+          const re = new RegExp(`${start}[\\s\\S]*?${end}`);
+          const newBody = re.test(body) ? body.replace(re, block) : `${body}\n\n${block}`.trim();
+
+          const titlePrefix = '${{ inputs.title-prefix }}';
+          const newTitle = titlePrefix && !pr.title.startsWith(titlePrefix)
+            ? `${titlePrefix} ${pr.title}`
+            : pr.title;
+
+          if (newBody !== body || newTitle !== pr.title) {
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_number: context.issue.number,
+              body: newBody,
+              title: newTitle,
+            });
+          }
