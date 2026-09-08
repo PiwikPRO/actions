@@ -18,13 +18,17 @@ runs:
   using: "composite"
   steps:
     - uses: actions/github-script@v9
+      env:
+        PR_UPDATE_MARKER: ${{ inputs.marker }}
+        PR_UPDATE_BODY: ${{ inputs.body }}
+        PR_UPDATE_TITLE_PREFIX: ${{ inputs.title-prefix }}
       with:
         github-token: ${{ inputs.github-token }}
         script: |
-          const marker = '${{ inputs.marker }}';
+          const marker = process.env.PR_UPDATE_MARKER;
           const start = `<!-- pr-update-action:${marker}:start -->`;
           const end = `<!-- pr-update-action:${marker}:end -->`;
-          const block = `${start}\n${{ toJSON(inputs.body) }}\n${end}`;
+          const block = `${start}\n${process.env.PR_UPDATE_BODY}\n${end}`;
 
           const { data: pr } = await github.rest.pulls.get({
             ...context.repo,
@@ -33,9 +37,9 @@ runs:
 
           const body = pr.body ?? '';
           const re = new RegExp(`${start}[\\s\\S]*?${end}`);
-          const newBody = re.test(body) ? body.replace(re, block) : `${body}\n\n${block}`.trim();
+          const newBody = re.test(body) ? body.replace(re, block) : `${block}\n\n${body}`.trim();
 
-          const titlePrefix = '${{ inputs.title-prefix }}';
+          const titlePrefix = process.env.PR_UPDATE_TITLE_PREFIX;
           const newTitle = titlePrefix && !pr.title.startsWith(titlePrefix)
             ? `${titlePrefix} ${pr.title}`
             : pr.title;
