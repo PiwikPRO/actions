@@ -1,6 +1,10 @@
 name: 'Setup integration tests'
 description: 'Sets up golang, python, installs local python package'
 inputs:
+  go-version:
+    required: false
+    default: 1.25.x
+    description: Go version
   test-directory:
     required: false
     description: Name of the directory the tests are stored in
@@ -15,7 +19,7 @@ runs:
     - name: Install Go
       uses: actions/setup-go@v7
       with:
-        go-version: "1.25.x"
+        go-version: ${{ inputs.go-version }}
 
     - name: Install uv
       uses: astral-sh/setup-uv@v10.0.1
