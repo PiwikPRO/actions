@@ -502,6 +502,9 @@ Example usage:
 
       - name: Setup integration tests
         uses: PiwikPRO/actions/go/setup/integration@master
+        with:
+          # Optional - must match the version required by your go.mod
+          go-version: 1.25.x
 
       - name: Run integration tests
         env:
