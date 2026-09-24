@@ -551,8 +551,7 @@ Lints and checks formatting of python code with [Ruff](https://docs.astral.sh/ru
   * `ruff check` - linter, reported as annotations in pull requests.
   * `ruff format --diff` - formatter check, runs even when the linter fails.
 
-Ruff configuration is taken from the repository (`ruff.toml`, `.ruff.toml` or `[tool.ruff]` section in `pyproject.toml` in `working-directory`). When the repository config exists, it is used as is - no defaults from this action are merged into it.
-If there is no configuration, the action prints a notice and falls back to settings compatible with the legacy linters:
+It prioritize ruff config from files: `ruff.toml` > `.ruff.toml` > `[tool.ruff]` section in `pyproject.toml`. If there is no configuration, the action prints a notice and falls back to settings compatible with the legacy linters:
 
 ```toml
 [tool.ruff]
@@ -564,8 +563,8 @@ select = ["E", "W", "F", "I", "C90"]
 mccabe.max-complexity = 10
 ```
 
-The python target version is inferred by Ruff from `requires-python` in `pyproject.toml`.
-Ruff version is resolved in order: `ruff-version` input, `uv.lock`, `pyproject.toml` dependencies, latest.
+The python target taken from `requires-python` in `pyproject.toml`, with fallback to legacy.
+Ruff version is resolved in order: `ruff-version` input > `uv.lock` > `pyproject.toml` dependencies > latest.
 
 Inputs:
 | Input | Default | Description |
@@ -587,15 +586,7 @@ Example usage:
 ...
 ```
 
-**Migrating from isort/black/flake8**
-
-The action used to run isort, black and flake8. To migrate to Ruff:
-1. Optionally add a `[tool.ruff]` section to `pyproject.toml` (the fallback above is a good starting point) and add `ruff` to your dev dependencies (`uv add --dev ruff`) to pin its version.
-2. Run `uvx ruff check --fix . && uvx ruff format .` and commit the result.
-3. Add that commit hash to `.git-blame-ignore-revs` to keep `git blame` useful.
-4. Remove `use-black`, `use-flake` and `use-isort` inputs from your workflow.
-
-If you cannot migrate yet, keep the old behaviour with (it will print a deprecation warning):
+If you cannot migrate yet, you can turn on legacy linters with `use-legacy`:
 ```yaml
       - name: Run linters
         uses: PiwikPRO/actions/python/lint@master
@@ -603,20 +594,6 @@ If you cannot migrate yet, keep the old behaviour with (it will print a deprecat
           use-legacy: true
 ```
 
-**Configure VSCode**
-
-Install the [Ruff extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff); it picks up the repository configuration automatically. Optionally set it as the formatter in `ctrl+shift+p -> Preferences: Open settings (JSON)`:
-```
-{
-    "[python]": {
-        "editor.defaultFormatter": "charliermarsh.ruff",
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "explicit"
-        }
-    }
-}
-```
 
 #### QA-Lint
 
