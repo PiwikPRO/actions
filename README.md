@@ -586,6 +586,8 @@ Example usage:
 ...
 ```
 
+**All python projects should use uv with ruff.**
+
 If you cannot migrate yet, you can turn on legacy linters with `use-legacy`:
 ```yaml
       - name: Run linters
