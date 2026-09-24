@@ -37,9 +37,9 @@
     - [Trigger version update](#trigger-version-update)
     - [1Password](#1Password)
       - [Get kubeconfig](#get-kubeconfig)
-    - [Helm]
+    - [Helm](#helm)
       - [Extract PiwikPRO CRDs](#extract-piwikpro-crds)
-    - [Slack]
+    - [Slack](#slack)
       - [Sending slack message to any channel](#slack)
     - [Allure](#allure)
       - [Generating allure report](#allure)
