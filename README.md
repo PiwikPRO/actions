@@ -547,11 +547,33 @@ Example usage:
 
 #### Lint
 
-Run various python linters:
-  * Flake8 - Check against pep8 violation (https://flake8.pycqa.org/en/latest/).
-  * Black - Enforce `Black` code style (https://black.readthedocs.io/en/stable/).
-  * Isort - Sort and format imports (https://pycqa.github.io/isort/).
+Lints and checks formatting of python code with [Ruff](https://docs.astral.sh/ruff/):
+  * `ruff check` - linter, reported as annotations in pull requests.
+  * `ruff format --diff` - formatter check, runs even when the linter fails.
 
+Ruff configuration is taken from the repository (`ruff.toml`, `.ruff.toml` or `[tool.ruff]` section in `pyproject.toml` in `working-directory`). When the repository config exists, it is used as is - no defaults from this action are merged into it.
+If there is no configuration, the action prints a notice and falls back to settings compatible with the legacy linters:
+
+```toml
+[tool.ruff]
+line-length = 100
+extend-exclude = ["*build*", "*artifacts*"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "C90"]
+mccabe.max-complexity = 10
+```
+
+The python target version is inferred by Ruff from `requires-python` in `pyproject.toml`.
+Ruff version is resolved in order: `ruff-version` input, `uv.lock`, `pyproject.toml` dependencies, latest.
+
+Inputs:
+| Input | Default | Description |
+|-------|---------|-------------|
+| `ruff-version` | `""` | Version of Ruff, e.g. `0.9.1`. Empty means lookup from `uv.lock`/`pyproject.toml`, else latest |
+| `working-directory` | `.` | Where to run Ruff and look for its configuration |
+| `use-legacy` | `false` | **Deprecated.** Run the old isort/black/flake8 linters instead of Ruff |
+| `python-version`, `use-black`, `use-flake`, `use-isort` | | Used only with `use-legacy: true` |
 
 Example usage:
 ```yaml
@@ -560,51 +582,41 @@ Example usage:
       - name: Check out repository code
         uses: actions/checkout@v4 # pin latest commit-hash
 
-      # Simple linting, uses predefined configuration file from this repository:
       - name: Run linters
         uses: PiwikPRO/actions/python/lint@master
-        with:
-          use-black: true
-          use-flake: true
-          use-isort: true
-
 ...
 ```
 
-**Configure VSCode to use common linter configuration**
+**Migrating from isort/black/flake8**
 
-You can configure your local environment to use common configuration placed in this repository.
-First, make sure, that `black formatter` and `flake8` extenstions are downloaded and available.
-Then clone this repository and set apropriate settings in preferences:
+The action used to run isort, black and flake8. To migrate to Ruff:
+1. Optionally add a `[tool.ruff]` section to `pyproject.toml` (the fallback above is a good starting point) and add `ruff` to your dev dependencies (`uv add --dev ruff`) to pin its version.
+2. Run `uvx ruff check --fix . && uvx ruff format .` and commit the result.
+3. Add that commit hash to `.git-blame-ignore-revs` to keep `git blame` useful.
+4. Remove `use-black`, `use-flake` and `use-isort` inputs from your workflow.
 
-`ctrl+shift+p -> Preferences: Open settings (JSON)`
+If you cannot migrate yet, keep the old behaviour with (it will print a deprecation warning):
+```yaml
+      - name: Run linters
+        uses: PiwikPRO/actions/python/lint@master
+        with:
+          use-legacy: true
+```
 
-and set:
+**Configure VSCode**
+
+Install the [Ruff extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff); it picks up the repository configuration automatically. Optionally set it as the formatter in `ctrl+shift+p -> Preferences: Open settings (JSON)`:
 ```
 {
-    "black-formatter.args": [
-        "--config",
-        "/home/kosto/Projects/promil/actions/python/lint/pyproject.toml"
-    ],
-    "editor.formatOnSave": true,
-    "flake8.args": [
-        "--config",
-        "/home/kosto/Projects/promil/actions/python/lint/flake8.ini"
-    ],
-    "isort.args": [
-        "--profile",
-        "black",
-        "--sp",
-        "/home/kosto/Projects/promil/actions/python/lint/.isort.cfg"
-    ],
     "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
-            "source.organizeImports": true
+            "source.organizeImports": "explicit"
         }
     }
 }
 ```
-Replace `/home/kkaragiorgis/Projects/promil` to wherever you cloned `actions` repository.
 
 #### QA-Lint
 

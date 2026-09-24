@@ -1,44 +1,120 @@
 name: 'Lint python project'
-description: 'Runs few python linter'
+description: 'Runs ruff linter and formatter check (or legacy isort/black/flake8)'
 inputs:
+  use-legacy:
+    required: false
+    description: Use deprecated isort/black/flake8 linters instead of ruff
+    default: "false"
+  ruff-version:
+    required: false
+    description: Version of ruff. When empty, read from uv.lock or pyproject.toml, else latest
+    default: ""
+  working-directory:
+    required: false
+    description: Where to run ruff and look for its configuration
+    default: "."
   python-version:
     required: false
-    description: Version of python
+    description: Version of python (legacy only)
     default: "3.10.x"
   use-black:
     required: false
-    description: Use black linter
+    description: Use black linter (legacy only)
     default: true
   use-flake:
     required: false
-    description: Use Flake8 linter
+    description: Use Flake8 linter (legacy only)
     default: true
   use-isort:
     required: false
-    description: Use Isort linter
+    description: Use Isort linter (legacy only)
     default: true
 runs:
   using: "composite"
   steps:
+    - name: Warn about legacy linters
+      if: ${{ inputs.use-legacy == 'true' }}
+      shell: bash
+      run: echo "::warning title=Deprecated python linters::use-legacy is deprecated and will be removed. Migrate to ruff by removing the use-legacy input, see https://github.com/PiwikPRO/actions#lint-1"
     - name: Install Python
+      if: ${{ inputs.use-legacy == 'true' }}
       uses: actions/setup-python@v7
       with:
         python-version: ${{ inputs.python-version }}
     - name: Run isort linter
-      if: ${{ inputs.use-isort == 'true' }}
+      if: ${{ inputs.use-legacy == 'true' && inputs.use-isort == 'true' }}
       uses: isort/isort-action@f555d1d11ca0529654eb6d1f017f9e4a269ffa7f
       with:
         configuration: --check-only --diff --settings-path ${{ github.action_path }}/.isort.cfg
-        requirementsFiles: ${{ inputs.requirements_files }} 
+        requirementsFiles: ${{ inputs.requirements_files }}
     - name: Run Black linter
-      if: ${{ inputs.use-black == 'true' }}
+      if: ${{ inputs.use-legacy == 'true' && inputs.use-black == 'true' }}
       uses: psf/black@ae2c0758c9e61a385df9700dc9c231bf54887041
       with:
         options: --check --config ${{ github.action_path }}/pyproject.toml
         src: "."
         version: 23.12.1
     - name: Run flake8 linter
-      if: ${{ inputs.use-flake == 'true' }}
+      if: ${{ inputs.use-legacy == 'true' && inputs.use-flake == 'true' }}
       uses: py-actions/flake8@6b71483a8fe60d4cb967d3aa4ee56e5e52711d30
       with:
         args: "--config ${{ github.action_path }}/flake8.ini"
+
+    - name: Detect ruff configuration
+      id: detect
+      if: ${{ inputs.use-legacy != 'true' }}
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: |
+        if [ -f uv.lock ]; then
+          echo "version-file=$PWD/uv.lock" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f ruff.toml ] || [ -f .ruff.toml ] || { [ -f pyproject.toml ] && grep -q '^\[tool\.ruff' pyproject.toml; }; then
+          echo "has-config=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has-config=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=No ruff configuration::No ruff configuration found in '$WORKING_DIRECTORY', using defaults compatible with the legacy linters (line-length=100, select=E,W,F,I,C90, max-complexity=10). Add a [tool.ruff] section to pyproject.toml to customize."
+        fi
+    - name: Install ruff
+      if: ${{ inputs.use-legacy != 'true' }}
+      uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
+      with:
+        version: ${{ inputs.ruff-version }}
+        version-file: ${{ inputs.ruff-version == '' && steps.detect.outputs.version-file || '' }}
+        src: ${{ inputs.working-directory }}
+        args: "--version"
+    - name: Run ruff linter
+      id: ruff-check
+      if: ${{ inputs.use-legacy != 'true' }}
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        HAS_CONFIG: ${{ steps.detect.outputs.has-config }}
+      run: |
+        args=()
+        if [ "$HAS_CONFIG" != "true" ]; then
+          args=(
+            --config 'line-length = 100'
+            --config 'extend-exclude = ["*build*", "*artifacts*"]'
+            --config 'lint.select = ["E", "W", "F", "I", "C90"]'
+            --config 'lint.mccabe.max-complexity = 10'
+          )
+        fi
+        ruff check --output-format github "${args[@]}" .
+    - name: Run ruff formatter
+      if: ${{ !cancelled() && inputs.use-legacy != 'true' && (steps.ruff-check.outcome == 'success' || steps.ruff-check.outcome == 'failure') }}
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        HAS_CONFIG: ${{ steps.detect.outputs.has-config }}
+      run: |
+        args=()
+        if [ "$HAS_CONFIG" != "true" ]; then
+          args=(
+            --config 'line-length = 100'
+            --config 'extend-exclude = ["*build*", "*artifacts*"]'
+          )
+        fi
+        ruff format --diff "${args[@]}" .
