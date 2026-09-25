@@ -37,9 +37,9 @@
     - [Trigger version update](#trigger-version-update)
     - [1Password](#1Password)
       - [Get kubeconfig](#get-kubeconfig)
-    - [Helm]
+    - [Helm](#helm)
       - [Extract PiwikPRO CRDs](#extract-piwikpro-crds)
-    - [Slack]
+    - [Slack](#slack)
       - [Sending slack message to any channel](#slack)
     - [Allure](#allure)
       - [Generating allure report](#allure)
@@ -547,11 +547,32 @@ Example usage:
 
 #### Lint
 
-Run various python linters:
-  * Flake8 - Check against pep8 violation (https://flake8.pycqa.org/en/latest/).
-  * Black - Enforce `Black` code style (https://black.readthedocs.io/en/stable/).
-  * Isort - Sort and format imports (https://pycqa.github.io/isort/).
+Lints and checks formatting of python code with [Ruff](https://docs.astral.sh/ruff/):
+  * `ruff check` - linter, reported as annotations in pull requests.
+  * `ruff format --diff` - formatter check, runs even when the linter fails.
 
+It prioritize ruff config from files: `ruff.toml` > `.ruff.toml` > `[tool.ruff]` section in `pyproject.toml`. If there is no configuration, the action prints a notice and falls back to settings compatible with the legacy linters:
+
+```toml
+[tool.ruff]
+line-length = 100
+extend-exclude = ["*build*", "*artifacts*"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "C90"]
+mccabe.max-complexity = 10
+```
+
+The python target taken from `requires-python` in `pyproject.toml`, with fallback to legacy.
+Ruff version is resolved in order: `ruff-version` input > `uv.lock` > `pyproject.toml` dependencies > latest.
+
+Inputs:
+| Input | Default | Description |
+|-------|---------|-------------|
+| `ruff-version` | `""` | Version of Ruff, e.g. `0.9.1`. Empty means lookup from `uv.lock`/`pyproject.toml`, else latest |
+| `working-directory` | `.` | Where to run Ruff and look for its configuration |
+| `use-legacy` | `false` | **Deprecated.** Run the old isort/black/flake8 linters instead of Ruff |
+| `python-version`, `use-black`, `use-flake`, `use-isort` | | Used only with `use-legacy: true` |
 
 Example usage:
 ```yaml
@@ -560,51 +581,21 @@ Example usage:
       - name: Check out repository code
         uses: actions/checkout@v4 # pin latest commit-hash
 
-      # Simple linting, uses predefined configuration file from this repository:
       - name: Run linters
         uses: PiwikPRO/actions/python/lint@master
-        with:
-          use-black: true
-          use-flake: true
-          use-isort: true
-
 ...
 ```
 
-**Configure VSCode to use common linter configuration**
+**All python projects should use uv with ruff.**
 
-You can configure your local environment to use common configuration placed in this repository.
-First, make sure, that `black formatter` and `flake8` extenstions are downloaded and available.
-Then clone this repository and set apropriate settings in preferences:
-
-`ctrl+shift+p -> Preferences: Open settings (JSON)`
-
-and set:
+If you cannot migrate yet, you can turn on legacy linters with `use-legacy`:
+```yaml
+      - name: Run linters
+        uses: PiwikPRO/actions/python/lint@master
+        with:
+          use-legacy: true
 ```
-{
-    "black-formatter.args": [
-        "--config",
-        "/home/kosto/Projects/promil/actions/python/lint/pyproject.toml"
-    ],
-    "editor.formatOnSave": true,
-    "flake8.args": [
-        "--config",
-        "/home/kosto/Projects/promil/actions/python/lint/flake8.ini"
-    ],
-    "isort.args": [
-        "--profile",
-        "black",
-        "--sp",
-        "/home/kosto/Projects/promil/actions/python/lint/.isort.cfg"
-    ],
-    "[python]": {
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": true
-        }
-    }
-}
-```
-Replace `/home/kkaragiorgis/Projects/promil` to wherever you cloned `actions` repository.
+
 
 #### QA-Lint
 
