@@ -193,12 +193,17 @@ jobs:
 
       - name: Push changes to Tech-docs
         if: env.CHANGES != '0'
+        # Pass event data through env so the shell never parses quotes or backticks in it
+        env:
+          PUSHER_EMAIL: ${{ github.event.pusher.email }}
+          PUSHER_NAME: ${{ github.event.pusher.name }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           cd Tech-docs
-          git config --global user.email "${{github.event.pusher.email}}"
-          git config --global user.name "${{github.event.pusher.name}}"
+          git config --global user.email "$PUSHER_EMAIL"
+          git config --global user.name "$PUSHER_NAME"
           git add --all
-          git commit -m "${{ github.event.head_commit.message }}"
+          git commit -m "$COMMIT_MESSAGE"
           git push origin $TECH_DOCS_BRANCH --force
 
 
@@ -245,9 +250,12 @@ jobs:
 
       - name: Set Tech-docs branch names
         shell: bash
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          LOCAL_BASE_BRANCH=$(echo "${{ github.base_ref }}" | sed 's/refs\/heads\///')
-          LOCAL_HEAD_BRANCH=$(echo "${{ github.head_ref }}" | sed 's/refs\/heads\///')
+          LOCAL_BASE_BRANCH=$(echo "$BASE_REF" | sed 's/refs\/heads\///')
+          LOCAL_HEAD_BRANCH=$(echo "$HEAD_REF" | sed 's/refs\/heads\///')
           if [[ "$LOCAL_BASE_BRANCH" == "$MAIN_BRANCH" ]]; then
             TECH_DOCS_BASE_BRANCH=master
           else
