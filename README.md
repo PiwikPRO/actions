@@ -91,6 +91,10 @@ on:
         description: 'Repository tag to process'
         required: true
         type: string
+      release_version:
+        description: 'Release version (semver, e.g. 18.78.0) the change should be synced for'
+        required: true
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -102,10 +106,13 @@ jobs:
     secrets: inherit
     with:
       repository_tag: ${{ github.event.inputs.repository_tag }}
+      release_version: ${{ github.event.inputs.release_version }}
 ```
 
 Then, you can trigger it manually from the Actions tab in your repository. As input you need to provide the tag 
-of the repository you want to process.
+of the repository you want to process and the release version (semver, e.g. `18.78.0`) the change should be synced for.
+The created pull request in DevelopersPortal is labeled `Release:<release_version>` (e.g. `Release:18.78.0`);
+the label is created there if it does not exist yet.
 
 For more details about its implementation head to [PiwikPRO/DevelopersPortal](https://github.com/PiwikPRO/DevelopersPortal#api-documentation)
 

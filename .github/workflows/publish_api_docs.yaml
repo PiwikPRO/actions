@@ -6,11 +6,25 @@ on:
         default: 'Repository tag to process'
         required: true
         type: string
+      release_version:
+        description: 'Release version (semver, e.g. 18.78.0) the change should be synced for'
+        required: true
+        type: string
 
 jobs:
   update_api:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate release version
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::release_version must be a semver version like 18.78.0, got: '$RELEASE_VERSION'"
+            exit 1
+          fi
+          echo "RELEASE_LABEL=Release:$RELEASE_VERSION" >> $GITHUB_ENV
+
       - name: Checkout source repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -99,13 +113,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
         run: |
+          # gh pr create fails on labels that do not exist yet, so make sure the release label is there
+          if ! gh label list -R PiwikPRO/DevelopersPortal --search "$RELEASE_LABEL" --json name --jq '.[].name' | grep -Fxq "$RELEASE_LABEL"; then
+            gh label create "$RELEASE_LABEL" -R PiwikPRO/DevelopersPortal --description "Changes for release ${{ inputs.release_version }}"
+          fi
           gh pr create --title "API Update: ${{ github.event.repository.name }}:${{ inputs.repository_tag }}" \
             --body "This PR contains public OpenAPI spec from \
-              [${{ github.repository }}:${{ inputs.repository_tag }}](https://github.com/${{ github.repository }}/releases/tag/${{ inputs.repository_tag }}).
+              [${{ github.repository }}:${{ inputs.repository_tag }}](https://github.com/${{ github.repository }}/releases/tag/${{ inputs.repository_tag }}) \
+              for release ${{ inputs.release_version }}.
               Triggered by: @${{ github.actor }}" \
             --head ${{ env.BRANCH_NAME }} \
             --base master \
             --repo PiwikPRO/DevelopersPortal \
             --assignee ${{ github.actor }} \
-            --label "openapi-update" | tee pr_url.txt
+            --label "openapi-update" \
+            --label "$RELEASE_LABEL" | tee pr_url.txt
           echo "::notice::Pull request created: $(cat pr_url.txt)"
