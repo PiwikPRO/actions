@@ -13,6 +13,10 @@ inputs:
   environment:
     required: true
     description: Target environment name included in the run title
+  title-extra:
+    required: false
+    description: Optional extra segment appended to the run title. The calling workflow chooses the value.
+    default: ''
 
 runs:
   using: composite
@@ -24,6 +28,7 @@ runs:
         QASE_TESTOPS_PROJECT: ${{ inputs.project }}
         QASE_TESTOPS_PLAN_ID: ${{ inputs.plan-id }}
         TARGET_ENV: ${{ inputs.environment }}
+        TITLE_EXTRA: ${{ inputs.title-extra }}
       run: |
         if [ -z "$QASE_TESTOPS_API_TOKEN" ]; then
           echo "::error::Missing QASE_TESTOPS_API_TOKEN"
@@ -39,7 +44,11 @@ runs:
 
         RUN_DATE=$(TZ=Europe/Warsaw date '+%Y-%m-%d %H:%M')
         RUN_TITLE="${PLAN_TITLE} | ${TARGET_ENV} | ${RUN_DATE} | GHA #${GITHUB_RUN_NUMBER} | @${GITHUB_TRIGGERING_ACTOR}"
+        if [ -n "$TITLE_EXTRA" ]; then
+          RUN_TITLE="${RUN_TITLE} | ${TITLE_EXTRA}"
+        fi
         GHA_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        QASE_RUN_URL="https://app.qase.io/run/${QASE_TESTOPS_PROJECT}"
         RUN_DESCRIPTION="[GHA #${GITHUB_RUN_NUMBER}](${GHA_URL})"
         if [ -n "$ALLURE_REPORT_URL" ]; then
           RUN_DESCRIPTION="${RUN_DESCRIPTION}"$'  \n'"[Allure report](${ALLURE_REPORT_URL})"
@@ -52,6 +61,7 @@ runs:
           printf 'QASE_TESTOPS_PLAN_ID=%s\n' "$QASE_TESTOPS_PLAN_ID"
           printf 'QASE_ENVIRONMENT=%s\n' "$TARGET_ENV"
           printf 'QASE_TESTOPS_RUN_TITLE=%s\n' "$RUN_TITLE"
+          printf 'QASE_RUN_URL=%s\n' "$QASE_RUN_URL"
           echo "QASE_TESTOPS_RUN_DESCRIPTION<<QASE_DESCRIPTION_END"
           printf '%s\n' "$RUN_DESCRIPTION"
           echo "QASE_DESCRIPTION_END"

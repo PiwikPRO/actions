@@ -1014,6 +1014,7 @@ It uses **s5cmd** that is faster, but we are not 100% sure about stability. [Rea
 Sets Qase TestOps environment variables for later steps in the same job. It does not upload results itself. The test step that follows must use a Qase reporter, which reads these variables and creates the run.
 
 The run title is `{plan title} | {environment} | {date} | GHA #{run number} | @{actor}`.
+Pass `title-extra` to append one more segment. The calling workflow decides the value, for example a matrix field or its own input. Leave it empty to keep the standard title.
 
 ```yaml
       - name: Set Qase test run
@@ -1023,7 +1024,12 @@ The run title is `{plan title} | {environment} | {date} | GHA #{run number} | @{
           environment: ${{ matrix.environment }}
           project: 'PIT'
           plan-id: '1'
+          title-extra: ${{ matrix.browser }} # optional
 ```
+
+The variables are available only in later steps of the same job, as `env.*`. They are not passed to another job.
+
+`QASE_RUN_URL` is the link to the project runs, for example `https://app.qase.io/run/PIT`. The Qase reporter does not read it. Use it in a Slack message, a pull request description, or a job summary: `${{ env.QASE_RUN_URL }}`.
 
 #### Requirements
 
@@ -1031,3 +1037,4 @@ QASE_TESTOPS_API_TOKEN - repository secret. The token is in [1Password](https://
 project - project code from the Qase URL, for example PIT in https://app.qase.io/project/PIT.
 plan-id - numeric test plan id from Qase.
 environment - name included in the run title, usually matrix.environment or inputs.environment.
+title-extra - optional extra segment appended to the run title. Pass any value from the calling workflow, such as matrix.browser or inputs.suite.
