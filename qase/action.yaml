@@ -5,17 +5,21 @@ inputs:
     required: true
     description: Qase API token
   project:
-    required: false
+    required: true
     description: Qase project code
   plan-id:
-    required: false
+    required: true
     description: Qase test plan id used as the first part of the run title
   environment:
     required: true
     description: Target environment name included in the run title
   title-extra:
     required: false
-    description: Optional extra segment appended to the run title. The calling workflow chooses the value.
+    description: Optional extra input appended to the run title. The calling workflow chooses the value. Don't use newlines.
+    default: ''
+  allure-report-url:
+    required: false
+    description: Optional Allure report URL. Falls back to ALLURE_REPORT_URL when empty.
     default: ''
 
 runs:
@@ -29,18 +33,22 @@ runs:
         QASE_TESTOPS_PLAN_ID: ${{ inputs.plan-id }}
         TARGET_ENV: ${{ inputs.environment }}
         TITLE_EXTRA: ${{ inputs.title-extra }}
+        INPUT_ALLURE_REPORT_URL: ${{ inputs.allure-report-url }}
       run: |
         if [ -z "$QASE_TESTOPS_API_TOKEN" ]; then
           echo "::error::Missing QASE_TESTOPS_API_TOKEN"
           exit 1
         fi
 
-        PLAN_TITLE=$(curl --fail --silent --show-error \
+        if ! PLAN_TITLE=$(curl --fail --silent --show-error \
           --connect-timeout 10 --max-time 30 \
           --header "Token: ${QASE_TESTOPS_API_TOKEN}" \
           --header "accept: application/json" \
           "https://api.qase.io/v1/plan/${QASE_TESTOPS_PROJECT}/${QASE_TESTOPS_PLAN_ID}" \
-          | jq -er '.result.title | select(type == "string") | gsub("[\r\n]"; " ") | select(length > 0)')
+          | jq -er '.result.title | select(type == "string") | gsub("[\r\n]"; " ") | select(length > 0)'); then
+          echo "::error::Failed to fetch a valid Qase plan title (project: ${QASE_TESTOPS_PROJECT}, plan ID: ${QASE_TESTOPS_PLAN_ID})"
+          exit 1
+        fi
 
         RUN_DATE=$(TZ=Europe/Warsaw date '+%Y-%m-%d %H:%M')
         RUN_TITLE="${PLAN_TITLE} | ${TARGET_ENV} | ${RUN_DATE} | GHA #${GITHUB_RUN_NUMBER} | @${GITHUB_TRIGGERING_ACTOR}"
@@ -50,6 +58,7 @@ runs:
         GHA_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
         QASE_RUN_URL="https://app.qase.io/run/${QASE_TESTOPS_PROJECT}"
         RUN_DESCRIPTION="[GHA #${GITHUB_RUN_NUMBER}](${GHA_URL})"
+        ALLURE_REPORT_URL=${INPUT_ALLURE_REPORT_URL:-${ALLURE_REPORT_URL:-}}
         if [ -n "$ALLURE_REPORT_URL" ]; then
           RUN_DESCRIPTION="${RUN_DESCRIPTION}"$'  \n'"[Allure report](${ALLURE_REPORT_URL})"
         fi

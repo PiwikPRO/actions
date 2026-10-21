@@ -1025,7 +1025,10 @@ Pass `title-extra` to append one more segment. The calling workflow decides the 
           project: 'PIT'
           plan-id: '1'
           title-extra: ${{ matrix.browser }} # optional
+          allure-report-url: ${{ env.ALLURE_REPORT_URL }} # optional
 ```
+
+Pass `allure-report-url` to include an Allure report link in the run description. A non-empty input takes precedence over `ALLURE_REPORT_URL`; an empty or omitted input falls back to that environment variable. If neither is set, the description contains only the GitHub Actions run link.
 
 The variables are available only in later steps of the same job, as `env.*`. They are not passed to another job.
 
