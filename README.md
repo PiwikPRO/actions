@@ -1038,10 +1038,12 @@ The variables are available only in later steps of the same job, as `env.*`. The
 `QASE_RUN_URL` is the link to the project runs, for example `https://app.qase.io/run/PIT`. The Qase reporter does not read it. Use it in a Slack message, a pull request description, or a job summary: `${{ env.QASE_RUN_URL }}`.
 
 #### Requirements
-
 - `QASE_TESTOPS_API_TOKEN` - repository secret. The token is in [1Password](https://start.1password.com/open/i?a=ND4ZYDKP5NH7VI4VZZIJZ77SLE&v=5oowspt3iy4yos7iwbbmtv52e4&i=uuqhyrx7n6eyogfdecstla4brq&h=piwikpro.1password.eu)
 - `project` - project code from the Qase URL, for example PIT in https://app.qase.io/project/PIT.
 - `plan-id` - numeric test plan id from Qase.
 - `environment` - name included in the run title, usually matrix.environment or inputs.environment.
-- `title-extra` - optional extra segment appended to the run title. Pass any value from the calling workflow, such as matrix.browser or inputs.suite.
-- `run-tags` - optional extra segment appended to the test cases. Pass any value separated by commas
+
+#### Optional
+- `title-extra` - extra segment appended to the run title. Pass any value from the calling workflow, such as matrix.browser or inputs.suite.
+- `run-tags` - extra segment appended to the test cases. Pass any value separated by commas
+- `allure-report-url` - Allure report URL included in the Qase run description. Falls back to `ALLURE_REPORT_URL` when empty or omitted. If neither is set, no Allure link is added.
