@@ -1025,10 +1025,13 @@ Pass `title-extra` to append one more segment. The calling workflow decides the 
           project: 'PIT'
           plan-id: '1'
           title-extra: ${{ matrix.browser }} # optional
+          run-tags: 'automated,nightly' # optional
           allure-report-url: ${{ env.ALLURE_REPORT_URL }} # optional
 ```
 
 Pass `allure-report-url` to include an Allure report link in the run description. A non-empty input takes precedence over `ALLURE_REPORT_URL`; an empty or omitted input falls back to that environment variable. If neither is set, the description contains only the GitHub Actions run link.
+
+Pass `run-tags` as a comma-separated list, for example `automated,nightly`. The action exports it as `QASE_TESTOPS_RUN_TAGS`, which the Qase reporter uses to populate the run's **Tags** section. Do not include newlines. When the input is empty or omitted, the action does not export this variable, leaving any existing reporter tag configuration unchanged.
 
 The variables are available only in later steps of the same job, as `env.*`. They are not passed to another job.
 
@@ -1036,8 +1039,9 @@ The variables are available only in later steps of the same job, as `env.*`. The
 
 #### Requirements
 
-QASE_TESTOPS_API_TOKEN - repository secret. The token is in [1Password](https://start.1password.com/open/i?a=ND4ZYDKP5NH7VI4VZZIJZ77SLE&v=5oowspt3iy4yos7iwbbmtv52e4&i=uuqhyrx7n6eyogfdecstla4brq&h=piwikpro.1password.eu)
-project - project code from the Qase URL, for example PIT in https://app.qase.io/project/PIT.
-plan-id - numeric test plan id from Qase.
-environment - name included in the run title, usually matrix.environment or inputs.environment.
-title-extra - optional extra segment appended to the run title. Pass any value from the calling workflow, such as matrix.browser or inputs.suite.
+`QASE_TESTOPS_API_TOKEN` - repository secret. The token is in [1Password](https://start.1password.com/open/i?a=ND4ZYDKP5NH7VI4VZZIJZ77SLE&v=5oowspt3iy4yos7iwbbmtv52e4&i=uuqhyrx7n6eyogfdecstla4brq&h=piwikpro.1password.eu)
+`project` - project code from the Qase URL, for example PIT in https://app.qase.io/project/PIT.
+`plan-id` - numeric test plan id from Qase.
+`environment` - name included in the run title, usually matrix.environment or inputs.environment.
+`title-extra` - optional extra segment appended to the run title. Pass any value from the calling workflow, such as matrix.browser or inputs.suite.
+`run-tags` - optional extra segment appended to the test cases. Pass any value separated by commas
