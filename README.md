@@ -1039,9 +1039,9 @@ The variables are available only in later steps of the same job, as `env.*`. The
 
 #### Requirements
 
-`QASE_TESTOPS_API_TOKEN` - repository secret. The token is in [1Password](https://start.1password.com/open/i?a=ND4ZYDKP5NH7VI4VZZIJZ77SLE&v=5oowspt3iy4yos7iwbbmtv52e4&i=uuqhyrx7n6eyogfdecstla4brq&h=piwikpro.1password.eu)
-`project` - project code from the Qase URL, for example PIT in https://app.qase.io/project/PIT.
-`plan-id` - numeric test plan id from Qase.
-`environment` - name included in the run title, usually matrix.environment or inputs.environment.
-`title-extra` - optional extra segment appended to the run title. Pass any value from the calling workflow, such as matrix.browser or inputs.suite.
-`run-tags` - optional extra segment appended to the test cases. Pass any value separated by commas
+- `QASE_TESTOPS_API_TOKEN` - repository secret. The token is in [1Password](https://start.1password.com/open/i?a=ND4ZYDKP5NH7VI4VZZIJZ77SLE&v=5oowspt3iy4yos7iwbbmtv52e4&i=uuqhyrx7n6eyogfdecstla4brq&h=piwikpro.1password.eu)
+- `project` - project code from the Qase URL, for example PIT in https://app.qase.io/project/PIT.
+- `plan-id` - numeric test plan id from Qase.
+- `environment` - name included in the run title, usually matrix.environment or inputs.environment.
+- `title-extra` - optional extra segment appended to the run title. Pass any value from the calling workflow, such as matrix.browser or inputs.suite.
+- `run-tags` - optional extra segment appended to the test cases. Pass any value separated by commas
