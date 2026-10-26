@@ -43,6 +43,7 @@
       - [Sending slack message to any channel](#slack)
     - [Allure](#allure)
       - [Generating allure report](#allure)
+    - [Qase](#qase)
 <!--toc:end-->
 
 Custom github actions and reusable workflows used both internally and externally by Piwik PRO employees. This repo is public and licensed on MIT license, but contains some actions, that cannot be launched without Piwik PRO proprietary components or secrets - sorry!
@@ -1008,3 +1009,43 @@ Above setup will allow you to preserve the history of test runs in your Allure R
 #### Allure history fast
 You can also use `PiwikPRO/actions/allure/history_fast@master` action. 
 It uses **s5cmd** that is faster, but we are not 100% sure about stability. [Read more](allure/history_fast/README.md)
+
+### Qase
+
+Sets Qase TestOps environment variables for later steps in the same job. It does not upload results itself. The test step that follows must use a Qase reporter, which reads these variables and creates the run.
+
+The run title is `{plan title} | {environment} | {date} | GHA #{run number} | @{actor}`.
+Pass `title-extra` to append one more segment. The calling workflow decides the value, for example a matrix field or its own input. Leave it empty to keep the standard title.
+
+```yaml
+      - name: Set Qase test run
+        uses: PiwikPRO/actions/qase@master
+        with:
+          api-token: ${{ secrets.QASE_TESTOPS_API_TOKEN }}
+          environment: ${{ matrix.environment }}
+          project: 'PIT'
+          plan-id: '1'
+          title-extra: ${{ matrix.browser }} # optional
+          run-tags: 'automated,nightly' # optional
+```
+
+
+Pass `run-tags` as a comma-separated list, for example `automated,nightly`. The action exports it as `QASE_TESTOPS_RUN_TAGS`, which the Qase reporter uses to populate the run's **Tags** section. Do not include newlines. When the input is empty or omitted, the action does not export this variable, leaving any existing reporter tag configuration unchanged.
+
+The variables are available only in later steps of the same job, as `env.*`. They are not passed to another job.
+
+`QASE_RUN_URL` is the link to the project runs, for example `https://app.qase.io/run/PIT`. The Qase reporter does not read it. Use it in a Slack message, a pull request description, or a job summary: `${{ env.QASE_RUN_URL }}`.
+
+#### Requirements
+
+- `QASE_TESTOPS_API_TOKEN` - repository secret. The token is in [1Password](https://start.1password.com/open/i?a=ND4ZYDKP5NH7VI4VZZIJZ77SLE&v=5oowspt3iy4yos7iwbbmtv52e4&i=uuqhyrx7n6eyogfdecstla4brq&h=piwikpro.1password.eu)
+- `project` - project code from the Qase URL, for example PIT in [https://app.qase.io/project/PIT](https://app.qase.io/project/PIT).
+- `plan-id` - numeric test plan id from Qase.
+- `environment` - name included in the run title, usually matrix.environment or inputs.environment.
+
+
+
+#### Optional
+
+- `title-extra` - extra segment appended to the run title. Pass any value from the calling workflow, such as matrix.browser or inputs.suite.
+- `run-tags` - extra segment appended to the test cases. Pass any value separated by commas
