@@ -9,7 +9,7 @@ inputs:
     description: Qase project code
   plan-id:
     required: true
-    description: Qase test plan ID. Its name is used as the first part of the run title. Exported as QASE_TESTOPS_PLAN_ID, which also filters pytest execution to cases in the plan.
+    description: Qase test plan ID. Its name is used as the first part of the run title. Exported as QASE_TESTOPS_PLAN_ID, which also filters pytest execution to cases in the plan. Tests not added to the plan are not included in the run.
   environment:
     required: true
     description: Target environment name included in the run title
