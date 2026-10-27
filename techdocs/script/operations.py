@@ -318,9 +318,26 @@ class OpenAPIBundler:
 
 
 class OpenAPIValidator:
-    RDME_VERSION = "latest"
+    RDME_VERSION = "10"
+    IMAGE = f"techdocs-rdme:{RDME_VERSION}"
+    DOCKERFILE = (
+        f'FROM node:24-alpine\nRUN npm install -g rdme@{RDME_VERSION}\nENTRYPOINT ["rdme"]\n'
+    )
+
+    def _ensure_image(self):
+        inspect = subprocess.run(["docker", "image", "inspect", self.IMAGE], capture_output=True)
+        if inspect.returncode == 0:
+            return
+        output = subprocess.run(
+            ["docker", "build", "-t", self.IMAGE, "-"],
+            input=self.DOCKERFILE.encode(),
+            capture_output=True,
+        )
+        if output.returncode != 0:
+            raise Exception(f"Building rdme image failed: {output.stderr.decode()}")
 
     def validate(self, source_abs, ref_files: list[str]):
+        self._ensure_image()
         ref_files_volumes = {os.path.dirname(ref_file) for ref_file in ref_files} | {os.path.dirname(source_abs)}
         base_path = os.path.commonpath(ref_files_volumes)
         args = [
@@ -330,10 +347,11 @@ class OpenAPIValidator:
             f"{base_path}:/spec",
             "-w",
             "/spec",
-            f"ghcr.io/readmeio/rdme:{self.RDME_VERSION}",
-            "openapi:validate",
+            self.IMAGE,
+            "openapi",
+            "validate",
             f"/spec/{os.path.relpath(source_abs, base_path)}",
-            f"--workingDirectory=/spec/{os.path.dirname(os.path.relpath(source_abs, base_path))}",
+            f"--working-directory=/spec/{os.path.dirname(os.path.relpath(source_abs, base_path))}",
         ]
         output = subprocess.run(args, capture_output=True)
         if output.returncode != 0:
