@@ -1,0 +1,76 @@
+name: 'Qase test run'
+description: 'Set the standard Qase TestOps mode, run title, and description for later steps in the job'
+inputs:
+  api-token:
+    required: true
+    description: Qase API token
+  project:
+    required: true
+    description: Qase project code
+  plan-id:
+    required: true
+    description: Qase test plan ID. Its name is used as the first part of the run title. Exported as QASE_TESTOPS_PLAN_ID, which also filters pytest execution to cases in the plan. Tests not added to the plan are not included in the run.
+  environment:
+    required: true
+    description: Target environment name included in the run title
+  title-extra:
+    required: false
+    description: Optional extra input appended to the run title. The calling workflow chooses the value. Don't use newlines.
+    default: ''
+  run-tags:
+    required: false
+    description: Optional comma-separated Qase test run tags (e.g. automated,nightly). Exported as QASE_TESTOPS_RUN_TAGS when non-empty. Don't use newlines.
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Set Qase run title and description
+      shell: bash
+      env:
+        QASE_TESTOPS_API_TOKEN: ${{ inputs.api-token }}
+        QASE_TESTOPS_PROJECT: ${{ inputs.project }}
+        QASE_TESTOPS_PLAN_ID: ${{ inputs.plan-id }}
+        QASE_ENVIRONMENT: ${{ inputs.environment }}
+        QASE_TESTOPS_RUN_TAGS: ${{ inputs.run-tags }}
+        TITLE_EXTRA: ${{ inputs.title-extra }}
+      run: |
+        if [ -z "$QASE_TESTOPS_API_TOKEN" ]; then
+          echo "::error::Missing QASE_TESTOPS_API_TOKEN"
+          exit 1
+        fi
+
+        if ! PLAN_TITLE=$(curl --fail --silent --show-error \
+          --connect-timeout 10 --max-time 30 \
+          --header "Token: ${QASE_TESTOPS_API_TOKEN}" \
+          --header "accept: application/json" \
+          "https://api.qase.io/v1/plan/${QASE_TESTOPS_PROJECT}/${QASE_TESTOPS_PLAN_ID}" \
+          | jq -er '.result.title | select(type == "string") | gsub("[\r\n]"; " ") | select(length > 0)'); then
+          echo "::error::Failed to fetch a valid Qase plan title (project: ${QASE_TESTOPS_PROJECT}, plan ID: ${QASE_TESTOPS_PLAN_ID})"
+          exit 1
+        fi
+
+        RUN_DATE=$(TZ=Europe/Warsaw date '+%Y-%m-%d %H:%M')
+        RUN_TITLE="${PLAN_TITLE} | ${QASE_ENVIRONMENT} | ${RUN_DATE} | GHA #${GITHUB_RUN_NUMBER} | @${GITHUB_TRIGGERING_ACTOR}"
+        RUN_TITLE+="${TITLE_EXTRA:+ | ${TITLE_EXTRA}}"
+        GHA_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        QASE_RUN_URL="https://app.qase.io/run/${QASE_TESTOPS_PROJECT}"
+        RUN_DESCRIPTION="[GHA #${GITHUB_RUN_NUMBER}](${GHA_URL})"
+        if [ -n "${ALLURE_REPORT_URL:-}" ]; then
+          RUN_DESCRIPTION+=$'  \n'"[Allure report](${ALLURE_REPORT_URL})"
+        fi
+
+        {
+          printf 'QASE_MODE=%s\n' "testops"
+          printf 'QASE_TESTOPS_API_TOKEN=%s\n' "$QASE_TESTOPS_API_TOKEN"
+          printf 'QASE_TESTOPS_PROJECT=%s\n' "$QASE_TESTOPS_PROJECT"
+          printf 'QASE_TESTOPS_PLAN_ID=%s\n' "$QASE_TESTOPS_PLAN_ID"
+          printf 'QASE_ENVIRONMENT=%s\n' "$QASE_ENVIRONMENT"
+          printf 'QASE_TESTOPS_RUN_TITLE=%s\n' "$RUN_TITLE"
+          printf 'QASE_RUN_URL=%s\n' "$QASE_RUN_URL"
+          if [ -n "$QASE_TESTOPS_RUN_TAGS" ]; then
+            printf 'QASE_TESTOPS_RUN_TAGS=%s\n' "$QASE_TESTOPS_RUN_TAGS"
+          fi
+          echo "QASE_TESTOPS_RUN_DESCRIPTION<<QASE_DESCRIPTION_END"
+          printf '%s\n' "$RUN_DESCRIPTION"
+          echo "QASE_DESCRIPTION_END"
+        } >> "$GITHUB_ENV"
